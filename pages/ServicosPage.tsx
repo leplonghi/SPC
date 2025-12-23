@@ -204,7 +204,7 @@ const ServicosPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
-      <section className="bg-[#2D2D2D] pt-32 pb-24 relative overflow-hidden">
+      <section className="bg-[#2D2D2D] pt-24 pb-16 relative overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <img
             src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=2000"
@@ -214,23 +214,23 @@ const ServicosPage: React.FC = () => {
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-[#2D2D2D]/40 via-[#2D2D2D] to-[#2D2D2D]"></div>
 
-        <div className="relative max-w-7xl mx-auto px-4 text-center space-y-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#CC343A]/20 text-[#CC343A] border border-[#CC343A]/30 rounded-full text-xs font-black uppercase tracking-[0.2em] mb-4">
+        <div className="relative max-w-7xl mx-auto px-4 text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#CC343A]/20 text-[#CC343A] border border-[#CC343A]/30 rounded-full text-xs font-black uppercase tracking-[0.2em] mb-2">
             Atendimento Cidadão
           </div>
-          <h1 className="text-4xl md:text-7xl font-black text-white leading-tight">
+          <h1 className="text-3xl md:text-5xl font-black text-white leading-tight">
             Serviços <span className="text-[#CC343A]">Online</span>
           </h1>
-          <p className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
-            Orientações, formulários e o passo a passo para suas solicitações junto à Superintendência.
+          <p className="text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
+            Orientações e formulários para suas solicitações junto à Superintendência.
           </p>
 
-          <div className="w-full max-w-2xl mx-auto relative group pt-8">
-            <Search className="absolute left-6 top-[calc(50%+16px)] -translate-y-1/2 text-slate-400 group-focus-within:text-[#CC343A] transition-colors" size={24} />
+          <div className="w-full max-w-xl mx-auto relative group pt-4">
+            <Search className="absolute left-6 top-[calc(50%+8px)] -translate-y-1/2 text-slate-400 group-focus-within:text-[#CC343A] transition-colors" size={20} />
             <input
               type="text"
               placeholder="Ex: Reforma, DPHAP, Certidão, Obra..."
-              className="w-full pl-16 pr-6 py-6 bg-white/10 border-2 border-white/10 backdrop-blur-md rounded-[2rem] text-lg font-medium text-white placeholder:text-slate-400 focus:outline-none focus:ring-8 focus:ring-[#CC343A]/20 focus:border-[#CC343A] transition-all shadow-sm"
+              className="w-full pl-14 pr-6 py-4 bg-white/10 border-2 border-white/10 backdrop-blur-md rounded-2xl text-base font-medium text-white placeholder:text-slate-400 focus:outline-none focus:ring-8 focus:ring-[#CC343A]/20 focus:border-[#CC343A] transition-all shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />

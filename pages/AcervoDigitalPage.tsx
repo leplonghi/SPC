@@ -50,25 +50,25 @@ const AcervoDigitalPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-slate-50 pb-32">
             {/* Hero Section */}
-            <section className="bg-[#2D2D2D] pt-32 pb-24 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-20">
+            <section className="bg-[#2D2D2D] pt-16 pb-10 relative overflow-hidden">
+                <div className="absolute inset-0 opacity-30">
                     <img
-                        src="https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&q=80&w=2000"
-                        alt="Biblioteca e Conhecimento"
+                        src="/imagens/1912 - justo jansen - mapa.jpg"
+                        alt="Acervo Histórico"
                         className="w-full h-full object-cover"
                     />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-b from-[#2D2D2D]/40 via-[#2D2D2D] to-[#2D2D2D]"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-[#2D2D2D]/60 via-[#2D2D2D]/90 to-[#2D2D2D]"></div>
 
-                <div className="relative max-w-7xl mx-auto px-4 text-center space-y-8">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#CC343A]/20 text-[#CC343A] border border-[#CC343A]/30 rounded-full text-xs font-black uppercase tracking-[0.2em] mb-4">
+                <div className="relative max-w-7xl mx-auto px-4 text-center space-y-4">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#CC343A]/20 text-[#CC343A] border border-[#CC343A]/30 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
                         Ecossistema Digital SPC
                     </div>
-                    <h1 className="text-4xl md:text-7xl font-black text-white leading-tight">
+                    <h1 className="text-2xl md:text-4xl font-black text-white leading-tight">
                         Digitalização e <span className="text-[#CC343A]">Conhecimento</span>
                     </h1>
-                    <p className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
-                        Central de inteligência para pesquisa, consulta de normas e acesso a arquivos históricos georreferenciados do Maranhão.
+                    <p className="text-sm text-slate-300 max-w-xl mx-auto leading-relaxed font-medium">
+                        Acesso simplificado a arquivos históricos e normas do Maranhão.
                     </p>
                 </div>
             </section>
