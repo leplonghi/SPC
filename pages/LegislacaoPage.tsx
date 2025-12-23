@@ -98,10 +98,20 @@ const LegislacaoPage: React.FC = () => {
     <div className="min-h-screen bg-slate-50">
       {/* Header Section */}
       <section className="bg-brand-dark pt-32 pb-20 relative overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0 overflow-hidden opacity-30">
+          <img
+            src="/imagens/legislacao_hero.jpg"
+            alt="Pianta della Città di S. Luigi"
+            className="w-full h-full object-cover scale-110"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-brand-dark via-brand-dark/40 to-brand-dark"></div>
+        </div>
+
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-red opacity-5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-brand-blue opacity-5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2"></div>
 
-        <div className="relative max-w-7xl mx-auto px-4 text-center space-y-8">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-blue/20 text-brand-blue border border-brand-blue/30 rounded-full text-xs font-black uppercase tracking-[0.2em]">
             <Gavel size={16} /> Biblioteca Jurídica
           </div>

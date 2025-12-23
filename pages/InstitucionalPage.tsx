@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import { 
-  History, 
-  Sparkles, 
-  ArrowRight, 
-  Target, 
-  Shield, 
-  Eye, 
+import {
+  History,
+  Sparkles,
+  ArrowRight,
+  Target,
+  Shield,
+  Eye,
   Users,
   Building2,
   FileBadge,
@@ -63,14 +63,14 @@ const InstitucionalPage: React.FC = () => {
       {/* Hero Section */}
       <section className="bg-[#2D2D2D] pt-32 pb-20 relative overflow-hidden">
         <div className="absolute inset-0 opacity-40">
-          <img 
-            src="https://images.unsplash.com/photo-1590483736622-39da8af7541c?auto=format&fit=crop&q=80&w=2000" 
-            alt="Centro Histórico de São Luís" 
+          <img
+            src="https://images.unsplash.com/photo-1590483736622-39da8af7541c?auto=format&fit=crop&q=80&w=2000"
+            alt="Centro Histórico de São Luís"
             className="w-full h-full object-cover"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-[#2D2D2D]/40 via-[#2D2D2D] to-[#2D2D2D]"></div>
-        
+
         <div className="relative max-w-7xl mx-auto px-4 text-center space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#CC343A]/20 text-[#CC343A] border border-[#CC343A]/30 rounded-full text-xs font-black uppercase tracking-[0.2em] mb-4">
             Institucional
@@ -92,11 +92,10 @@ const InstitucionalPage: React.FC = () => {
               <button
                 key={id}
                 onClick={() => setActiveTab(id as any)}
-                className={`flex items-center gap-3 px-10 py-6 text-xs font-black uppercase tracking-widest transition-all border-b-4 ${
-                  activeTab === id 
-                  ? `border-[#CC343A] text-[#CC343A]` 
-                  : 'border-transparent text-slate-400 hover:text-[#2D2D2D] hover:bg-slate-50'
-                }`}
+                className={`flex items-center gap-3 px-10 py-6 text-xs font-black uppercase tracking-widest transition-all border-b-4 ${activeTab === id
+                    ? `border-[#CC343A] text-[#CC343A]`
+                    : 'border-transparent text-slate-400 hover:text-[#2D2D2D] hover:bg-slate-50'
+                  }`}
               >
                 <section.icon size={18} />
                 {section.title}
@@ -142,12 +141,12 @@ const InstitucionalPage: React.FC = () => {
               {/* Superintendente Destaque */}
               <div className="bg-white rounded-[4rem] border border-slate-100 shadow-2xl p-10 md:p-16 flex flex-col lg:flex-row gap-12 items-center">
                 <div className="lg:w-1/3 w-full">
-                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=800" className="w-full h-[450px] object-cover rounded-[3rem] shadow-2xl" alt="Superintendente" />
+                  <img src="/imagens/superintendente.jpg" className="w-full h-[450px] object-cover rounded-[3rem] shadow-2xl" alt="Superintendente Eduardo Longhi" />
                 </div>
                 <div className="lg:w-2/3 space-y-8">
                   <div className="space-y-2">
                     <span className="inline-flex items-center gap-2 px-3 py-1 bg-[#CC343A]/10 text-[#CC343A] rounded-full text-[10px] font-black uppercase tracking-widest">Gabinete da Superintendência</span>
-                    <h3 className="text-4xl font-black text-[#2D2D2D]">Dr. Roberto Lima de Oliveira</h3>
+                    <h3 className="text-4xl font-black text-[#2D2D2D]">Eduardo Longhi</h3>
                     <p className="text-lg text-[#5283A9] font-bold">Superintendente do Patrimônio Cultural</p>
                   </div>
                   <p className="text-slate-600 leading-relaxed text-lg italic">
@@ -168,24 +167,24 @@ const InstitucionalPage: React.FC = () => {
 
               {/* Chefes de Departamento Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                <StaffCard 
-                  name="Arq. Mariana Rocha" 
-                  role="Diretora do Departamento de Patrimônio Material. Especialista em Restauro pela UFMA." 
-                  dept="Chefia DPHAP" 
+                <StaffCard
+                  name="Arq. Mariana Rocha"
+                  role="Diretora do Departamento de Patrimônio Material. Especialista em Restauro pela UFMA."
+                  dept="Chefia DPHAP"
                   image="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=800"
                   color="bg-[#5283A9]"
                 />
-                <StaffCard 
-                  name="Profa. Benedita Soares" 
-                  role="Diretora de Patrimônio Imaterial. Antropóloga com foco em culturas quilombolas." 
-                  dept="Chefia DPI" 
+                <StaffCard
+                  name="Profa. Benedita Soares"
+                  role="Diretora de Patrimônio Imaterial. Antropóloga com foco em culturas quilombolas."
+                  dept="Chefia DPI"
                   image="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800"
                   color="bg-[#CC343A]"
                 />
-                <StaffCard 
-                  name="Eng. Carlos Alberto" 
-                  role="Diretor de Projetos Especiais. Especialista em infraestrutura urbana de centros históricos." 
-                  dept="Chefia DPE" 
+                <StaffCard
+                  name="Eng. Carlos Alberto"
+                  role="Diretor de Projetos Especiais. Especialista em infraestrutura urbana de centros históricos."
+                  dept="Chefia DPE"
                   image="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=800"
                   color="bg-[#2D2D2D]"
                 />
@@ -194,28 +193,28 @@ const InstitucionalPage: React.FC = () => {
 
             {/* Corpo Técnico Menor Grid */}
             <div className="bg-slate-100/50 rounded-[4rem] p-16 space-y-12">
-               <div className="text-center space-y-4">
-                  <h3 className="text-2xl font-black text-[#2D2D2D] uppercase tracking-widest">Nossa Equipe Técnica</h3>
-                  <p className="text-slate-500 text-sm max-w-lg mx-auto">Uma equipe multidisciplinar dedicada ao monitoramento e proteção dos 42 municípios sob nossa guarda.</p>
-               </div>
-               <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                  {[
-                    { name: 'Ana Beatriz', role: 'Arquiteta Urbanista', dept: 'DPHAP' },
-                    { name: 'Ricardo Mendes', role: 'Historiador', dept: 'DPHAP' },
-                    { name: 'Clara Nunes', role: 'Socióloga', dept: 'DPI' },
-                    { name: 'Paulo Victor', role: 'Engenheiro Civil', dept: 'DPE' },
-                    { name: 'Fernanda Lima', role: 'Arqueóloga', dept: 'DPHAP' },
-                    { name: 'Gabriel Souza', role: 'Geógrafo / GIS', dept: 'Gabinete' },
-                    { name: 'Sueli Martins', role: 'Advogada Patrimonial', dept: 'Jurídico' },
-                    { name: 'João Batista', role: 'Mestre de Obras Históricas', dept: 'DPE' }
-                  ].map((staff, idx) => (
-                    <div key={idx} className="bg-white p-6 rounded-3xl border border-white shadow-sm hover:shadow-md transition-shadow">
-                       <h5 className="font-black text-[#2D2D2D] text-sm mb-1">{staff.name}</h5>
-                       <p className="text-[10px] text-slate-400 font-bold uppercase mb-2">{staff.dept}</p>
-                       <p className="text-[10px] text-slate-500">{staff.role}</p>
-                    </div>
-                  ))}
-               </div>
+              <div className="text-center space-y-4">
+                <h3 className="text-2xl font-black text-[#2D2D2D] uppercase tracking-widest">Nossa Equipe Técnica</h3>
+                <p className="text-slate-500 text-sm max-w-lg mx-auto">Uma equipe multidisciplinar dedicada ao monitoramento e proteção dos 42 municípios sob nossa guarda.</p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                {[
+                  { name: 'Ana Beatriz', role: 'Arquiteta Urbanista', dept: 'DPHAP' },
+                  { name: 'Ricardo Mendes', role: 'Historiador', dept: 'DPHAP' },
+                  { name: 'Clara Nunes', role: 'Socióloga', dept: 'DPI' },
+                  { name: 'Paulo Victor', role: 'Engenheiro Civil', dept: 'DPE' },
+                  { name: 'Fernanda Lima', role: 'Arqueóloga', dept: 'DPHAP' },
+                  { name: 'Gabriel Souza', role: 'Geógrafo / GIS', dept: 'Gabinete' },
+                  { name: 'Sueli Martins', role: 'Advogada Patrimonial', dept: 'Jurídico' },
+                  { name: 'João Batista', role: 'Mestre de Obras Históricas', dept: 'DPE' }
+                ].map((staff, idx) => (
+                  <div key={idx} className="bg-white p-6 rounded-3xl border border-white shadow-sm hover:shadow-md transition-shadow">
+                    <h5 className="font-black text-[#2D2D2D] text-sm mb-1">{staff.name}</h5>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-2">{staff.dept}</p>
+                    <p className="text-[10px] text-slate-500">{staff.role}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Trajectory Section (Existing) */}
@@ -233,8 +232,8 @@ const InstitucionalPage: React.FC = () => {
                 </div>
               </div>
               <div className="lg:w-1/2 relative h-80 lg:h-auto overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1629235483813-906d20364d08?auto=format&fit=crop&q=80&w=1200" 
+                <img
+                  src="https://images.unsplash.com/photo-1629235483813-906d20364d08?auto=format&fit=crop&q=80&w=1200"
                   className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000"
                   alt="Patrimônio Colonial"
                 />
@@ -265,9 +264,9 @@ const InstitucionalPage: React.FC = () => {
                     Responsável pelo inventário, tombamento e fiscalização técnica de conjuntos arquitetônicos e monumentos. Define as diretrizes para obras de restauro e preservação da paisagem urbana.
                   </p>
                   <ul className="flex flex-wrap gap-3">
-                     {['Tombamentos', 'Fiscalização', 'Diretrizes', 'Restauro'].map(tag => (
-                        <li key={tag} className="px-4 py-1.5 bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-widest rounded-full border border-slate-100">{tag}</li>
-                     ))}
+                    {['Tombamentos', 'Fiscalização', 'Diretrizes', 'Restauro'].map(tag => (
+                      <li key={tag} className="px-4 py-1.5 bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-widest rounded-full border border-slate-100">{tag}</li>
+                    ))}
                   </ul>
                 </div>
               </div>
@@ -285,9 +284,9 @@ const InstitucionalPage: React.FC = () => {
                     Atua no registro de manifestações culturais, celebrações, formas de expressão e saberes tradicionais. Coordena planos de salvaguarda que protegem a alma coletiva do Maranhão.
                   </p>
                   <ul className="flex flex-wrap gap-3">
-                     {['Registros', 'Mapeamento', 'Salvaguarda', 'Celebrações'].map(tag => (
-                        <li key={tag} className="px-4 py-1.5 bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-widest rounded-full border border-slate-100">{tag}</li>
-                     ))}
+                    {['Registros', 'Mapeamento', 'Salvaguarda', 'Celebrações'].map(tag => (
+                      <li key={tag} className="px-4 py-1.5 bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-widest rounded-full border border-slate-100">{tag}</li>
+                    ))}
                   </ul>
                 </div>
               </div>
@@ -305,9 +304,9 @@ const InstitucionalPage: React.FC = () => {
                     Coordena projetos especiais de intervenção urbana em centros históricos, visando a reabilitação, infraestrutura e sustentabilidade de áreas de grande relevância patrimonial.
                   </p>
                   <ul className="flex flex-wrap gap-3">
-                     {['Urbanismo', 'Obras', 'Revitalização', 'Planejamento'].map(tag => (
-                        <li key={tag} className="px-4 py-1.5 bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-widest rounded-full border border-slate-100">{tag}</li>
-                     ))}
+                    {['Urbanismo', 'Obras', 'Revitalização', 'Planejamento'].map(tag => (
+                      <li key={tag} className="px-4 py-1.5 bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-widest rounded-full border border-slate-100">{tag}</li>
+                    ))}
                   </ul>
                 </div>
               </div>

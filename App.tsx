@@ -24,6 +24,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import InstitucionalPage from './pages/InstitucionalPage';
 import ServicosPage from './pages/ServicosPage';
 import LegislacaoPage from './pages/LegislacaoPage';
+import AcervoDigitalPage from './pages/AcervoDigitalPage';
 import { UserRole, User as UserType } from './types';
 
 const Navigation = () => {
@@ -31,46 +32,52 @@ const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const navItems = [
-    { label: 'Início', path: '/', icon: <Home size={20} /> },
-    { label: 'Mapa', path: '/mapa', icon: <MapIcon size={20} /> },
     { label: 'A SPC', path: '/institucional', icon: <Info size={20} /> },
-    { label: 'Legislação', path: '/legislacao', icon: <Gavel size={20} /> },
     { label: 'Serviços', path: '/servicos', icon: <FileText size={20} /> },
-    { label: 'Acervo', path: '/acervo', icon: <Library size={20} /> },
-    { label: 'Repositório', path: '/repositorio', icon: <Database size={20} /> },
+    { label: 'Acervo Digital', path: '/acervo-digital', icon: <Library size={20} /> },
+    { label: 'Mapa', path: '/mapa', icon: <MapIcon size={20} /> },
     { label: 'Admin', path: '/admin', icon: <Settings size={20} /> },
   ];
 
   return (
     <nav className="sticky top-0 z-[100] bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-[1440px] mx-auto px-6">
         <div className="flex justify-between items-center h-20">
-          <Link to="/" className="flex items-center space-x-4 group">
+          <Link to="/" className="flex items-center space-x-6 group">
             <img
               src="/imagens/logo_spc.jpg"
               alt="SPC Logo"
               className="h-16 w-auto transition-transform group-hover:scale-105"
             />
-            <div className="hidden lg:block border-l border-slate-200 pl-4">
-              <span className="block font-black text-brand-dark leading-tight text-base italic uppercase tracking-tighter">Superintendência do Patrimônio Cultural</span>
-              <span className="block text-[10px] font-black text-brand-blue tracking-[0.3em] uppercase">Governo do Maranhão</span>
+            <div className="hidden lg:block border-l border-slate-200 pl-6">
+              <span className="block font-black text-brand-dark leading-none text-base uppercase">Superintendência do</span>
+              <span className="block font-black text-brand-dark leading-none text-base uppercase mb-1">Patrimônio Cultural</span>
+              <span className="block text-[10px] font-bold text-brand-blue uppercase tracking-[0.2em]">Governo do Maranhão</span>
             </div>
           </Link>
 
-          <div className="hidden md:flex items-center space-x-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-full text-xs lg:text-sm font-bold transition-all ${location.pathname === item.path
-                  ? 'bg-brand-blue/10 text-brand-blue'
-                  : 'text-brand-dark hover:bg-slate-100'
-                  }`}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </Link>
-            ))}
+          <div className="hidden md:flex items-center space-x-6">
+            <div className="flex items-center">
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${location.pathname === item.path
+                    ? 'text-brand-blue bg-brand-blue/5'
+                    : 'text-brand-dark hover:text-brand-blue hover:bg-slate-50'
+                    }`}
+                >
+                  <span className="text-brand-blue/70">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
+            <div className="h-10 border-l border-slate-200"></div>
+            <img
+              src="/imagens/logo_governo.png"
+              alt="Governo do Maranhão"
+              className="h-12 w-auto object-contain"
+            />
           </div>
 
           <button
@@ -89,10 +96,15 @@ const Navigation = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className="flex items-center space-x-3 p-3 rounded-xl text-brand-dark font-bold hover:bg-slate-50"
+                className={`flex items-center space-x-3 p-4 rounded-xl font-bold transition-all ${location.pathname === item.path
+                  ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/20'
+                  : 'text-brand-dark hover:bg-slate-50'
+                  }`}
                 onClick={() => setIsOpen(false)}
               >
-                {item.icon}
+                <span className={`${location.pathname === item.path ? 'text-white' : 'text-brand-blue'}`}>
+                  {item.icon}
+                </span>
                 <span>{item.label}</span>
               </Link>
             ))}
@@ -136,9 +148,9 @@ const Footer = () => (
         <ul className="space-y-4 text-sm font-medium">
           <li><Link to="/institucional" className="hover:text-white transition-colors">Quem Somos</Link></li>
           <li><Link to="/servicos" className="hover:text-white transition-colors">Serviços ao Cidadão</Link></li>
-          <li><Link to="/acervo" className="hover:text-white transition-colors">Acervo Digital</Link></li>
-          <li><Link to="/repositorio" className="hover:text-white transition-colors">Repositório de Documentos</Link></li>
-          <li><Link to="/legislacao" className="hover:text-white transition-colors">Legislação</Link></li>
+          <li><Link to="/acervo-digital" className="hover:text-white transition-colors">Acervo Digital</Link></li>
+          <li><Link to="/acervo-digital" className="hover:text-white transition-colors">Repositório de Documentos</Link></li>
+          <li><Link to="/acervo-digital" className="hover:text-white transition-colors">Legislação</Link></li>
           <li><Link to="/transparencia" className="hover:text-white transition-colors">Transparência</Link></li>
         </ul>
       </div>
@@ -171,6 +183,7 @@ const App: React.FC = () => {
             <Route path="/mapa" element={<MapaPage />} />
             <Route path="/institucional" element={<InstitucionalPage />} />
             <Route path="/servicos" element={<ServicosPage />} />
+            <Route path="/acervo-digital" element={<AcervoDigitalPage />} />
             <Route path="/legislacao" element={<LegislacaoPage />} />
             <Route path="/admin" element={<AdminDashboard user={user} />} />
             <Route path="*" element={

@@ -203,23 +203,34 @@ const ServicosPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <section className="bg-white border-b border-slate-200 py-24">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col items-center text-center space-y-10">
-          <div className="inline-flex items-center gap-3 px-4 py-2 bg-brand-blue/10 text-brand-blue rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
-            <ClipboardList size={16} /> Atendimento Cidadão
+      {/* Hero Section */}
+      <section className="bg-[#2D2D2D] pt-32 pb-24 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          <img
+            src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=2000"
+            alt="Serviços Públicos"
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#2D2D2D]/40 via-[#2D2D2D] to-[#2D2D2D]"></div>
+
+        <div className="relative max-w-7xl mx-auto px-4 text-center space-y-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#CC343A]/20 text-[#CC343A] border border-[#CC343A]/30 rounded-full text-xs font-black uppercase tracking-[0.2em] mb-4">
+            Atendimento Cidadão
           </div>
-          <h1 className="text-5xl md:text-7xl font-black text-brand-dark tracking-tight">Serviços <span className="text-brand-red">Online</span></h1>
-          <p className="text-xl text-slate-500 max-w-2xl font-medium">
+          <h1 className="text-4xl md:text-7xl font-black text-white leading-tight">
+            Serviços <span className="text-[#CC343A]">Online</span>
+          </h1>
+          <p className="text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
             Orientações, formulários e o passo a passo para suas solicitações junto à Superintendência.
           </p>
 
-          <div className="w-full max-w-2xl relative group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-red transition-colors" size={24} />
+          <div className="w-full max-w-2xl mx-auto relative group pt-8">
+            <Search className="absolute left-6 top-[calc(50%+16px)] -translate-y-1/2 text-slate-400 group-focus-within:text-[#CC343A] transition-colors" size={24} />
             <input
               type="text"
               placeholder="Ex: Reforma, DPHAP, Certidão, Obra..."
-              className="w-full pl-16 pr-6 py-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-lg font-medium focus:outline-none focus:ring-8 focus:ring-brand-red/5 focus:border-brand-red transition-all shadow-sm"
+              className="w-full pl-16 pr-6 py-6 bg-white/10 border-2 border-white/10 backdrop-blur-md rounded-[2rem] text-lg font-medium text-white placeholder:text-slate-400 focus:outline-none focus:ring-8 focus:ring-[#CC343A]/20 focus:border-[#CC343A] transition-all shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -270,8 +281,8 @@ const ServicosPage: React.FC = () => {
                       {service.category}
                     </span>
                     <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full text-white ${service.department_responsible === Department.DPHAP ? 'bg-brand-blue' :
-                        service.department_responsible === Department.DPI ? 'bg-brand-red' :
-                          'bg-brand-dark'
+                      service.department_responsible === Department.DPI ? 'bg-brand-red' :
+                        'bg-brand-dark'
                       }`}>
                       {service.department_responsible}
                     </span>
@@ -331,7 +342,7 @@ const ServicosPage: React.FC = () => {
                             href={service.form_link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="w-full sm:w-auto px-8 py-4 bg-[#CC343A] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#b02c32] hover:shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 shadow-lg shadow-[#CC343A]/20"
+                            className="w-full sm:w-auto px-8 py-4 bg-brand-red text-white rounded-2xl font-black uppercase tracking-widest hover:bg-brand-red/90 hover:shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 shadow-lg shadow-brand-red/20"
                           >
                             Solicitar Agora <ExternalLink size={18} />
                           </a>
@@ -366,7 +377,7 @@ const ServicosPage: React.FC = () => {
       </section>
 
       {/* Footer Banner */}
-      <section className="bg-[#2D2D2D] py-24">
+      <section className="bg-brand-dark py-24">
         <div className="max-w-5xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
           <div className="space-y-8">
             <h2 className="text-4xl font-black text-white leading-tight">Suporte Técnico</h2>
@@ -388,7 +399,7 @@ const ServicosPage: React.FC = () => {
             <p className="text-slate-400 font-medium leading-relaxed">
               Inicie seu processo de forma 100% digital através do Sistema Eletrônico de Informações do Maranhão.
             </p>
-            <a href="https://sei.ma.gov.br" target="_blank" className="inline-flex items-center gap-3 text-[#5283A9] font-black uppercase tracking-widest text-sm hover:gap-5 transition-all">
+            <a href="https://sei.ma.gov.br" target="_blank" className="inline-flex items-center gap-3 text-brand-blue font-black uppercase tracking-widest text-sm hover:gap-5 transition-all">
               Ir para o SEI <ArrowRight size={20} />
             </a>
           </div>
