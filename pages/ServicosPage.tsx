@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import { 
-  FileText, 
-  Search, 
-  ArrowRight, 
-  Download, 
-  CheckSquare, 
-  Clock, 
+import {
+  FileText,
+  Search,
+  ArrowRight,
+  Download,
+  CheckSquare,
+  Clock,
   HelpCircle,
   ChevronDown,
   Info,
@@ -53,9 +53,9 @@ const DEPARTAMENTOS_INFO = [
     name: 'DPHAP',
     fullName: 'Patrimônio Material',
     icon: History,
-    color: 'text-[#5283A9]',
-    bgColor: 'bg-[#5283A9]/10',
-    borderColor: 'border-[#5283A9]/20',
+    color: 'text-brand-blue',
+    bgColor: 'bg-brand-blue/10',
+    borderColor: 'border-brand-blue/20',
     description: 'Atua na preservação física de bens. Realiza consultas sobre poligonais, autoriza obras e reformas arquitetônicas.'
   },
   {
@@ -63,9 +63,9 @@ const DEPARTAMENTOS_INFO = [
     name: 'DPI',
     fullName: 'Patrimônio Imaterial',
     icon: Sparkles,
-    color: 'text-[#CC343A]',
-    bgColor: 'bg-[#CC343A]/10',
-    borderColor: 'border-[#CC343A]/20',
+    color: 'text-brand-red',
+    bgColor: 'bg-brand-red/10',
+    borderColor: 'border-brand-red/20',
     description: 'Responsável pelo registro de saberes, celebrações e apoio às comunidades detentoras de tradições.'
   },
   {
@@ -73,9 +73,9 @@ const DEPARTAMENTOS_INFO = [
     name: 'DPE',
     fullName: 'Projetos Especiais',
     icon: Hammer,
-    color: 'text-[#2D2D2D]',
-    bgColor: 'bg-[#2D2D2D]/10',
-    borderColor: 'border-[#2D2D2D]/20',
+    color: 'text-brand-dark',
+    bgColor: 'bg-brand-dark/10',
+    borderColor: 'border-brand-dark/20',
     description: 'Gerencia grandes intervenções urbanas e projetos estruturantes em áreas históricas protegidas.'
   }
 ];
@@ -195,8 +195,8 @@ const ServicosPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeService, setActiveService] = useState<string | null>(null);
 
-  const filteredServices = SERVICOS_LIST.filter(s => 
-    s.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredServices = SERVICOS_LIST.filter(s =>
+    s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.department_responsible.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -206,20 +206,20 @@ const ServicosPage: React.FC = () => {
       {/* Header */}
       <section className="bg-white border-b border-slate-200 py-24">
         <div className="max-w-7xl mx-auto px-4 flex flex-col items-center text-center space-y-10">
-          <div className="inline-flex items-center gap-3 px-4 py-2 bg-[#5283A9]/10 text-[#5283A9] rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
+          <div className="inline-flex items-center gap-3 px-4 py-2 bg-brand-blue/10 text-brand-blue rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
             <ClipboardList size={16} /> Atendimento Cidadão
           </div>
-          <h1 className="text-5xl md:text-7xl font-black text-[#2D2D2D] tracking-tight">Serviços <span className="text-[#CC343A]">Online</span></h1>
+          <h1 className="text-5xl md:text-7xl font-black text-brand-dark tracking-tight">Serviços <span className="text-brand-red">Online</span></h1>
           <p className="text-xl text-slate-500 max-w-2xl font-medium">
             Orientações, formulários e o passo a passo para suas solicitações junto à Superintendência.
           </p>
 
           <div className="w-full max-w-2xl relative group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#CC343A] transition-colors" size={24} />
-            <input 
-              type="text" 
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-red transition-colors" size={24} />
+            <input
+              type="text"
               placeholder="Ex: Reforma, DPHAP, Certidão, Obra..."
-              className="w-full pl-16 pr-6 py-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-lg font-medium focus:outline-none focus:ring-8 focus:ring-[#CC343A]/5 focus:border-[#CC343A] transition-all shadow-sm"
+              className="w-full pl-16 pr-6 py-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-lg font-medium focus:outline-none focus:ring-8 focus:ring-brand-red/5 focus:border-brand-red transition-all shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -235,7 +235,7 @@ const ServicosPage: React.FC = () => {
               <div className={`w-14 h-14 ${dept.bgColor} ${dept.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
                 <dept.icon size={28} />
               </div>
-              <h3 className="text-xl font-black text-[#2D2D2D] mb-1">{dept.name}</h3>
+              <h3 className="text-xl font-black text-brand-dark mb-1">{dept.name}</h3>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">{dept.fullName}</p>
               <p className="text-sm text-slate-500 leading-relaxed font-medium">{dept.description}</p>
             </div>
@@ -245,35 +245,34 @@ const ServicosPage: React.FC = () => {
 
       {/* Services Listing */}
       <section className="max-w-5xl mx-auto px-4 py-20 space-y-8">
-        <h2 className="text-2xl font-black text-[#2D2D2D] uppercase tracking-widest flex items-center gap-3">
-          <Building2 size={24} className="text-[#CC343A]" /> Catálogo SPC
+        <h2 className="text-2xl font-black text-brand-dark uppercase tracking-widest flex items-center gap-3">
+          <Building2 size={24} className="text-brand-red" /> Catálogo SPC
         </h2>
 
         {filteredServices.length === 0 ? (
           <div className="text-center py-24 bg-white rounded-[3rem] border border-slate-100">
-             <Info className="mx-auto text-slate-200 mb-6" size={64} />
-             <p className="text-slate-500 font-bold uppercase tracking-widest">Nenhum serviço encontrado.</p>
+            <Info className="mx-auto text-slate-200 mb-6" size={64} />
+            <p className="text-slate-500 font-bold uppercase tracking-widest">Nenhum serviço encontrado.</p>
           </div>
         ) : (
           filteredServices.map((service) => (
-            <div 
+            <div
               key={service.id}
               className={`bg-white rounded-[2.8rem] border-2 border-slate-100 overflow-hidden transition-all duration-500 ${activeService === service.id ? 'border-[#5283A9]/30 ring-8 ring-[#5283A9]/5 shadow-2xl scale-[1.01]' : 'hover:border-slate-200 hover:shadow-lg'}`}
             >
-              <button 
+              <button
                 onClick={() => setActiveService(activeService === service.id ? null : service.id)}
                 className="w-full p-10 text-left flex items-center justify-between group"
               >
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black text-[#5283A9] uppercase tracking-widest bg-[#5283A9]/10 px-3 py-1 rounded-full">
+                    <span className="text-[10px] font-black text-brand-blue uppercase tracking-widest bg-brand-blue/10 px-3 py-1 rounded-full">
                       {service.category}
                     </span>
-                    <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full text-white ${
-                      service.department_responsible === Department.DPHAP ? 'bg-[#5283A9]' :
-                      service.department_responsible === Department.DPI ? 'bg-[#CC343A]' :
-                      'bg-[#2D2D2D]'
-                    }`}>
+                    <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full text-white ${service.department_responsible === Department.DPHAP ? 'bg-brand-blue' :
+                        service.department_responsible === Department.DPI ? 'bg-brand-red' :
+                          'bg-brand-dark'
+                      }`}>
                       {service.department_responsible}
                     </span>
                   </div>
@@ -291,11 +290,11 @@ const ServicosPage: React.FC = () => {
                     {/* Left Column: Flow and FAQ */}
                     <div className="space-y-10">
                       <div className="space-y-6">
-                        <h4 className="text-xs font-black text-[#2D2D2D] uppercase tracking-widest flex items-center gap-3"><ArrowRight size={18} className="text-[#CC343A]" /> Fluxo do Processo</h4>
+                        <h4 className="text-xs font-black text-brand-dark uppercase tracking-widest flex items-center gap-3"><ArrowRight size={18} className="text-brand-red" /> Fluxo do Processo</h4>
                         <div className="space-y-6">
                           {service.steps.map((step, idx) => (
                             <div key={idx} className="flex gap-5 items-start">
-                              <span className="w-8 h-8 rounded-xl bg-[#2D2D2D] text-white text-xs font-black flex items-center justify-center flex-shrink-0 shadow-lg">{idx + 1}</span>
+                              <span className="w-8 h-8 rounded-xl bg-brand-dark text-white text-xs font-black flex items-center justify-center flex-shrink-0 shadow-lg">{idx + 1}</span>
                               <p className="text-slate-600 font-medium leading-relaxed">{step}</p>
                             </div>
                           ))}
@@ -303,11 +302,11 @@ const ServicosPage: React.FC = () => {
                       </div>
 
                       <div className="space-y-6">
-                        <h4 className="text-xs font-black text-[#2D2D2D] uppercase tracking-widest flex items-center gap-3"><MessageCircle size={18} className="text-[#5283A9]" /> Perguntas Frequentes</h4>
+                        <h4 className="text-xs font-black text-brand-dark uppercase tracking-widest flex items-center gap-3"><MessageCircle size={18} className="text-brand-blue" /> Perguntas Frequentes</h4>
                         <div className="space-y-4">
                           {service.faq.map((q, idx) => (
                             <div key={idx} className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                              <p className="text-sm font-black text-[#2D2D2D] mb-2">{q.question}</p>
+                              <p className="text-sm font-black text-brand-dark mb-2">{q.question}</p>
                               <p className="text-xs text-slate-500 font-medium leading-relaxed">{q.answer}</p>
                             </div>
                           ))}
@@ -318,19 +317,19 @@ const ServicosPage: React.FC = () => {
                     {/* Right Column: Requisites and Contact */}
                     <div className="space-y-10">
                       <div className="space-y-6">
-                        <h4 className="text-xs font-black text-[#2D2D2D] uppercase tracking-widest flex items-center gap-3"><CheckSquare size={18} className="text-[#5283A9]" /> Requisitos</h4>
+                        <h4 className="text-xs font-black text-brand-dark uppercase tracking-widest flex items-center gap-3"><CheckSquare size={18} className="text-brand-blue" /> Requisitos</h4>
                         <div className="space-y-3">
                           {service.documents.map((doc, idx) => (
-                            <div key={idx} className="flex items-center gap-4 text-sm font-bold text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:border-[#5283A9]/30 transition-colors cursor-default">
-                              <Download size={16} className="text-[#5283A9]" /> {doc}
+                            <div key={idx} className="flex items-center gap-4 text-sm font-bold text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:border-brand-blue/30 transition-colors cursor-default">
+                              <Download size={16} className="text-brand-blue" /> {doc}
                             </div>
                           ))}
                         </div>
                         <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-6">
                           <span className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest"><Clock size={14} /> Prazo Médio: {service.deadline}</span>
-                          <a 
-                            href={service.form_link} 
-                            target="_blank" 
+                          <a
+                            href={service.form_link}
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="w-full sm:w-auto px-8 py-4 bg-[#CC343A] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#b02c32] hover:shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 shadow-lg shadow-[#CC343A]/20"
                           >
@@ -339,16 +338,16 @@ const ServicosPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="space-y-6 p-8 bg-[#2D2D2D] text-white rounded-[2.5rem] shadow-xl relative overflow-hidden">
+                      <div className="space-y-6 p-8 bg-brand-dark text-white rounded-[2.5rem] shadow-xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 -translate-y-1/2 translate-x-1/2 rounded-full"></div>
-                        <h4 className="text-xs font-black uppercase tracking-widest flex items-center gap-3"><HelpCircle size={18} className="text-[#5283A9]" /> Contato do Departamento</h4>
+                        <h4 className="text-xs font-black uppercase tracking-widest flex items-center gap-3"><HelpCircle size={18} className="text-brand-blue" /> Contato do Departamento</h4>
                         <div className="space-y-4 text-slate-300">
                           <div className="flex items-center gap-4">
-                            <Mail size={16} className="text-[#CC343A]" />
+                            <Mail size={16} className="text-brand-red" />
                             <span className="text-sm font-bold">{service.contact.email}</span>
                           </div>
                           <div className="flex items-center gap-4">
-                            <Phone size={16} className="text-[#5283A9]" />
+                            <Phone size={16} className="text-brand-blue" />
                             <span className="text-sm font-bold">{service.contact.phone}</span>
                           </div>
                           <div className="flex items-start gap-4">
@@ -369,30 +368,30 @@ const ServicosPage: React.FC = () => {
       {/* Footer Banner */}
       <section className="bg-[#2D2D2D] py-24">
         <div className="max-w-5xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-           <div className="space-y-8">
-             <h2 className="text-4xl font-black text-white leading-tight">Suporte Técnico</h2>
-             <p className="text-slate-400 text-lg font-medium">
-               Dúvidas sobre legislação ou como proceder com sua solicitação? Nossa central de atendimento está disponível para orientação.
-             </p>
-             <div className="flex flex-col sm:flex-row gap-5">
-               <button className="px-8 py-4 bg-[#CC343A] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[#b02c32] transition-all flex items-center justify-center gap-3 active:scale-95">
-                 <HelpCircle size={20} /> Canal Dúvidas
-               </button>
-               <button className="px-8 py-4 bg-white/10 text-white border border-white/20 rounded-2xl font-black uppercase tracking-widest hover:bg-white/20 transition-all flex items-center justify-center gap-3 active:scale-95">
-                 <ShieldCheck size={20} /> Ouvidoria MA
-               </button>
-             </div>
-           </div>
-           <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-12 rounded-[3.5rem] space-y-6">
-             <div className="w-16 h-16 bg-[#5283A9] rounded-2xl flex items-center justify-center text-white shadow-xl"><FileText size={32} /></div>
-             <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Protocolo Digital</h3>
-             <p className="text-slate-400 font-medium leading-relaxed">
-               Inicie seu processo de forma 100% digital através do Sistema Eletrônico de Informações do Maranhão.
-             </p>
-             <a href="https://sei.ma.gov.br" target="_blank" className="inline-flex items-center gap-3 text-[#5283A9] font-black uppercase tracking-widest text-sm hover:gap-5 transition-all">
-               Ir para o SEI <ArrowRight size={20} />
-             </a>
-           </div>
+          <div className="space-y-8">
+            <h2 className="text-4xl font-black text-white leading-tight">Suporte Técnico</h2>
+            <p className="text-slate-400 text-lg font-medium">
+              Dúvidas sobre legislação ou como proceder com sua solicitação? Nossa central de atendimento está disponível para orientação.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-5">
+              <button className="px-8 py-4 bg-brand-red text-white rounded-2xl font-black uppercase tracking-widest hover:bg-brand-red/90 transition-all flex items-center justify-center gap-3 active:scale-95">
+                <HelpCircle size={20} /> Canal Dúvidas
+              </button>
+              <button className="px-8 py-4 bg-white/10 text-white border border-white/20 rounded-2xl font-black uppercase tracking-widest hover:bg-white/20 transition-all flex items-center justify-center gap-3 active:scale-95">
+                <ShieldCheck size={20} /> Ouvidoria MA
+              </button>
+            </div>
+          </div>
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-12 rounded-[3.5rem] space-y-6">
+            <div className="w-16 h-16 bg-brand-blue rounded-2xl flex items-center justify-center text-white shadow-xl"><FileText size={32} /></div>
+            <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Protocolo Digital</h3>
+            <p className="text-slate-400 font-medium leading-relaxed">
+              Inicie seu processo de forma 100% digital através do Sistema Eletrônico de Informações do Maranhão.
+            </p>
+            <a href="https://sei.ma.gov.br" target="_blank" className="inline-flex items-center gap-3 text-[#5283A9] font-black uppercase tracking-widest text-sm hover:gap-5 transition-all">
+              Ir para o SEI <ArrowRight size={20} />
+            </a>
+          </div>
         </div>
       </section>
     </div>

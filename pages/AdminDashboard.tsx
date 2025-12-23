@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  Map as MapIcon, 
-  FilePlus, 
-  Users, 
-  History, 
-  BarChart, 
+import {
+  LayoutDashboard,
+  Map as MapIcon,
+  FilePlus,
+  Users,
+  History,
+  BarChart,
   ChevronRight,
   Database,
   UploadCloud,
@@ -41,7 +41,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   if (!user || ![UserRole.SUPER_ADMIN, UserRole.ADMIN_SPC, UserRole.EDITOR_DPHAP, UserRole.EDITOR_DPE, UserRole.EDITOR_DPI].includes(user.role)) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
-        <h2 className="text-2xl font-bold text-red-600">Acesso Restrito</h2>
+        <h2 className="text-2xl font-bold text-brand-red">Acesso Restrito</h2>
         <p className="text-slate-600">Você não tem permissões para acessar esta área.</p>
       </div>
     );
@@ -51,20 +51,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <div className="bg-slate-900 text-white px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center font-bold">SPC</div>
+          <div className="w-10 h-10 bg-brand-red rounded-lg flex items-center justify-center font-bold">SPC</div>
           <div>
             <span className="block text-sm font-bold">Painel Administrativo</span>
             <span className="block text-[10px] text-slate-400 uppercase tracking-widest">Acesso: {user.role}</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
-           <div className="text-right hidden sm:block">
-             <span className="block text-xs font-bold">{user.name}</span>
-             <span className="block text-[10px] text-slate-400">{user.department || 'Gestão Central'}</span>
-           </div>
-           <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
-             <Users size={20} />
-           </div>
+          <div className="text-right hidden sm:block">
+            <span className="block text-xs font-bold">{user.name}</span>
+            <span className="block text-[10px] text-slate-400">{user.department || 'Gestão Central'}</span>
+          </div>
+          <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
+            <Users size={20} />
+          </div>
         </div>
       </div>
 
@@ -82,9 +82,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-                activeTab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === item.id ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                }`}
             >
               <item.icon size={18} />
               {item.label}
@@ -97,19 +96,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           {activeTab === 'overview' && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard label="Tombamentos" value="2.451" trend="12%" icon={MapIcon} color="bg-blue-600" />
-                <StatCard label="Registros DPI" value="38" trend="4%" icon={FilePlus} color="bg-red-600" />
-                <StatCard label="Projetos Ativos" value="12" trend="0%" icon={Database} color="bg-slate-900" />
+                <StatCard label="Tombamentos" value="2.451" trend="12%" icon={MapIcon} color="bg-brand-blue" />
+                <StatCard label="Registros DPI" value="38" trend="4%" icon={FilePlus} color="bg-brand-red" />
+                <StatCard label="Projetos Ativos" value="12" trend="0%" icon={Database} color="bg-brand-dark" />
                 <StatCard label="Solicitações" value="89" trend="24%" icon={History} color="bg-amber-500" />
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
                   <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-                    <History size={20} className="text-blue-600" /> Edições Recentes
+                    <History size={20} className="text-brand-blue" /> Edições Recentes
                   </h3>
                   <div className="space-y-4">
-                    {[1,2,3,4].map(i => (
+                    {[1, 2, 3, 4].map(i => (
                       <div key={i} className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100">
                         <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-bold">JD</div>
                         <div className="flex-grow">
@@ -124,7 +123,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
                   <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-                    <Database size={20} className="text-red-600" /> Integridade de Dados
+                    <Database size={20} className="text-brand-red" /> Integridade de Dados
                   </h3>
                   <div className="space-y-4">
                     <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-4">
@@ -150,7 +149,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
           {activeTab === 'import' && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 max-w-3xl mx-auto space-y-8">
               <div className="text-center space-y-2">
-                <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-20 h-20 bg-blue-50 text-brand-blue rounded-full flex items-center justify-center mx-auto mb-4">
                   <UploadCloud size={40} />
                 </div>
                 <h2 className="text-2xl font-black text-slate-900">Assistente de Importação</h2>
@@ -158,7 +157,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               </div>
 
               <div className="border-2 border-dashed border-slate-200 rounded-2xl p-12 text-center space-y-4 hover:border-blue-400 transition-colors group cursor-pointer">
-                <p className="text-sm text-slate-500 group-hover:text-blue-600 font-medium">Arraste seu arquivo aqui ou clique para selecionar</p>
+                <p className="text-sm text-slate-500 group-hover:text-brand-blue font-medium">Arraste seu arquivo aqui ou clique para selecionar</p>
                 <button className="px-6 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold">Selecionar Arquivo</button>
               </div>
 
