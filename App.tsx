@@ -27,6 +27,9 @@ import LegislacaoPage from './pages/LegislacaoPage';
 import AcervoDigitalPage from './pages/AcervoDigitalPage';
 import AcervoPage from './pages/AcervoPage';
 import RepositorioPage from './pages/RepositorioPage';
+import DphapPage from './pages/DphapPage';
+import DpiPage from './pages/DpiPage';
+import DpePage from './pages/DpePage';
 import { UserRole, User as UserType } from './types';
 
 const Navigation = () => {
@@ -61,8 +64,8 @@ const Navigation = () => {
     <nav
       className={`sticky top-0 z-[100] transition-all duration-500 ease-in-out border-b
       ${scrolled
-          ? 'bg-white/95 backdrop-blur-xl border-slate-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] py-1.5'
-          : 'bg-white/80 backdrop-blur-md border-transparent shadow-none py-2.5'
+          ? 'bg-white/95 backdrop-blur-xl border-slate-200/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] py-1'
+          : 'bg-white/80 backdrop-blur-md border-transparent shadow-none py-2'
         }`}
     >
       <div className="max-w-[1440px] mx-auto px-6">
@@ -73,13 +76,13 @@ const Navigation = () => {
               <img
                 src="/imagens/logo_spc.jpg"
                 alt="SPC Logo"
-                className="h-12 w-auto relative transform transition-all duration-500 group-hover:scale-110 group-hover:rotate-1"
+                className="h-10 w-auto relative transform transition-all duration-500 group-hover:scale-110 group-hover:rotate-1"
               />
             </div>
             <div className={`hidden lg:block border-l pl-4 transition-all duration-500 ${scrolled ? 'border-slate-300' : 'border-slate-400/50'}`}>
-              <span className="block font-black text-brand-dark leading-none text-base uppercase tracking-tight group-hover:text-brand-blue transition-colors">Superintendência do</span>
-              <span className="block font-black text-brand-dark leading-none text-base uppercase mb-0.5 tracking-tight group-hover:text-brand-blue transition-colors">Patrimônio Cultural</span>
-              <span className="block text-[10px] font-bold text-brand-blue uppercase tracking-[0.3em] group-hover:text-brand-red transition-colors">Governo do Maranhão</span>
+              <span className="block font-black text-brand-dark leading-none text-sm uppercase tracking-tight group-hover:text-brand-blue transition-colors">Superintendência do</span>
+              <span className="block font-black text-brand-dark leading-none text-sm uppercase mb-0.5 tracking-tight group-hover:text-brand-blue transition-colors">Patrimônio Cultural</span>
+              <span className="block text-[9px] font-bold text-brand-blue uppercase tracking-[0.3em] group-hover:text-brand-red transition-colors">Governo do Maranhão</span>
             </div>
           </Link>
 
@@ -148,7 +151,7 @@ const Navigation = () => {
 };
 
 const Footer = () => (
-  <footer className="bg-[#1e1e1e] text-slate-400 py-8 border-t border-white/5 font-sans relative overflow-hidden">
+  <footer className="bg-[#1e1e1e] text-slate-400 py-6 border-t border-white/5 font-sans relative overflow-hidden">
     {/* Decorative element */}
     <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-brand-blue/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
@@ -180,19 +183,19 @@ const Footer = () => (
         <h4 className="text-white font-bold mb-3 text-[10px] uppercase tracking-[0.2em] border-l-2 border-brand-red pl-2.5">Departamentos</h4>
         <ul className="space-y-2 text-[11px] font-medium">
           <li>
-            <Link to="/institucional" className="group flex items-center gap-2 hover:text-brand-blue transition-all">
+            <Link to="/dphap" className="group flex items-center gap-2 hover:text-brand-blue transition-all">
               <span className="w-1 h-1 rounded-full bg-slate-600 group-hover:bg-brand-blue group-hover:w-1.5 transition-all"></span>
               DPHAP (Material)
             </Link>
           </li>
           <li>
-            <Link to="/institucional" className="group flex items-center gap-2 hover:text-brand-red transition-all">
+            <Link to="/dpi" className="group flex items-center gap-2 hover:text-brand-red transition-all">
               <span className="w-1 h-1 rounded-full bg-slate-600 group-hover:bg-brand-red group-hover:w-1.5 transition-all"></span>
               DPI (Imaterial)
             </Link>
           </li>
           <li>
-            <Link to="/institucional" className="group flex items-center gap-2 hover:text-white transition-all">
+            <Link to="/dpe" className="group flex items-center gap-2 hover:text-white transition-all">
               <span className="w-1 h-1 rounded-full bg-slate-600 group-hover:bg-white group-hover:w-1.5 transition-all"></span>
               DPE (Especiais)
             </Link>
@@ -203,13 +206,36 @@ const Footer = () => (
       <div>
         <h4 className="text-white font-bold mb-3 text-[10px] uppercase tracking-[0.2em] border-l-2 border-brand-blue pl-2.5">Institucional</h4>
         <ul className="space-y-2 text-[11px] font-medium">
-          {['Quem Somos', 'Serviços ao Cidadão', 'Acervo Digital', 'Repositório', 'Legislação', 'Transparência'].map((item, idx) => (
-            <li key={idx}>
-              <Link to="/institucional" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
-                {item}
-              </Link>
-            </li>
-          ))}
+          <li>
+            <Link to="/institucional" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
+              Quem Somos
+            </Link>
+          </li>
+          <li>
+            <Link to="/servicos" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
+              Serviços ao Cidadão
+            </Link>
+          </li>
+          <li>
+            <Link to="/acervo-digital" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
+              Acervo Digital
+            </Link>
+          </li>
+          <li>
+            <Link to="/repositorio" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
+              Repositório
+            </Link>
+          </li>
+          <li>
+            <Link to="/legislacao" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
+              Legislação
+            </Link>
+          </li>
+          <li>
+            <Link to="/institucional" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
+              Transparência
+            </Link>
+          </li>
         </ul>
       </div>
     </div>
@@ -246,6 +272,9 @@ const App: React.FC = () => {
             <Route path="/acervo" element={<AcervoPage />} />
             <Route path="/repositorio" element={<RepositorioPage />} />
             <Route path="/legislacao" element={<LegislacaoPage />} />
+            <Route path="/dphap" element={<DphapPage />} />
+            <Route path="/dpi" element={<DpiPage />} />
+            <Route path="/dpe" element={<DpePage />} />
             <Route path="/admin" element={<AdminDashboard user={user} />} />
             <Route path="*" element={
               <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">

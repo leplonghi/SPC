@@ -69,15 +69,32 @@ const MapaPage: React.FC = () => {
 
   const uniqueCidades = useMemo(() => Array.from(new Set(assets.map(a => a.cidade))).sort(), [assets]);
 
-  const handleImportSeed = async () => {
-    if (confirm(`Deseja importar ${patrimonioSeed.length} itens do seed? Isso pode demorar.`)) {
+  // State to track if we've already attempted auto-import in this session
+  const [hasAutoImported, setHasAutoImported] = useState(false);
+
+  useEffect(() => {
+    // Auto-import if loaded, empty, and haven't tried yet
+    if (!loading && assets.length === 0 && !isImporting && !hasAutoImported) {
+      console.log("Auto-importing seed data detected empty database...");
+      setHasAutoImported(true);
+      handleImportSeed(true);
+    }
+  }, [loading, assets.length, isImporting, hasAutoImported]);
+
+  const handleImportSeed = async (skipConfirm = false) => {
+    if (skipConfirm || confirm(`Deseja importar ${patrimonioSeed.length} itens do seed? Isso pode demorar.`)) {
       setIsImporting(true);
       setImportProgress(0);
-      await geocodingService.importSeed(patrimonioSeed, (count) => {
-        setImportProgress(count);
-      });
-      setIsImporting(false);
-      alert('Importação finalizada!');
+      try {
+        await geocodingService.importSeed(patrimonioSeed, (count) => {
+          setImportProgress(count);
+        });
+        if (!skipConfirm) alert('Importação finalizada!');
+      } catch (error) {
+        console.error("Erro na importação:", error);
+      } finally {
+        setIsImporting(false);
+      }
     }
   };
 
@@ -108,11 +125,11 @@ const MapaPage: React.FC = () => {
   return (
     <div className="h-[calc(100vh-5rem)] flex flex-col md:flex-row overflow-hidden relative font-sans">
       {/* Sidebar Panel */}
-      <div className="w-full md:w-80 bg-white border-r border-slate-200 flex flex-col z-20 shadow-xl overflow-hidden relative">
+      <div className="w-full md:w-72 bg-white border-r border-slate-200 flex flex-col z-20 shadow-xl overflow-hidden relative">
         {/* Search Header */}
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-          <h2 className="text-base font-extrabold text-brand-dark mb-3 flex items-center gap-2 uppercase tracking-tight">
-            <MapPin size={18} className="text-[#CC343A]" />
+        <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+          <h2 className="text-sm font-extrabold text-brand-dark mb-2 flex items-center gap-2 uppercase tracking-tight">
+            <MapPin size={16} className="text-[#CC343A]" />
             Mapa do Patrimônio
           </h2>
           <div className="relative group">
@@ -120,20 +137,20 @@ const MapaPage: React.FC = () => {
             <input
               type="text"
               placeholder="Buscar por nome, logradouro..."
-              className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue transition-all font-medium"
+              className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue transition-all font-medium"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          <div className="flex items-center justify-between mt-3">
+          <div className="flex items-center justify-between mt-2">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all uppercase tracking-wide ${showFilters ? 'bg-brand-blue text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200'}`}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-bold transition-all uppercase tracking-wide ${showFilters ? 'bg-brand-blue text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200'}`}
             >
               <Filter size={10} /> {showFilters ? 'Ocultar' : 'Filtros'}
             </button>
-            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
+            <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">
               {filteredAssets.length} Resultados
             </span>
           </div>
@@ -199,23 +216,23 @@ const MapaPage: React.FC = () => {
                 <button
                   key={asset.id}
                   onClick={() => setSelectedAsset(asset)}
-                  className={`w-full p-3 text-left transition-all hover:bg-white hover:shadow-sm border-l-2 ${selectedAsset?.id === asset.id ? 'bg-white border-brand-blue shadow-inner' : 'border-transparent'}`}
+                  className={`w-full p-2 text-left transition-all hover:bg-white hover:shadow-sm border-l-2 ${selectedAsset?.id === asset.id ? 'bg-white border-brand-blue shadow-inner' : 'border-transparent'}`}
                 >
-                  <div className="flex gap-3 items-center">
-                    <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center ${asset.status === 'ok' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                      <MapPin size={16} />
+                  <div className="flex gap-2 items-center">
+                    <div className={`w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center ${asset.status === 'ok' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                      <MapPin size={14} />
                     </div>
                     <div className="min-w-0 flex-grow">
-                      <h4 className="font-bold text-slate-900 truncate text-xs leading-tight mb-0.5" title={asset.titulo}>{asset.titulo}</h4>
-                      <div className="flex items-center gap-1 text-slate-400 text-[9px] uppercase font-bold tracking-wider mb-1">
+                      <h4 className="font-bold text-slate-900 truncate text-[11px] leading-tight mb-0.5" title={asset.titulo}>{asset.titulo}</h4>
+                      <div className="flex items-center gap-1 text-slate-400 text-[8px] uppercase font-bold tracking-wider mb-1">
                         {asset.cidade}
                       </div>
                       <div className="flex gap-1">
-                        <span className={`px-1.5 py-px text-[8px] rounded font-bold uppercase border ${asset.status === 'ok' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
+                        <span className={`px-1 py-px text-[8px] rounded font-bold uppercase border ${asset.status === 'ok' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
                           {asset.status === 'ok' ? 'OK' : 'Revisar'}
                         </span>
                         {asset.geocode_precision !== 'unknown' && (
-                          <span className="px-1.5 py-px bg-slate-100 text-slate-500 text-[8px] rounded font-bold uppercase border border-slate-200">{asset.geocode_precision}</span>
+                          <span className="px-1 py-px bg-slate-100 text-slate-500 text-[8px] rounded font-bold uppercase border border-slate-200">{asset.geocode_precision}</span>
                         )}
                       </div>
                     </div>
@@ -256,33 +273,33 @@ const MapaPage: React.FC = () => {
       {/* Detail Drawer */}
       {selectedAsset && (
         <div className="absolute inset-0 md:relative md:w-[350px] bg-white z-[1001] shadow-2xl flex flex-col animate-in slide-in-from-right duration-500 border-l border-slate-200">
-          <div className="sticky top-0 bg-white/90 backdrop-blur-md z-10 p-4 flex items-center justify-between border-b border-slate-100">
+          <div className="sticky top-0 bg-white/90 backdrop-blur-md z-10 p-3 flex items-center justify-between border-b border-slate-100">
             <button
               onClick={() => setSelectedAsset(null)}
               className="p-1.5 hover:bg-slate-100 rounded-full transition-colors"
             >
-              <ChevronLeft size={18} className="text-slate-600" />
+              <ChevronLeft size={16} className="text-slate-600" />
             </button>
             <div className="flex gap-1" title="Confidence Score">
-              <span className="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded-full text-slate-500">
+              <span className="text-[9px] font-bold bg-slate-100 px-2 py-0.5 rounded-full text-slate-500">
                 CONF: {(selectedAsset.geocode_confidence * 100).toFixed(0)}%
               </span>
             </div>
           </div>
 
-          <div className="flex-grow overflow-y-auto p-6 space-y-6">
+          <div className="flex-grow overflow-y-auto p-4 space-y-4">
             <header>
               <div className="flex gap-2 mb-2">
-                <span className={`px-2 py-0.5 text-[9px] font-black rounded uppercase tracking-widest ${selectedAsset.status === 'ok' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                <span className={`px-2 py-0.5 text-[8px] font-black rounded uppercase tracking-widest ${selectedAsset.status === 'ok' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
                   {selectedAsset.status === 'ok' ? 'Verificado' : 'Em Revisão'}
                 </span>
-                <span className="px-2 py-0.5 bg-brand-blue/10 text-brand-blue text-[9px] font-black rounded uppercase tracking-widest">
+                <span className="px-2 py-0.5 bg-brand-blue/10 text-brand-blue text-[8px] font-black rounded uppercase tracking-widest">
                   {selectedAsset.geocode_precision}
                 </span>
               </div>
-              <h1 className="text-xl font-black text-brand-dark leading-tight mb-2">{selectedAsset.titulo}</h1>
-              <p className="flex items-center gap-1.5 text-slate-500 font-medium text-xs">
-                <MapPin size={14} className="text-[#CC343A]" /> {selectedAsset.endereco_original}
+              <h1 className="text-lg font-black text-brand-dark leading-tight mb-1">{selectedAsset.titulo}</h1>
+              <p className="flex items-center gap-1.5 text-slate-500 font-medium text-[11px]">
+                <MapPin size={12} className="text-[#CC343A]" /> {selectedAsset.endereco_original}
               </p>
               {selectedAsset.endereco_canonico && (
                 <p className="text-[10px] text-slate-400 mt-1 pl-5">

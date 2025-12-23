@@ -87,24 +87,43 @@ class GeocodingService {
         // Also check areas
         const areaRef = doc(db, "heritage_areas", slug);
         const areaSnap = await getDoc(areaRef);
-        if (areaSnap.exists()) return;
+        // Only return if it exists AND has valid data (geojson or manually marked as processed)
+        if (areaSnap.exists() && (areaSnap.data().geojson || areaSnap.data().status === 'ok')) return;
 
         // Determine type
         const isArea = this.isArea(item);
 
         if (isArea) {
-            // Create area entry (without polygon for now - needs manual import or advanced search)
+            // Attempt to fetch polygon for area
+            // 1. Check Cache
+            const queryStr = item.query_geocode || this.normalizeQuery(item.localizacao, item.cidade);
+            let geocodeResult = await this.checkCache(queryStr);
+
+            // 2. If not in cache, fetch Nominatim
+            if (!geocodeResult) {
+                geocodeResult = await this.fetchNominatim(queryStr);
+                if (geocodeResult) {
+                    await this.saveToCache(queryStr, geocodeResult);
+                }
+            }
+
+            let geojson = null;
+            if (geocodeResult && geocodeResult.geojson && (geocodeResult.geojson.type === 'Polygon' || geocodeResult.geojson.type === 'MultiPolygon')) {
+                geojson = geocodeResult.geojson;
+            }
+
             const areaData: HeritageArea = {
                 id: slug,
                 titulo: item.titulo,
                 cidade: item.cidade,
                 tipo_area: "outro", // default
-                geojson: null,
-                status: "needs_review",
+                geojson: geojson,
+                status: geojson ? "ok" : "needs_review",
                 type: "area"
             };
+
             await setDoc(areaRef, areaData);
-            console.log(`Area created: ${slug}`);
+            console.log(`Area processed: ${slug} (GeoJSON: ${!!geojson})`);
             return;
         }
 
@@ -180,7 +199,7 @@ class GeocodingService {
     }
 
     private async fetchNominatim(queryStr: string): Promise<any | null> {
-        const url = `${NOMINATIM_BASE_URL}?format=jsonv2&limit=1&countrycodes=br&addressdetails=1&q=${encodeURIComponent(queryStr)}`;
+        const url = `${NOMINATIM_BASE_URL}?format=jsonv2&limit=1&countrycodes=br&addressdetails=1&polygon_geojson=1&q=${encodeURIComponent(queryStr)}`;
         try {
             console.log(`Fetching: ${url}`);
             const res = await fetch(url, {

@@ -16,18 +16,18 @@ import {
 import { Link } from 'react-router-dom';
 
 const ResourceCard = ({ title, description, icon: Icon, color, link, items }: any) => (
-    <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-lg transition-all group overflow-hidden flex flex-col h-full">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition-all group overflow-hidden flex flex-col h-full">
         <div className={`h-1.5 bg-gradient-to-r ${color}`}></div>
-        <div className="p-6 flex flex-col flex-grow">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 shadow-md transition-transform ${color} text-white`}>
-                <Icon size={20} />
+        <div className="p-4 flex flex-col flex-grow">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-3 shadow-md transition-transform ${color} text-white`}>
+                <Icon size={16} />
             </div>
-            <h3 className="text-lg font-black text-brand-dark mb-2">{title}</h3>
-            <p className="text-[11px] text-slate-500 leading-relaxed mb-4 flex-grow font-medium">
+            <h3 className="text-base font-black text-brand-dark mb-2">{title}</h3>
+            <p className="text-[10px] text-slate-500 leading-relaxed mb-3 flex-grow font-medium">
                 {description}
             </p>
 
-            <div className="space-y-1.5 mb-5">
+            <div className="space-y-1 mb-4">
                 {items.map((item: string, idx: number) => (
                     <div key={idx} className="flex items-center gap-2 text-[9px] font-bold text-slate-600">
                         <div className={`w-1 h-1 rounded-full ${color.includes('blue') ? 'bg-brand-blue' : color.includes('red') ? 'bg-brand-red' : 'bg-slate-700'}`}></div>
@@ -38,9 +38,9 @@ const ResourceCard = ({ title, description, icon: Icon, color, link, items }: an
 
             <Link
                 to={link}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-brand-blue transition-all w-full justify-center group/btn"
+                className="inline-flex items-center gap-2 px-3 py-2 bg-slate-900 text-white rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-brand-blue transition-all w-full justify-center group/btn"
             >
-                Acessar <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                Acessar <ArrowRight size={12} className="group-hover/btn:translate-x-1 transition-transform" />
             </Link>
         </div>
     </div>
@@ -50,7 +50,7 @@ const AcervoDigitalPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-slate-50 pb-32">
             {/* Hero Section */}
-            <section className="bg-[#2D2D2D] pt-16 pb-10 relative overflow-hidden">
+            <section className="bg-[#2D2D2D] pt-12 pb-8 relative overflow-hidden">
                 <div className="absolute inset-0 opacity-80">
                     <img
                         src="/imagens/1912 - justo jansen - mapa.jpg"
@@ -61,13 +61,13 @@ const AcervoDigitalPage: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-b from-[#2D2D2D]/60 via-[#2D2D2D]/90 to-[#2D2D2D]"></div>
 
                 <div className="relative max-w-7xl mx-auto px-4 text-center space-y-4">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#CC343A]/20 text-[#CC343A] border border-[#CC343A]/30 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#CC343A]/20 text-[#CC343A] border border-[#CC343A]/30 rounded-full text-[9px] font-black uppercase tracking-[0.2em]">
                         Ecossistema Digital SPC
                     </div>
-                    <h1 className="text-2xl md:text-4xl font-black text-white leading-tight">
+                    <h1 className="text-xl md:text-3xl font-black text-white leading-tight">
                         Digitalização e <span className="text-[#CC343A]">Conhecimento</span>
                     </h1>
-                    <p className="text-sm text-slate-300 max-w-xl mx-auto leading-relaxed font-medium">
+                    <p className="text-xs text-slate-300 max-w-xl mx-auto leading-relaxed font-medium">
                         Acesso simplificado a arquivos históricos e normas do Maranhão.
                     </p>
                 </div>
@@ -75,7 +75,7 @@ const AcervoDigitalPage: React.FC = () => {
 
             {/* Resource Grid */}
             <section className="max-w-7xl mx-auto px-4 -mt-6 relative z-20">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <ResourceCard
                         title="Acervo Digital"
                         description="Base de dados multimídia contendo fotografias históricas, mapas antigos e registros iconográficos do patrimônio cultural."

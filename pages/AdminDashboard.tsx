@@ -21,17 +21,17 @@ interface AdminDashboardProps {
 }
 
 const StatCard = ({ label, value, trend, icon: Icon, color }: any) => (
-  <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-    <div className="flex justify-between items-start mb-4">
-      <div className={`p-3 rounded-xl ${color} text-white`}>
-        <Icon size={20} />
+  <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+    <div className="flex justify-between items-start mb-3">
+      <div className={`p-2 rounded-lg ${color} text-white`}>
+        <Icon size={16} />
       </div>
-      <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full flex items-center gap-1">
-        <ArrowUpRight size={12} /> {trend}
+      <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+        <ArrowUpRight size={10} /> {trend}
       </span>
     </div>
-    <h4 className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">{label}</h4>
-    <p className="text-2xl font-black text-slate-900">{value}</p>
+    <h4 className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-0.5">{label}</h4>
+    <p className="text-xl font-black text-slate-900">{value}</p>
   </div>
 );
 
@@ -49,7 +49,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <div className="bg-slate-900 text-white px-8 py-4 flex items-center justify-between">
+      <div className="bg-slate-900 text-white px-8 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-brand-red rounded-lg flex items-center justify-center font-bold">SPC</div>
           <div>
@@ -82,17 +82,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === item.id ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+              className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === item.id ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/20' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                 }`}
             >
-              <item.icon size={18} />
+              <item.icon size={16} />
               {item.label}
             </button>
           ))}
         </div>
 
         {/* Content Area */}
-        <div className="flex-grow p-8 space-y-8 max-w-6xl mx-auto w-full">
+        <div className="flex-grow p-6 space-y-6 max-w-6xl mx-auto w-full">
           {activeTab === 'overview' && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -103,9 +103,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-                  <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-                    <History size={20} className="text-brand-blue" /> Edições Recentes
+                <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+                  <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <History size={18} className="text-brand-blue" /> Edições Recentes
                   </h3>
                   <div className="space-y-4">
                     {[1, 2, 3, 4].map(i => (
@@ -121,9 +121,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-                  <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-                    <Database size={20} className="text-brand-red" /> Integridade de Dados
+                <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+                  <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <Database size={18} className="text-brand-red" /> Integridade de Dados
                   </h3>
                   <div className="space-y-4">
                     <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-4">

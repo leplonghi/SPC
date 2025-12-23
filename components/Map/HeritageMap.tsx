@@ -3,10 +3,7 @@ import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import 'leaflet.markercluster/dist/MarkerCluster.css';
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { HeritageAsset, HeritageArea } from '../../types_patrimonio';
-import MarkerClusterGroup from './MarkerClusterGroup';
 import { Layers, X, MapPin } from 'lucide-react';
 
 // Custom Marker Icons
@@ -107,39 +104,49 @@ const HeritageMap: React.FC<HeritageMapProps> = ({ assets, areas, selectedAssetI
             >
               <Popup>
                 <strong>{area.titulo}</strong><br />
-                {area.tipo_area}
+                <span className="text-xs text-slate-500">{area.tipo_area.replace('_', ' ')}</span><br />
+                <span className="text-xs text-slate-400">{area.cidade}</span>
               </Popup>
             </GeoJSON>
           )
         ))}
 
-        <MarkerClusterGroup>
-          {validAssets.map(asset => (
-            <Marker
-              key={asset.id}
-              position={[asset.lat, asset.lng]}
-              icon={getIcon(asset.categoria, asset.status)}
-              eventHandlers={{
-                click: () => onSelectAsset(asset)
-              }}
-            >
-              <Popup closeButton={false} className="brand-popup">
-                <div className="p-2 min-w-[200px]">
-                  <h4 className="font-bold text-sm mb-1">{asset.titulo}</h4>
-                  <p className="text-xs text-slate-500 mb-2">{asset.endereco_original}</p>
-                  <div className="flex gap-2 text-[10px]">
-                    <span className="bg-slate-100 px-1 rounded font-bold uppercase">{asset.categoria || 'Geral'}</span>
-                  </div>
-                  <button
-                    className="mt-2 w-full bg-slate-900 text-white text-xs py-1.5 rounded hover:bg-slate-700 font-bold uppercase"
-                    onClick={() => onSelectAsset(asset)}>
-                    Ver Detalhes
-                  </button>
+
+        {validAssets.map(asset => (
+          <Marker
+            key={asset.id}
+            position={[asset.lat, asset.lng]}
+            icon={getIcon(asset.categoria, asset.status)}
+            eventHandlers={{
+              click: () => onSelectAsset(asset)
+            }}
+          >
+            <Popup closeButton={false} className="brand-popup">
+              <div className="p-2 min-w-[200px]">
+                <h4 className="font-bold text-sm mb-1">{asset.titulo}</h4>
+                <p className="text-xs text-slate-500 mb-1">{asset.endereco_original}</p>
+                <p className="text-xs text-slate-400 mb-2 flex items-center gap-1">
+                  <MapPin size={10} /> {asset.cidade}
+                </p>
+                <div className="flex gap-2 text-[10px] mb-2 flex-wrap">
+                  <span className="bg-slate-100 px-1 rounded font-bold uppercase">{asset.categoria || 'Geral'}</span>
+                  {asset.tags && asset.tags.map(tag => (
+                    <span key={tag} className="bg-blue-50 text-blue-600 px-1 rounded font-bold uppercase">{tag}</span>
+                  ))}
                 </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MarkerClusterGroup>
+                <p className="text-[9px] text-slate-300 font-mono mb-2">
+                  {asset.lat.toFixed(4)}, {asset.lng.toFixed(4)}
+                </p>
+                <button
+                  className="w-full bg-slate-900 text-white text-xs py-1.5 rounded hover:bg-slate-700 font-bold uppercase transition-colors"
+                  onClick={() => onSelectAsset(asset)}>
+                  Ver Detalhes
+                </button>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+
 
         <FlyToControl selectedAsset={selectedAsset} />
       </MapContainer>

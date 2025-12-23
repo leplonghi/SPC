@@ -3,8 +3,8 @@ export const patrimonioSeed = [
         "titulo": "BIBLIOTECA PÚBLICA BENEDITO LEITE e ACERVO BIBLIO-ICONOGRÁFICO",
         "cidade": "São Luís",
         "localizacao": "Praça do Panteon",
-        "lat": -2.530366,
-        "lng": -44.296583
+        "lat": -2.529444,
+        "lng": -44.295556
     },
     {
         "titulo": "IMÓVEL COLONIAL - SOLAR DA BARONESA DE SÃO BENTO",
@@ -17,8 +17,8 @@ export const patrimonioSeed = [
         "titulo": "PALACETE GENTIL BRAGA",
         "cidade": "São Luís",
         "localizacao": "Rua Grande, 782",
-        "lat": -2.533261,
-        "lng": -44.298717
+        "lat": -2.530812,
+        "lng": -44.296464
     },
     {
         "titulo": "IMOVEL ONDE FUNCIONOU A INDÚSTRIA TÊXTIL – SÉCULO XIX",
@@ -45,8 +45,8 @@ export const patrimonioSeed = [
         "titulo": "IMÓVEL COLONIAL – ARQUIVO PÚBLICO",
         "cidade": "São Luís",
         "localizacao": "Rua de Nazaré, 218",
-        "lat": -2.529731,
-        "lng": -44.303350
+        "lat": -2.528753,
+        "lng": -44.304967
     },
     {
         "titulo": "IMÓVEL COLONIAL",
@@ -73,8 +73,8 @@ export const patrimonioSeed = [
         "titulo": "CENTRO DE CULTURA DOMINGOS VIEIRA FILHO",
         "cidade": "São Luís",
         "localizacao": "Rua do Giz, 221",
-        "lat": -2.529124,
-        "lng": -44.303531
+        "lat": -2.530610,
+        "lng": -44.304830
     },
     {
         "titulo": "COMPANHIA TELEFÔNICA - RESTAURANTE SENAC",
@@ -87,15 +87,15 @@ export const patrimonioSeed = [
         "titulo": "CASA DE CÂMARA E CADEIA - IMÓVEL COLONIAL",
         "cidade": "Alcântara",
         "localizacao": "Praça Gomes de Castro",
-        "lat": -2.407428,
-        "lng": -44.416209
+        "lat": -2.409028,
+        "lng": -44.417583
     },
     {
         "titulo": "RUINAS - SÍTIO SANTO ANTONIO DAS ALEGRIAS - SÍTIO DO FÍSICO",
         "cidade": "São Luís",
         "localizacao": "Parque Estadual do Bacanga",
-        "lat": -2.569424,
-        "lng": -44.275035
+        "lat": -2.573672,
+        "lng": -44.282244
     },
     {
         "titulo": "CADEIA PÚBLICA ITAPECURU - IMÓVEL COLONIAL",
@@ -108,8 +108,8 @@ export const patrimonioSeed = [
         "titulo": "CASA DO DIVINO - IMÓVEL COLONIAL",
         "cidade": "Alcântara",
         "localizacao": "Rua Grande, 88",
-        "lat": -2.406325,
-        "lng": -44.415275
+        "lat": -2.407956,
+        "lng": -44.416475
     },
     {
         "titulo": "RUÍNA – ALCÂNTARA",
@@ -129,8 +129,8 @@ export const patrimonioSeed = [
         "titulo": "IGREJA DE SANTANA",
         "cidade": "São Luís",
         "localizacao": "Rua de Santana",
-        "lat": -2.531236,
-        "lng": -44.301908
+        "lat": -2.531111,
+        "lng": -44.300556
     },
     {
         "titulo": "FONTE DO MARAJÁ",
@@ -184,16 +184,16 @@ export const patrimonioSeed = [
     {
         "titulo": "ENGENHO CENTRAL DE PINDARÉ",
         "cidade": "Pindaré-Mirim",
-        "localizacao": "Centro",
-        "lat": -3.610543,
-        "lng": -45.378939
+        "localizacao": "Avenida Elias Haickel, s/n, Centro",
+        "lat": -3.604940,
+        "lng": -45.342238
     },
     {
         "titulo": "IGREJA E LARGO DE NOSSA SENHORA DA LUZ",
         "cidade": "Paço do Lumiar",
         "localizacao": "Sede",
-        "lat": -2.518659,
-        "lng": -44.103977
+        "lat": -2.532222,
+        "lng": -44.107778
     },
     {
         "titulo": "CASA DE NAGÔ",
@@ -227,29 +227,29 @@ export const patrimonioSeed = [
         "titulo": "CENTRO DE CRIATIVIDADE \"ODYLO COSTA FILHO\"",
         "cidade": "São Luís",
         "localizacao": "Praia Grande",
-        "lat": -2.531737,
-        "lng": -44.306129
+        "lat": -2.529722,
+        "lng": -44.306389
     },
     {
         "titulo": "CATEDRAL METROPOLITANA",
         "cidade": "São Luís",
         "localizacao": "Av. Pedro II, s/n",
-        "lat": -2.529683,
-        "lng": -44.302685
+        "lat": -2.528055,
+        "lng": -44.304722
     },
     {
         "titulo": "TEATRO ARTUR AZEVÊDO",
         "cidade": "São Luís",
-        "localizacao": "Rua do Sol",
-        "lat": -2.530374,
-        "lng": -44.301567
+        "localizacao": "Rua do Sol, 180",
+        "lat": -2.528889,
+        "lng": -44.302500
     },
     {
         "titulo": "IGREJA DE NOSSA SENHORA DO ROSÁRIO DOS PRETOS",
         "cidade": "São Luís",
         "localizacao": "Rua do Egito",
-        "lat": -2.530067,
-        "lng": -44.300958
+        "lat": -2.526389,
+        "lng": -44.302778
     },
     {
         "titulo": "FORTE DO CALVÁRIO",
@@ -269,15 +269,15 @@ export const patrimonioSeed = [
         "titulo": "PALÁCIO CRISTO-REI",
         "cidade": "São Luís",
         "localizacao": "Praça Gonçalves Dias, s/n",
-        "lat": -2.528439,
-        "lng": -44.300256
+        "lat": -2.524580,
+        "lng": -44.295819
     },
     {
         "titulo": "CASA DE VESPASIANO RAMOS",
         "cidade": "Caxias",
         "localizacao": "Praça Vespasiano Ramos, 763",
-        "lat": -4.856983,
-        "lng": -43.355124
+        "lat": -4.860556,
+        "lng": -43.359722
     },
     {
         "titulo": "IGREJA DE SANTO ANTÔNIO",
@@ -290,14 +290,14 @@ export const patrimonioSeed = [
         "titulo": "MUSEU HISTÓRICO E ARTÍSTICO DO MARANHÃO",
         "cidade": "São Luís",
         "localizacao": "Rua do Sol, 302",
-        "lat": -2.530635,
-        "lng": -44.301297
+        "lat": -2.528920,
+        "lng": -44.299014
     },
     {
         "titulo": "PALÁCIO EPISCOPAL",
         "cidade": "São Luís",
         "localizacao": "Av. Pedro II, s/n",
-        "lat": -2.529598,
-        "lng": -44.302526
+        "lat": -2.527778,
+        "lng": -44.304444
     }
 ];

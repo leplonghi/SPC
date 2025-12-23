@@ -187,7 +187,7 @@ const AcervoPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Header Section */}
-            <div className="bg-[#2D2D2D] text-white pt-20 pb-8 relative overflow-hidden">
+            <div className="bg-[#2D2D2D] text-white pt-12 pb-8 relative overflow-hidden">
                 <div className="absolute inset-0 opacity-80 pointer-events-none">
                     <img
                         src="/imagens/mapa_sao_luiz.jpg"
@@ -201,7 +201,7 @@ const AcervoPage: React.FC = () => {
                         <Link to="/acervo-digital" className="inline-flex items-center gap-1.5 text-slate-400 font-bold mb-4 hover:text-white transition-colors text-[10px] uppercase tracking-widest">
                             <ArrowLeft size={12} /> Voltar para o Ecossistema
                         </Link>
-                        <h1 className="text-2xl md:text-4xl font-black leading-tight">
+                        <h1 className="text-xl md:text-3xl font-black leading-tight">
                             Acervo <span className="text-[#CC343A]">Digital</span>
                         </h1>
                         <p className="text-xs text-slate-400 max-w-xl leading-relaxed mt-2 font-medium">
@@ -281,7 +281,7 @@ const AcervoPage: React.FC = () => {
                                 key={item.id}
                                 className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-lg transition-all group flex flex-col h-full"
                             >
-                                <div className="h-40 overflow-hidden relative cursor-pointer" onClick={() => setSelectedItem(item)}>
+                                <div className="h-32 overflow-hidden relative cursor-pointer" onClick={() => setSelectedItem(item)}>
                                     <img
                                         src={item.imageUrl}
                                         alt={item.title}

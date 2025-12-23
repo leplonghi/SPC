@@ -155,7 +155,7 @@ const RepositorioPage: React.FC = () => {
             />
 
             {/* Results Section */}
-            <div className="max-w-7xl mx-auto px-6 pb-20">
+            <div className="max-w-7xl mx-auto px-6 pb-12">
                 <div className="flex items-center justify-between mb-8">
                     <h2 className="text-xl font-black text-brand-dark flex items-center gap-3">
                         <Archive className="text-brand-red" size={20} />
@@ -169,61 +169,61 @@ const RepositorioPage: React.FC = () => {
                             <div
                                 key={item.id}
                                 onClick={() => setSelectedItem(item)}
-                                className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex flex-col relative overflow-hidden"
+                                className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex flex-col relative overflow-hidden"
                             >
                                 <div className={`absolute top-0 left-0 w-2 h-full ${item.category === 'dossie' ? 'bg-brand-blue' :
-                                        item.category === 'edital' ? 'bg-brand-red' :
-                                            'bg-slate-800'
+                                    item.category === 'edital' ? 'bg-brand-red' :
+                                        'bg-slate-800'
                                     }`}></div>
 
-                                <div className="flex items-start justify-between mb-6 pl-4">
+                                <div className="flex items-start justify-between mb-4 pl-3">
                                     <div className="flex gap-2">
-                                        <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg ${item.department === 'DPHAP' ? 'bg-brand-blue/10 text-brand-blue' :
-                                                item.department === 'DPI' ? 'bg-brand-red/10 text-brand-red' :
-                                                    'bg-slate-100 text-slate-600'
+                                        <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${item.department === 'DPHAP' ? 'bg-brand-blue/10 text-brand-blue' :
+                                            item.department === 'DPI' ? 'bg-brand-red/10 text-brand-red' :
+                                                'bg-slate-100 text-slate-600'
                                             }`}>
                                             {item.department}
                                         </span>
-                                        <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg bg-slate-50 text-slate-400 flex items-center gap-2">
+                                        <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-slate-50 text-slate-400 flex items-center gap-2">
                                             {item.format}
                                         </span>
                                     </div>
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                         <Clock size={12} /> {new Date(item.date).getFullYear()}
                                     </span>
                                 </div>
 
                                 {/* Icon Display for Card */}
-                                <div className="mb-4 pl-4 text-brand-dark opacity-5 group-hover:opacity-100 group-hover:text-brand-blue transition-all duration-500 absolute top-6 right-6 scale-50 group-hover:scale-100 origin-top-right">
-                                    {item.category === 'dossie' ? <ShieldCheck size={48} /> :
-                                        item.category === 'edital' ? <Info size={48} /> :
-                                            item.category === 'publicacao' ? <FileText size={48} /> :
-                                                <Archive size={48} />}
+                                <div className="mb-3 pl-3 text-brand-dark opacity-5 group-hover:opacity-100 group-hover:text-brand-blue transition-all duration-500 absolute top-6 right-6 scale-50 group-hover:scale-100 origin-top-right">
+                                    {item.category === 'dossie' ? <ShieldCheck size={40} /> :
+                                        item.category === 'edital' ? <Info size={40} /> :
+                                            item.category === 'publicacao' ? <FileText size={40} /> :
+                                                <Archive size={40} />}
                                 </div>
 
-                                <h3 className="text-xl font-black text-brand-dark mb-3 pl-4 group-hover:text-brand-blue transition-colors leading-tight relative z-10">
+                                <h3 className="text-base font-black text-brand-dark mb-2 pl-3 group-hover:text-brand-blue transition-colors leading-tight relative z-10">
                                     {item.title}
                                 </h3>
 
-                                <p className="text-sm text-slate-500 font-medium leading-relaxed mb-6 pl-4 line-clamp-2 relative z-10">
+                                <p className="text-[11px] text-slate-500 font-medium leading-relaxed mb-3 pl-3 line-clamp-2 relative z-10">
                                     {item.description}
                                 </p>
 
-                                <div className="mt-auto pl-4 flex items-center justify-between border-t border-slate-50 pt-6 relative z-10">
+                                <div className="mt-auto pl-3 flex items-center justify-between border-t border-slate-50 pt-4 relative z-10">
                                     <div className="flex gap-2">
                                         {item.tags.slice(0, 2).map(tag => (
-                                            <span key={tag} className="text-[10px] font-bold text-slate-400">#{tag}</span>
+                                            <span key={tag} className="text-[9px] font-bold text-slate-400">#{tag}</span>
                                         ))}
                                     </div>
-                                    <button className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-brand-dark group-hover:bg-brand-blue group-hover:text-white transition-all shadow-md">
-                                        <ArrowRight size={18} />
+                                    <button className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-brand-dark group-hover:bg-brand-blue group-hover:text-white transition-all shadow-md">
+                                        <ArrowRight size={16} />
                                     </button>
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-24 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
+                    <div className="text-center py-12 bg-white rounded-3xl border-2 border-dashed border-slate-100">
                         <Database size={64} className="mx-auto text-slate-200 mb-6" />
                         <h3 className="text-2xl font-black text-brand-dark mb-2">Nenhum documento encontrado</h3>
                         <p className="text-slate-400 font-medium">Tente ajustar seus filtros ou termos de pesquisa.</p>
@@ -241,7 +241,7 @@ const RepositorioPage: React.FC = () => {
             {selectedItem && (
                 <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-brand-dark/90 backdrop-blur-xl" onClick={() => setSelectedItem(null)}></div>
-                    <div className="bg-white relative z-20 w-full max-w-3xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-200">
+                    <div className="bg-white relative z-20 w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-200">
                         <button
                             onClick={() => setSelectedItem(null)}
                             className="absolute top-6 right-6 p-2 bg-slate-50 rounded-full text-slate-400 hover:bg-slate-100 transition-colors z-50"
@@ -249,21 +249,21 @@ const RepositorioPage: React.FC = () => {
                             <X size={20} />
                         </button>
 
-                        <div className="p-10 md:p-12 w-full">
-                            <div className="flex items-center gap-3 mb-6">
-                                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg ${selectedItem.category === 'dossie' ? 'bg-brand-blue/10 text-brand-blue' :
-                                        selectedItem.category === 'edital' ? 'bg-brand-red/10 text-brand-red' :
-                                            'bg-slate-100 text-slate-600'
+                        <div className="p-6 md:p-8 w-full">
+                            <div className="flex items-center gap-3 mb-4">
+                                <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg ${selectedItem.category === 'dossie' ? 'bg-brand-blue/10 text-brand-blue' :
+                                    selectedItem.category === 'edital' ? 'bg-brand-red/10 text-brand-red' :
+                                        'bg-slate-100 text-slate-600'
                                     }`}>
                                     {selectedItem.category}
                                 </span>
-                                <span className="w-1 h-4 bg-slate-200 rounded-full"></span>
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <span className="w-1 h-3 bg-slate-200 rounded-full"></span>
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
                                     {selectedItem.size} • {selectedItem.format}
                                 </span>
                             </div>
 
-                            <h2 className="text-3xl font-black text-brand-dark mb-6 leading-tight">
+                            <h2 className="text-xl font-black text-brand-dark mb-3 leading-tight">
                                 {selectedItem.title}
                             </h2>
 
@@ -273,9 +273,9 @@ const RepositorioPage: React.FC = () => {
                                 </p>
                             </div>
 
-                            <div className="flex flex-wrap gap-2 mb-10">
+                            <div className="flex flex-wrap gap-2 mb-8">
                                 {selectedItem.tags.map(tag => (
-                                    <span key={tag} className="px-4 py-2 bg-slate-50 text-slate-500 rounded-xl text-xs font-bold border border-slate-100">
+                                    <span key={tag} className="px-3 py-1.5 bg-slate-50 text-slate-500 rounded-lg text-[10px] font-bold border border-slate-100">
                                         #{tag}
                                     </span>
                                 ))}

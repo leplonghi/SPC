@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   FileText,
   Search,
@@ -57,9 +58,9 @@ const DEPARTAMENTOS_INFO = [
     bgColor: 'bg-brand-blue/10',
     borderColor: 'border-brand-blue/20',
     description: 'Atua na preservação física de bens. Realiza consultas sobre poligonais, autoriza obras e reformas arquitetônicas.',
-    link: '#',
+    link: '/dphap',
     resources: [
-      { label: 'Diretrizes de Intervenção', url: '#' },
+      { label: 'Diretrizes de Intervenção', url: '/imagens/infografico_engenhos.jpg' },
       { label: 'Análises Técnicas', url: '#' },
       { label: 'Licenciamento Urbano', url: '#' }
     ]
@@ -73,7 +74,7 @@ const DEPARTAMENTOS_INFO = [
     bgColor: 'bg-brand-red/10',
     borderColor: 'border-brand-red/20',
     description: 'Responsável pelo registro de saberes, celebrações e apoio às comunidades detentoras de tradições.',
-    link: '#',
+    link: '/dpi',
     resources: []
   },
   {
@@ -85,7 +86,7 @@ const DEPARTAMENTOS_INFO = [
     bgColor: 'bg-brand-dark/10',
     borderColor: 'border-brand-dark/20',
     description: 'Gerencia grandes intervenções urbanas e projetos estruturantes em áreas históricas protegidas.',
-    link: '#',
+    link: '/dpe',
     resources: []
   }
 ];
@@ -250,21 +251,21 @@ const ServicosPage: React.FC = () => {
 
       {/* Dept Competencies */}
       <section className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-4xl mx-auto">
           {DEPARTAMENTOS_INFO.map((dept) => (
-            <div key={dept.id} className={`flex flex-col p-6 bg-white rounded-[1.5rem] border ${dept.borderColor} shadow-sm hover:shadow-lg transition-all group relative`}>
-              <a href={dept.link} className="block flex-1">
-                <div className={`w-10 h-10 ${dept.bgColor} ${dept.color} rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                  <dept.icon size={20} />
+            <div key={dept.id} className={`flex flex-col p-4 bg-white rounded-2xl border ${dept.borderColor} shadow-sm hover:shadow-lg transition-all group relative`}>
+              <Link to={dept.link} className="block flex-1">
+                <div className={`w-8 h-8 ${dept.bgColor} ${dept.color} rounded-lg flex items-center justify-center mb-2 group-hover:scale-110 transition-transform`}>
+                  <dept.icon size={16} />
                 </div>
                 <h3 className="text-base font-black text-brand-dark mb-1">{dept.name}</h3>
                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">{dept.fullName}</p>
                 <p className="text-[10px] text-slate-500 leading-relaxed font-medium">{dept.description}</p>
-              </a>
+              </Link>
 
               {dept.resources && dept.resources.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5 opacity-80">
+                <div className="mt-3 pt-3 border-t border-slate-100 space-y-1.5">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 opacity-80">
                     <FileText size={10} /> Acesso Rápido
                   </p>
                   <div className="space-y-1.5">
@@ -272,9 +273,11 @@ const ServicosPage: React.FC = () => {
                       <a
                         key={idx}
                         href={res.url}
-                        className="flex items-center gap-2 text-[10px] font-bold text-slate-600 hover:text-brand-blue transition-colors group/link p-1.5 rounded-lg hover:bg-slate-50"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex items-center gap-2 text-[10px] font-bold transition-colors group/link p-1.5 rounded-lg hover:bg-slate-50 ${res.label === 'Diretrizes de Intervenção' ? 'text-brand-blue bg-brand-blue/5' : 'text-slate-600 hover:text-brand-blue'}`}
                       >
-                        <ArrowRight size={10} className="text-brand-blue/50 group-hover/link:text-brand-blue transition-colors" />
+                        <ArrowRight size={10} className={`${res.label === 'Diretrizes de Intervenção' ? 'text-brand-blue' : 'text-brand-blue/50 group-hover/link:text-brand-blue'} transition-colors`} />
                         {res.label}
                       </a>
                     ))}
@@ -305,7 +308,7 @@ const ServicosPage: React.FC = () => {
             >
               <div
                 onClick={() => setActiveService(activeService === service.id ? null : service.id)}
-                className="w-full p-6 text-left flex items-center justify-between group cursor-pointer"
+                className="w-full p-4 text-left flex items-center justify-between group cursor-pointer"
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
@@ -320,18 +323,18 @@ const ServicosPage: React.FC = () => {
                     <span className="text-[9px] font-black text-brand-blue uppercase tracking-widest bg-brand-blue/10 px-2.5 py-0.5 rounded-full">
                       {service.category}
                     </span>
-                    <a
-                      href={DEPARTAMENTOS_INFO.find(d => d.id === service.department_responsible)?.link || '#'}
+                    <Link
+                      to={DEPARTAMENTOS_INFO.find(d => d.id === service.department_responsible)?.link || '#'}
                       onClick={(e) => e.stopPropagation()}
                       className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full text-white hover:opacity-80 transition-opacity ${service.department_responsible === Department.DPHAP ? 'bg-brand-blue' :
                         service.department_responsible === Department.DPI ? 'bg-brand-red' :
                           'bg-brand-dark'
                         }`}>
                       {service.department_responsible}
-                    </a>
+                    </Link>
                   </div>
-                  <h3 className="text-xl font-black text-[#2D2D2D] group-hover:text-[#CC343A] transition-colors">{service.title}</h3>
-                  <p className="text-slate-500 text-xs font-medium max-w-lg line-clamp-1">{service.description}</p>
+                  <h3 className="text-lg font-black text-[#2D2D2D] group-hover:text-[#CC343A] transition-colors">{service.title}</h3>
+                  <p className="text-slate-500 text-[11px] font-medium max-w-lg line-clamp-1">{service.description}</p>
                 </div>
                 <div className={`p-3 rounded-xl bg-slate-50 text-slate-400 transition-all ${activeService === service.id ? 'rotate-180 bg-[#CC343A] text-white' : 'group-hover:bg-slate-100'}`}>
                   <ChevronDown size={20} />
@@ -339,8 +342,8 @@ const ServicosPage: React.FC = () => {
               </div>
 
               {activeService === service.id && (
-                <div className="px-6 pb-8 space-y-8 animate-in slide-in-from-top-4 duration-500 border-t border-slate-50 pt-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="px-5 pb-6 space-y-6 animate-in slide-in-from-top-4 duration-500 border-t border-slate-50 pt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Left Column: Flow and FAQ */}
                     <div className="space-y-8">
                       <div className="space-y-4">
@@ -423,7 +426,7 @@ const ServicosPage: React.FC = () => {
       <section className="bg-brand-dark py-12">
         <div className="max-w-5xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div className="space-y-4">
-            <h2 className="text-xl font-black text-white leading-tight">Suporte Técnico</h2>
+            <h2 className="text-lg font-black text-white leading-tight">Suporte Técnico</h2>
             <p className="text-slate-400 text-xs font-medium">
               Dúvidas sobre legislação ou como proceder com sua solicitação? Nossa central de atendimento está disponível para orientação.
             </p>
@@ -436,9 +439,9 @@ const ServicosPage: React.FC = () => {
               </button>
             </div>
           </div>
-          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[2rem] space-y-3">
-            <div className="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center text-white shadow-xl"><FileText size={20} /></div>
-            <h3 className="text-lg font-black text-white uppercase tracking-tighter">Protocolo Digital</h3>
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-6 rounded-[1.5rem] space-y-2.5">
+            <div className="w-8 h-8 bg-brand-blue rounded-lg flex items-center justify-center text-white shadow-xl"><FileText size={16} /></div>
+            <h3 className="text-base font-black text-white uppercase tracking-tighter">Protocolo Digital</h3>
             <p className="text-slate-400 text-xs font-medium leading-relaxed">
               Inicie seu processo de forma 100% digital através do Sistema Eletrônico de Informações do Maranhão.
             </p>

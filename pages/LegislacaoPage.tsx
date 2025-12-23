@@ -26,6 +26,15 @@ interface Document {
 
 const DOCUMENTS: Document[] = [
   {
+    id: 'infog-1',
+    title: 'Infográfico: Instalação de Engenhos Publicitários',
+    category: 'Manual',
+    date: '2025-12-23',
+    size: '1.4 MB',
+    description: 'Guia visual para instalação de placas, letreiros e anúncios em imóveis do Centro Histórico.',
+    tags: ['DPHAP', 'Engenhos', 'Visual', 'Destaque']
+  },
+  {
     id: '1',
     title: 'Lei Estadual de Proteção ao Patrimônio nº 10.543',
     category: 'Lei',
@@ -97,7 +106,7 @@ const LegislacaoPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header Section */}
-      <section className="bg-[#2D2D2D] pt-20 pb-12 relative overflow-hidden">
+      <section className="bg-[#2D2D2D] pt-12 pb-8 relative overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0 z-0 overflow-hidden opacity-80">
           <img
@@ -112,7 +121,7 @@ const LegislacaoPage: React.FC = () => {
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#CC343A]/20 text-[#CC343A] border border-[#CC343A]/30 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
             <Gavel size={14} /> Biblioteca Jurídica
           </div>
-          <h1 className="text-2xl md:text-4xl font-black text-white leading-tight">
+          <h1 className="text-xl md:text-3xl font-black text-white leading-tight">
             Legislação e <span className="text-[#CC343A]">Documentos</span>
           </h1>
           <p className="text-sm text-slate-300 max-w-xl mx-auto leading-relaxed font-medium">
@@ -186,9 +195,9 @@ const LegislacaoPage: React.FC = () => {
               <button onClick={() => { setSearchTerm(''); setActiveCategory('Todos') }} className="mt-4 text-brand-blue font-black uppercase tracking-widest text-[10px]">Limpar filtros</button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-2">
               {filteredDocs.map(doc => (
-                <div key={doc.id} className="bg-white p-6 rounded-2xl border border-slate-100 hover:border-brand-blue/30 hover:shadow-lg transition-all group flex flex-col md:flex-row md:items-center gap-6">
+                <div key={doc.id} className="bg-white p-4 rounded-xl border border-slate-100 hover:border-brand-blue/30 hover:shadow-lg transition-all group flex flex-col md:flex-row md:items-center gap-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${doc.category === 'Lei' ? 'bg-brand-red/10 text-brand-red' :
                     doc.category === 'Decreto' ? 'bg-brand-blue/10 text-brand-blue' :
                       'bg-slate-100 text-slate-500'
@@ -218,9 +227,14 @@ const LegislacaoPage: React.FC = () => {
                   </div>
 
                   <div className="flex flex-col gap-2 min-w-[120px]">
-                    <button className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-brand-blue text-white rounded-lg font-black uppercase tracking-widest text-[9px] hover:bg-brand-blue/90 transition-all active:scale-95">
-                      Download <Download size={12} />
-                    </button>
+                    <a
+                      href={doc.id === 'infog-1' ? '/imagens/infografico_engenhos.jpg' : '#'}
+                      target={doc.id === 'infog-1' ? '_blank' : undefined}
+                      rel={doc.id === 'infog-1' ? 'noopener noreferrer' : undefined}
+                      className={`w-full flex items-center justify-center gap-2 px-4 py-2 text-white rounded-lg font-black uppercase tracking-widest text-[9px] transition-all active:scale-95 ${doc.id === 'infog-1' ? 'bg-brand-red animate-pulse shadow-lg shadow-brand-red/20' : 'bg-brand-blue hover:bg-brand-blue/90'}`}
+                    >
+                      {doc.id === 'infog-1' ? 'Ver Infográfico' : 'Download'} <Download size={12} />
+                    </a>
                     <span className="text-[8px] text-center font-bold text-slate-300 uppercase tracking-widest">Tamanho: {doc.size}</span>
                   </div>
                 </div>
