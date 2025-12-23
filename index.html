@@ -17,6 +17,27 @@
               dark: '#2B2B2B',
               accent: '#F7E5E2',
             }
+          },
+          animation: {
+            'gradient-x': 'gradient-x 3s ease infinite',
+            'float': 'float 6s ease-in-out infinite',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            'gradient-x': {
+              '0%, 100%': {
+                'background-size': '200% 200%',
+                'background-position': 'left center'
+              },
+              '50%': {
+                'background-size': '200% 200%',
+                'background-position': 'right center'
+              }
+            },
+            'float': {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-20px)' },
+            }
           }
         }
       }
@@ -71,6 +92,76 @@
 
     ::-webkit-scrollbar-thumb:hover {
       background: #1a1a1a;
+    }
+
+    /* 3D Transform Utilities */
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+
+    .rotate-y-12 {
+      transform: rotateY(12deg);
+    }
+
+    .rotate-x-6 {
+      transform: rotateX(6deg);
+    }
+
+    /* Animation Keyframes if not covered by Tailwind config */
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-20px);
+      }
+    }
+
+
+    .animate-float {
+      animation: float 6s ease-in-out infinite;
+    }
+
+    /* Map Popup Customization */
+    .leaflet-popup-content-wrapper {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      border-radius: 16px;
+      box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.2);
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .leaflet-popup-content {
+      margin: 0 !important;
+      width: 100% !important;
+    }
+
+    .leaflet-popup-tip {
+      background: rgba(255, 255, 255, 0.95);
+    }
+
+    .leaflet-container a.leaflet-popup-close-button {
+      top: 12px;
+      right: 12px;
+      background: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font: 16px/14px Tahoma, Verdana, sans-serif;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .glass-popup .leaflet-popup-content-wrapper {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(8px);
     }
   </style>
 </head>
