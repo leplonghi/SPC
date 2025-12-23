@@ -1,0 +1,7 @@
+{
+  "name": "SPC Maranhão - Portal do Patrimônio",
+  "description": "Plataforma integrada da Superintendência do Patrimônio Cultural do Maranhão, incluindo portal institucional, mapa GIS interativo e gestão administrativa.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
