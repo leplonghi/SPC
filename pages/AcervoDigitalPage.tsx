@@ -16,21 +16,21 @@ import {
 import { Link } from 'react-router-dom';
 
 const ResourceCard = ({ title, description, icon: Icon, color, link, items }: any) => (
-    <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all group overflow-hidden flex flex-col h-full">
-        <div className={`h-3 bg-gradient-to-r ${color}`}></div>
-        <div className="p-10 flex flex-col flex-grow">
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-8 shadow-lg group-hover:scale-110 transition-transform ${color} text-white`}>
-                <Icon size={32} />
+    <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-lg transition-all group overflow-hidden flex flex-col h-full">
+        <div className={`h-1.5 bg-gradient-to-r ${color}`}></div>
+        <div className="p-6 flex flex-col flex-grow">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 shadow-md transition-transform ${color} text-white`}>
+                <Icon size={20} />
             </div>
-            <h3 className="text-3xl font-black text-brand-dark mb-4">{title}</h3>
-            <p className="text-slate-500 leading-relaxed mb-10 flex-grow font-medium">
+            <h3 className="text-lg font-black text-brand-dark mb-2">{title}</h3>
+            <p className="text-[11px] text-slate-500 leading-relaxed mb-4 flex-grow font-medium">
                 {description}
             </p>
 
-            <div className="space-y-4 mb-10">
+            <div className="space-y-1.5 mb-5">
                 {items.map((item: string, idx: number) => (
-                    <div key={idx} className="flex items-center gap-3 text-sm font-bold text-slate-600">
-                        <div className={`w-1.5 h-1.5 rounded-full ${color.split(' ')[1]}`}></div>
+                    <div key={idx} className="flex items-center gap-2 text-[9px] font-bold text-slate-600">
+                        <div className={`w-1 h-1 rounded-full ${color.includes('blue') ? 'bg-brand-blue' : color.includes('red') ? 'bg-brand-red' : 'bg-slate-700'}`}></div>
                         {item}
                     </div>
                 ))}
@@ -38,9 +38,9 @@ const ResourceCard = ({ title, description, icon: Icon, color, link, items }: an
 
             <Link
                 to={link}
-                className="inline-flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-brand-blue transition-all w-full justify-center group/btn"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-brand-blue transition-all w-full justify-center group/btn"
             >
-                Acessar Página <ArrowRight size={20} className="group-hover/btn:translate-x-2 transition-transform" />
+                Acessar <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
             </Link>
         </div>
     </div>
@@ -74,8 +74,8 @@ const AcervoDigitalPage: React.FC = () => {
             </section>
 
             {/* Resource Grid */}
-            <section className="max-w-7xl mx-auto px-4 -mt-12 relative z-20">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <section className="max-w-7xl mx-auto px-4 -mt-6 relative z-20">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <ResourceCard
                         title="Acervo Digital"
                         description="Base de dados multimídia contendo fotografias históricas, mapas antigos e registros iconográficos do patrimônio cultural."
@@ -119,49 +119,49 @@ const AcervoDigitalPage: React.FC = () => {
             </section>
 
             {/* Search & Help CTA */}
-            <section className="max-w-7xl mx-auto px-4 mt-32">
-                <div className="bg-brand-blue rounded-[4rem] p-12 md:p-24 relative overflow-hidden flex flex-col lg:flex-row items-center gap-16 shadow-2xl shadow-brand-blue/20">
+            <section className="max-w-7xl mx-auto px-4 mt-16">
+                <div className="bg-brand-blue rounded-[3rem] p-10 md:p-16 relative overflow-hidden flex flex-col lg:flex-row items-center gap-10 shadow-2xl shadow-brand-blue/20">
                     <div className="absolute top-0 left-0 w-full h-full">
-                        <div className="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-white opacity-5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+                        <div className="absolute top-0 right-0 w-72 h-72 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
                     </div>
 
-                    <div className="relative z-10 lg:w-1/2 space-y-8 text-white">
-                        <h2 className="text-4xl md:text-5xl font-black leading-tight">Busca Unificada <br />de Documentos</h2>
-                        <p className="text-blue-100 text-lg font-medium leading-relaxed">
+                    <div className="relative z-10 lg:w-1/2 space-y-6 text-white">
+                        <h2 className="text-2xl md:text-3xl font-black leading-tight">Busca Unificada <br />de Documentos</h2>
+                        <p className="text-blue-100 text-sm font-medium leading-relaxed">
                             Encontre rapidamente qualquer documento oficial através do nosso indexador dinâmico. Digite termos chave acima ou utilize os filtros.
                         </p>
                         <div className="flex gap-4">
-                            <div className="bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/20 text-center flex-1">
-                                <span className="block text-3xl font-black">+15k</span>
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200">Arquivos</span>
+                            <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center flex-1">
+                                <span className="block text-2xl font-black">+15k</span>
+                                <span className="text-[9px] font-bold uppercase tracking-widest text-blue-200">Arquivos</span>
                             </div>
-                            <div className="bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/20 text-center flex-1">
-                                <span className="block text-3xl font-black">24/7</span>
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200">Disponibilidade</span>
+                            <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center flex-1">
+                                <span className="block text-2xl font-black">24/7</span>
+                                <span className="text-[9px] font-bold uppercase tracking-widest text-blue-200">Disponibilidade</span>
                             </div>
                         </div>
                     </div>
 
                     <div className="relative z-10 lg:w-1/2 w-full">
-                        <div className="bg-white rounded-[3rem] p-10 shadow-xl space-y-8">
-                            <div className="space-y-4">
-                                <label className="text-xs font-black text-brand-dark uppercase tracking-widest">O que você procura?</label>
+                        <div className="bg-white rounded-[2rem] p-8 shadow-xl space-y-6">
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-brand-dark uppercase tracking-widest">O que você procura?</label>
                                 <div className="relative">
-                                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                     <input
                                         type="text"
                                         placeholder="Ex: Lei 1.234, Bumba meu Boi..."
-                                        className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-brand-blue transition-all font-medium"
+                                        className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl focus:outline-none focus:border-brand-blue transition-all text-sm font-medium"
                                     />
                                 </div>
                             </div>
-                            <button className="w-full py-5 bg-black text-white rounded-2xl font-black uppercase tracking-widest hover:bg-brand-red transition-all flex items-center justify-center gap-3">
-                                <ArrowRight size={20} /> Iniciar Pesquisa
+                            <button className="w-full py-4 bg-black text-white rounded-xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-[#CC343A] transition-all flex items-center justify-center gap-3">
+                                <ArrowRight size={18} /> Iniciar Pesquisa
                             </button>
-                            <div className="pt-6 border-t border-slate-100 flex items-center justify-between text-slate-400">
-                                <span className="text-xs font-bold flex items-center gap-2"><ShieldCheck size={16} /> Dados Oficiais</span>
-                                <span className="text-xs font-bold flex items-center gap-2"><Download size={16} /> Acesso Público</span>
+                            <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-slate-400">
+                                <span className="text-[9px] font-bold flex items-center gap-1.5"><ShieldCheck size={14} /> Dados Oficiais</span>
+                                <span className="text-[9px] font-bold flex items-center gap-1.5"><Download size={14} /> Acesso Público</span>
                             </div>
                         </div>
                     </div>

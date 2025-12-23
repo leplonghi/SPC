@@ -204,33 +204,33 @@ const ServicosPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
-      <section className="bg-[#2D2D2D] pt-24 pb-16 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
+      <section className="bg-[#2D2D2D] pt-16 pb-12 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-30">
           <img
-            src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=2000"
-            alt="Serviços Públicos"
+            src="/imagens/CH 01.jpg"
+            alt="Centro Histórico"
             className="w-full h-full object-cover"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-[#2D2D2D]/40 via-[#2D2D2D] to-[#2D2D2D]"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#2D2D2D]/60 via-[#2D2D2D]/90 to-[#2D2D2D]"></div>
 
-        <div className="relative max-w-7xl mx-auto px-4 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#CC343A]/20 text-[#CC343A] border border-[#CC343A]/30 rounded-full text-xs font-black uppercase tracking-[0.2em] mb-2">
+        <div className="relative max-w-7xl mx-auto px-4 text-center space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#CC343A]/20 text-[#CC343A] border border-[#CC343A]/30 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
             Atendimento Cidadão
           </div>
-          <h1 className="text-3xl md:text-5xl font-black text-white leading-tight">
+          <h1 className="text-2xl md:text-4xl font-black text-white leading-tight">
             Serviços <span className="text-[#CC343A]">Online</span>
           </h1>
-          <p className="text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Orientações e formulários para suas solicitações junto à Superintendência.
+          <p className="text-sm text-slate-300 max-w-xl mx-auto leading-relaxed font-medium">
+            Orientações rápidas e formulários para suas solicitações.
           </p>
 
-          <div className="w-full max-w-xl mx-auto relative group pt-4">
-            <Search className="absolute left-6 top-[calc(50%+8px)] -translate-y-1/2 text-slate-400 group-focus-within:text-[#CC343A] transition-colors" size={20} />
+          <div className="w-full max-w-md mx-auto relative group pt-1">
+            <Search className="absolute left-5 top-[calc(50%+2px)] -translate-y-1/2 text-slate-300 group-focus-within:text-[#CC343A] transition-colors" size={16} />
             <input
               type="text"
-              placeholder="Ex: Reforma, DPHAP, Certidão, Obra..."
-              className="w-full pl-14 pr-6 py-4 bg-white/10 border-2 border-white/10 backdrop-blur-md rounded-2xl text-base font-medium text-white placeholder:text-slate-400 focus:outline-none focus:ring-8 focus:ring-[#CC343A]/20 focus:border-[#CC343A] transition-all shadow-sm"
+              placeholder="Ex: Reforma, DPHAP, Certidão..."
+              className="w-full pl-12 pr-6 py-2.5 bg-white/10 border border-white/10 backdrop-blur-md rounded-xl text-[13px] font-medium text-white placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-[#CC343A]/20 focus:border-[#CC343A] transition-all shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -239,25 +239,25 @@ const ServicosPage: React.FC = () => {
       </section>
 
       {/* Dept Competencies */}
-      <section className="max-w-7xl mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <section className="max-w-7xl mx-auto px-4 py-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {DEPARTAMENTOS_INFO.map((dept) => (
-            <div key={dept.id} className={`p-10 bg-white rounded-[2.5rem] border ${dept.borderColor} shadow-sm hover:shadow-xl transition-all group`}>
-              <div className={`w-14 h-14 ${dept.bgColor} ${dept.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                <dept.icon size={28} />
+            <div key={dept.id} className={`p-8 bg-white rounded-[2rem] border ${dept.borderColor} shadow-sm hover:shadow-lg transition-all group`}>
+              <div className={`w-12 h-12 ${dept.bgColor} ${dept.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                <dept.icon size={24} />
               </div>
-              <h3 className="text-xl font-black text-brand-dark mb-1">{dept.name}</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">{dept.fullName}</p>
-              <p className="text-sm text-slate-500 leading-relaxed font-medium">{dept.description}</p>
+              <h3 className="text-lg font-black text-brand-dark mb-1">{dept.name}</h3>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">{dept.fullName}</p>
+              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">{dept.description}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Services Listing */}
-      <section className="max-w-5xl mx-auto px-4 py-20 space-y-8">
-        <h2 className="text-2xl font-black text-brand-dark uppercase tracking-widest flex items-center gap-3">
-          <Building2 size={24} className="text-brand-red" /> Catálogo SPC
+      <section className="max-w-5xl mx-auto px-4 py-12 space-y-6">
+        <h2 className="text-xl font-black text-brand-dark uppercase tracking-widest flex items-center gap-3">
+          <Building2 size={20} className="text-[#CC343A]" /> Catálogo SPC
         </h2>
 
         {filteredServices.length === 0 ? (
@@ -377,30 +377,30 @@ const ServicosPage: React.FC = () => {
       </section>
 
       {/* Footer Banner */}
-      <section className="bg-brand-dark py-24">
-        <div className="max-w-5xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-          <div className="space-y-8">
-            <h2 className="text-4xl font-black text-white leading-tight">Suporte Técnico</h2>
-            <p className="text-slate-400 text-lg font-medium">
+      <section className="bg-brand-dark py-16">
+        <div className="max-w-5xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <h2 className="text-2xl font-black text-white leading-tight">Suporte Técnico</h2>
+            <p className="text-slate-400 text-sm font-medium">
               Dúvidas sobre legislação ou como proceder com sua solicitação? Nossa central de atendimento está disponível para orientação.
             </p>
-            <div className="flex flex-col sm:flex-row gap-5">
-              <button className="px-8 py-4 bg-brand-red text-white rounded-2xl font-black uppercase tracking-widest hover:bg-brand-red/90 transition-all flex items-center justify-center gap-3 active:scale-95">
-                <HelpCircle size={20} /> Canal Dúvidas
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button className="px-6 py-3 bg-brand-red text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-red/90 transition-all flex items-center justify-center gap-2 active:scale-95">
+                <HelpCircle size={16} /> Canal Dúvidas
               </button>
-              <button className="px-8 py-4 bg-white/10 text-white border border-white/20 rounded-2xl font-black uppercase tracking-widest hover:bg-white/20 transition-all flex items-center justify-center gap-3 active:scale-95">
-                <ShieldCheck size={20} /> Ouvidoria MA
+              <button className="px-6 py-3 bg-white/10 text-white border border-white/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all flex items-center justify-center gap-2 active:scale-95">
+                <ShieldCheck size={16} /> Ouvidoria MA
               </button>
             </div>
           </div>
-          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-12 rounded-[3.5rem] space-y-6">
-            <div className="w-16 h-16 bg-brand-blue rounded-2xl flex items-center justify-center text-white shadow-xl"><FileText size={32} /></div>
-            <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Protocolo Digital</h3>
-            <p className="text-slate-400 font-medium leading-relaxed">
+          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-10 rounded-[2.5rem] space-y-4">
+            <div className="w-12 h-12 bg-brand-blue rounded-xl flex items-center justify-center text-white shadow-xl"><FileText size={24} /></div>
+            <h3 className="text-xl font-black text-white uppercase tracking-tighter">Protocolo Digital</h3>
+            <p className="text-slate-400 text-[13px] font-medium leading-relaxed">
               Inicie seu processo de forma 100% digital através do Sistema Eletrônico de Informações do Maranhão.
             </p>
-            <a href="https://sei.ma.gov.br" target="_blank" className="inline-flex items-center gap-3 text-brand-blue font-black uppercase tracking-widest text-sm hover:gap-5 transition-all">
-              Ir para o SEI <ArrowRight size={20} />
+            <a href="https://sei.ma.gov.br" target="_blank" className="inline-flex items-center gap-2 text-brand-blue font-black uppercase tracking-widest text-[10px] hover:gap-4 transition-all">
+              Ir para o SEI <ArrowRight size={16} />
             </a>
           </div>
         </div>

@@ -25,6 +25,7 @@ import InstitucionalPage from './pages/InstitucionalPage';
 import ServicosPage from './pages/ServicosPage';
 import LegislacaoPage from './pages/LegislacaoPage';
 import AcervoDigitalPage from './pages/AcervoDigitalPage';
+import AcervoPage from './pages/AcervoPage';
 import { UserRole, User as UserType } from './types';
 
 const Navigation = () => {
@@ -184,6 +185,7 @@ const App: React.FC = () => {
             <Route path="/institucional" element={<InstitucionalPage />} />
             <Route path="/servicos" element={<ServicosPage />} />
             <Route path="/acervo-digital" element={<AcervoDigitalPage />} />
+            <Route path="/acervo" element={<AcervoPage />} />
             <Route path="/legislacao" element={<LegislacaoPage />} />
             <Route path="/admin" element={<AdminDashboard user={user} />} />
             <Route path="*" element={
