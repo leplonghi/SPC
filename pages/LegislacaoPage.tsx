@@ -13,6 +13,7 @@ import {
   Calendar,
   ExternalLink
 } from 'lucide-react';
+import { PageHero } from '../components/ui/PageHero';
 
 interface Document {
   id: string;
@@ -106,29 +107,18 @@ const LegislacaoPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header Section */}
-      <section className="bg-[#2D2D2D] pt-12 pb-8 relative overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0 overflow-hidden opacity-80">
-          <img
-            src="/imagens/1912 - justo jansen - mapa.jpg"
-            alt="Acervo Histórico"
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-[#2D2D2D]/60 via-[#2D2D2D]/90 to-[#2D2D2D]"></div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 text-center space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#CC343A]/20 text-[#CC343A] border border-[#CC343A]/30 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
-            <Gavel size={14} /> Biblioteca Jurídica
-          </div>
-          <h1 className="text-xl md:text-3xl font-black text-white leading-tight">
-            Legislação e <span className="text-[#CC343A]">Documentos</span>
-          </h1>
-          <p className="text-sm text-slate-300 max-w-xl mx-auto leading-relaxed font-medium">
-            Acesso público a normativas, decretos e manuais técnicos que regem o patrimônio maranhense.
-          </p>
-
-          <div className="max-w-lg mx-auto relative group mt-6">
+      <PageHero
+        align="center"
+        backgroundImage="/imagens/1912 - justo jansen - mapa.jpg"
+        badge={{
+          text: 'Biblioteca Jurídica',
+          icon: Gavel,
+          variant: 'white'
+        }}
+        title={<>Legislação e <span className="text-[#CC343A]">Documentos</span></>}
+        description="Acesso público a normativas, decretos e manuais técnicos que regem o patrimônio maranhense."
+        actions={
+          <div className="relative group w-full max-w-lg text-left">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#CC343A] transition-colors" size={18} />
             <input
               type="text"
@@ -138,8 +128,8 @@ const LegislacaoPage: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-        </div>
-      </section>
+        }
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-12 flex flex-col lg:flex-row gap-8">

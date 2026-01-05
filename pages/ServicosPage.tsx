@@ -23,6 +23,7 @@ import {
   MessageCircle,
   MapPin
 } from 'lucide-react';
+import { PageHero } from '../components/ui/PageHero';
 import { Department } from '../types';
 
 interface ServiceFAQ {
@@ -215,28 +216,17 @@ const ServicosPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
-      <section className="bg-[#2D2D2D] pt-12 pb-8 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-80">
-          <img
-            src="/imagens/CH 01.jpg"
-            alt="Centro Histórico"
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-[#2D2D2D]/60 via-[#2D2D2D]/90 to-[#2D2D2D]"></div>
-
-        <div className="relative max-w-7xl mx-auto px-6 text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-[#CC343A]/20 text-[#CC343A] border border-[#CC343A]/30 rounded-full text-[9px] font-black uppercase tracking-[0.2em]">
-            Atendimento Cidadão
-          </div>
-          <h1 className="text-xl md:text-3xl font-black text-white leading-tight">
-            Serviços <span className="text-[#CC343A]">Online</span>
-          </h1>
-          <p className="text-xs text-slate-300 max-w-xl mx-auto leading-relaxed font-medium">
-            Orientações rápidas e formulários para suas solicitações.
-          </p>
-
-          <div className="w-full max-w-md mx-auto relative group pt-1">
+      <PageHero
+        align="center"
+        backgroundImage="/imagens/CH 01.jpg"
+        badge={{
+          text: 'Atendimento Cidadão',
+          variant: 'white' // using white variant which is mapped to #CC343A style
+        }}
+        title={<>Serviços <span className="text-[#CC343A]">Online</span></>}
+        description="Orientações rápidas e formulários para suas solicitações."
+        actions={
+          <div className="w-full max-w-md mx-auto relative group pt-1 text-left">
             <Search className="absolute left-4 top-[calc(50%+2px)] -translate-y-1/2 text-slate-300 group-focus-within:text-[#CC343A] transition-colors" size={14} />
             <input
               type="text"
@@ -246,8 +236,8 @@ const ServicosPage: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-        </div>
-      </section>
+        }
+      />
 
       {/* Dept Competencies */}
       <section className="max-w-7xl mx-auto px-6 py-8">

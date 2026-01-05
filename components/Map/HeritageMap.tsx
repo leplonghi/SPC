@@ -1,10 +1,10 @@
 
-import React, { useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet';
+import React, { useEffect, useMemo, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMap, Polyline, Polygon } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { HeritageAsset, HeritageArea } from '../../types_patrimonio';
-import { Layers, X, MapPin } from 'lucide-react';
+import { Layers, X, MapPin, Navigation } from 'lucide-react';
 
 // Custom Marker Icons
 const getIcon = (category: string = 'other', status: string) => {
@@ -17,6 +17,7 @@ const getIcon = (category: string = 'other', status: string) => {
     case 'ruin': color = '#FF6F00'; break; // Amber/Orange
     case 'monument': color = '#8E24AA'; break; // Purple
     case 'area': color = '#CC343A'; break; // Red
+    case 'ai_pin': color = '#2563eb'; break; // Brand Blue for AI
   }
 
   const opacity = status === 'ok' ? 1 : 0.6;
@@ -45,15 +46,35 @@ const getIcon = (category: string = 'other', status: string) => {
   });
 };
 
+interface AIMarker {
+  id: string;
+  position: [number, number];
+  label: string;
+}
+
+interface AIRoute {
+  id: string;
+  coordinates: [number, number][];
+}
+
+interface AIPolygon {
+  id: string;
+  coordinates: [number, number][];
+  color?: string;
+}
+
 interface HeritageMapProps {
   assets: HeritageAsset[];
   areas: HeritageArea[];
   selectedAssetId?: string;
   onSelectAsset: (asset: HeritageAsset) => void;
   showPolygons: boolean;
+  aiMarkers?: AIMarker[];
+  aiRoutes?: AIRoute[];
+  aiPolygons?: AIPolygon[];
 }
 
-const FlyToControl = ({ selectedAsset }: { selectedAsset?: HeritageAsset }) => {
+const FlyToControl = ({ selectedAsset, center }: { selectedAsset?: HeritageAsset, center?: [number, number] }) => {
   const map = useMap();
   useEffect(() => {
     if (selectedAsset) {
@@ -62,12 +83,34 @@ const FlyToControl = ({ selectedAsset }: { selectedAsset?: HeritageAsset }) => {
           duration: 2.0
         });
       }
+    } else if (center) {
+      map.flyTo(center, 15, { duration: 1.5 });
     }
-  }, [selectedAsset, map]);
+  }, [selectedAsset, center, map]);
   return null;
 };
 
-const HeritageMap: React.FC<HeritageMapProps> = ({ assets, areas, selectedAssetId, onSelectAsset, showPolygons }) => {
+const MapResizeFix: React.FC = () => {
+  const map = useMap();
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [map]);
+  return null;
+};
+
+const HeritageMap: React.FC<HeritageMapProps> = ({
+  assets,
+  areas,
+  selectedAssetId,
+  onSelectAsset,
+  showPolygons,
+  aiMarkers = [],
+  aiRoutes = [],
+  aiPolygons = []
+}) => {
   const selectedAsset = useMemo(() => assets.find(a => a.id === selectedAssetId), [assets, selectedAssetId]);
   const [showLegend, setShowLegend] = React.useState(true);
 
@@ -77,15 +120,15 @@ const HeritageMap: React.FC<HeritageMapProps> = ({ assets, areas, selectedAssetI
   return (
     <div className="h-full w-full relative">
       <MapContainer
-        center={[-2.5284, -44.3044]}
-        zoom={10}
+        center={[-2.5307, -44.3068]}
+        zoom={14}
         scrollWheelZoom={true}
         className="h-full w-full z-0 font-sans"
         zoomControl={false}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
 
         {showPolygons && areas.map(area => (
@@ -111,6 +154,52 @@ const HeritageMap: React.FC<HeritageMapProps> = ({ assets, areas, selectedAssetI
           )
         ))}
 
+        {/* AI Polygons */}
+        {aiPolygons.map(p => (
+          <Polygon
+            key={p.id}
+            positions={p.coordinates}
+            pathOptions={{
+              color: p.color || '#2563eb',
+              fillColor: p.color || '#2563eb',
+              fillOpacity: 0.3,
+              weight: 3
+            }}
+          />
+        ))}
+
+        {/* AI Routes */}
+        {aiRoutes.map(r => (
+          <Polyline
+            key={r.id}
+            positions={r.coordinates}
+            pathOptions={{
+              color: '#2563eb',
+              weight: 5,
+              opacity: 0.8,
+              lineJoin: 'round'
+            }}
+          />
+        ))}
+
+        {/* AI Markers */}
+        {aiMarkers.map(m => (
+          <Marker
+            key={m.id}
+            position={m.position}
+            icon={getIcon('ai_pin', 'ok')}
+          >
+            <Popup>
+              <div className="p-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <Navigation size={14} className="text-brand-blue" />
+                  <h4 className="font-bold text-xs">Ponto Sugerido</h4>
+                </div>
+                <p className="text-[11px] text-slate-600 font-medium">{m.label}</p>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
 
         {validAssets.map(asset => (
           <Marker
@@ -148,7 +237,11 @@ const HeritageMap: React.FC<HeritageMapProps> = ({ assets, areas, selectedAssetI
         ))}
 
 
-        <FlyToControl selectedAsset={selectedAsset} />
+        <FlyToControl
+          selectedAsset={selectedAsset}
+          center={aiMarkers.length > 0 ? aiMarkers[0].position : undefined}
+        />
+        <MapResizeFix />
       </MapContainer>
 
       {/* Legend Toggle Button */}
@@ -177,7 +270,8 @@ const HeritageMap: React.FC<HeritageMapProps> = ({ assets, areas, selectedAssetI
             <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#FF6F00]"></span> Ruínas</div>
             <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#8E24AA]"></span> Monumento/Fonte</div>
             <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#546E7A]"></span> Outros</div>
-            <div className="flex items-center gap-2 border-t pt-2 mt-2"><span className="w-3 h-3 rounded-full border-2 border-[#FFD54F] bg-transparent"></span> Com alerta (Revisar)</div>
+            <div className="flex items-center gap-2 border-t pt-2 mt-2 font-bold text-brand-blue"><span className="w-3 h-3 rounded-full bg-[#2563eb]"></span> Sugestão AI</div>
+            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full border-2 border-[#FFD54F] bg-transparent"></span> Com alerta (Revisar)</div>
           </div>
         </div>
       )}

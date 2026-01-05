@@ -13,6 +13,7 @@ import {
     Info,
     Archive
 } from 'lucide-react';
+import { PageHero } from '../components/ui/PageHero';
 import { Link } from 'react-router-dom';
 
 const ResourceCard = ({ title, description, icon: Icon, color, link, items }: any) => (
@@ -50,28 +51,16 @@ const AcervoDigitalPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-slate-50 pb-32">
             {/* Hero Section */}
-            <section className="bg-[#2D2D2D] pt-12 pb-8 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-80">
-                    <img
-                        src="/imagens/1912 - justo jansen - mapa.jpg"
-                        alt="Acervo Histórico"
-                        className="w-full h-full object-cover"
-                    />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-b from-[#2D2D2D]/60 via-[#2D2D2D]/90 to-[#2D2D2D]"></div>
-
-                <div className="relative max-w-7xl mx-auto px-4 text-center space-y-4">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#CC343A]/20 text-[#CC343A] border border-[#CC343A]/30 rounded-full text-[9px] font-black uppercase tracking-[0.2em]">
-                        Ecossistema Digital SPC
-                    </div>
-                    <h1 className="text-xl md:text-3xl font-black text-white leading-tight">
-                        Digitalização e <span className="text-[#CC343A]">Conhecimento</span>
-                    </h1>
-                    <p className="text-xs text-slate-300 max-w-xl mx-auto leading-relaxed font-medium">
-                        Acesso simplificado a arquivos históricos e normas do Maranhão.
-                    </p>
-                </div>
-            </section>
+            <PageHero
+                align="center"
+                backgroundImage="/imagens/1912 - justo jansen - mapa.jpg"
+                badge={{
+                    text: 'Ecossistema Digital SPC',
+                    variant: 'white' // using white variant which is mapped to #CC343A (red) style
+                }}
+                title={<>Digitalização e <span className="text-[#CC343A]">Conhecimento</span></>}
+                description="Acesso simplificado a arquivos históricos e normas do Maranhão."
+            />
 
             {/* Resource Grid */}
             <section className="max-w-7xl mx-auto px-4 -mt-6 relative z-20">
@@ -93,7 +82,7 @@ const AcervoDigitalPage: React.FC = () => {
                         title="Legislação"
                         description="Compilado atualizado de leis federais, estaduais e municipais que regem a proteção do patrimônio maranhense."
                         icon={Gavel}
-                        color="from-brand-red to-orange-600"
+                        color="from-brand-blue via-blue-500 to-brand-blue-dark"
                         link="/legislacao"
                         items={[
                             'Decretos Estaduais',
@@ -106,7 +95,7 @@ const AcervoDigitalPage: React.FC = () => {
                         title="Repositório"
                         description="Biblioteca técnica com dossiês de tombamento, pareceres públicos, editais e publicações acadêmicas da SPC."
                         icon={Database}
-                        color="from-brand-dark to-slate-700"
+                        color="from-blue-600 to-brand-blue"
                         link="/repositorio"
                         items={[
                             'Dossiês Técnicos',

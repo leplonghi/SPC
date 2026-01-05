@@ -14,6 +14,7 @@ import {
     Info,
     ArrowLeft
 } from 'lucide-react';
+import { PageHero } from '../components/ui/PageHero';
 import { Link } from 'react-router-dom';
 
 interface AcervoItem {
@@ -187,29 +188,13 @@ const AcervoPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Header Section */}
-            <div className="bg-[#2D2D2D] text-white pt-12 pb-8 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-80 pointer-events-none">
-                    <img
-                        src="/imagens/mapa_sao_luiz.jpg"
-                        alt="Background Pattern"
-                        className="w-full h-full object-cover grayscale"
-                    />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-b from-[#2D2D2D]/60 via-[#2D2D2D]/90 to-[#2D2D2D]"></div>
-                <div className="max-w-7xl mx-auto px-4 relative z-10 text-center md:text-left md:flex md:items-end md:justify-between">
-                    <div>
-                        <Link to="/acervo-digital" className="inline-flex items-center gap-1.5 text-slate-400 font-bold mb-4 hover:text-white transition-colors text-[10px] uppercase tracking-widest">
-                            <ArrowLeft size={12} /> Voltar para o Ecossistema
-                        </Link>
-                        <h1 className="text-xl md:text-3xl font-black leading-tight">
-                            Acervo <span className="text-[#CC343A]">Digital</span>
-                        </h1>
-                        <p className="text-xs text-slate-400 max-w-xl leading-relaxed mt-2 font-medium">
-                            Coleção de registros históricos, fotografias e mapas que preservam a memória do Maranhão.
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <PageHero
+                align="left"
+                backgroundImage="/imagens/mapa_sao_luiz.jpg"
+                title={<>Acervo <span className="text-[#CC343A]">Digital</span></>}
+                description="Coleção de registros históricos, fotografias e mapas que preservam a memória do Maranhão."
+                breadcrumb={{ label: 'Voltar para o Ecossistema', to: '/acervo-digital' }}
+            />
 
             {/* Filters & Search - Condensed */}
             <div className="max-w-7xl mx-auto px-4 -mt-6 mb-8 relative z-20">

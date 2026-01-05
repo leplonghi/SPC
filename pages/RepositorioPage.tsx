@@ -139,155 +139,197 @@ const RepositorioPage: React.FC = () => {
             <PageHero
                 title={<>Repositório de <span className="text-brand-red">Documentos</span></>}
                 description="Acesso oficial a dossiês técnicos, atas, editais e publicações acadêmicas da Superintendência."
-                badge="Biblioteca Técnica SPC"
+                badge={{ text: 'Biblioteca Técnica SPC', variant: 'blue' }}
                 breadcrumb={{ label: 'Voltar para o Ecossistema Digital', to: '/acervo-digital' }}
+                align="left"
             />
 
-            <SearchFilterCard
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                placeholder="Buscar documentos, leis, atas..."
-                categories={categories}
-                activeCategory={activeCategory}
-                onCategoryChange={setActiveCategory}
-                tags={allTags}
-                onTagClick={setSearchTerm}
-            />
+            {/* Filters Section */}
+            <div className="max-w-7xl mx-auto px-6 mb-12">
+                <SearchFilterCard
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    placeholder="Documentos, leis, atas..."
+                    categories={categories}
+                    activeCategory={activeCategory}
+                    onCategoryChange={setActiveCategory}
+                    tags={allTags}
+                    onTagClick={setSearchTerm}
+                />
+            </div>
 
             {/* Results Section */}
-            <div className="max-w-7xl mx-auto px-6 pb-12">
-                <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-xl font-black text-brand-dark flex items-center gap-3">
-                        <Archive className="text-brand-red" size={20} />
-                        Documentos Listados ({filteredItems.length})
-                    </h2>
+            <div className="max-w-7xl mx-auto px-6 pb-20">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                    <div className="space-y-1">
+                        <h2 className="text-xl font-black text-brand-dark flex items-center gap-3">
+                            <Database className="text-brand-red" size={20} />
+                            Repositório Técnico
+                        </h2>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
+                            {filteredItems.length} Documentos Disponíveis
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {['todos', 'dossie', 'publicacao', 'edital', 'ata'].map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveCategory(cat)}
+                                className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${activeCategory === cat
+                                    ? 'bg-brand-dark text-white'
+                                    : 'bg-white text-slate-400 hover:text-brand-dark hover:bg-slate-50'
+                                    }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {filteredItems.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {filteredItems.map((item) => (
                             <div
                                 key={item.id}
                                 onClick={() => setSelectedItem(item)}
-                                className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl transition-all cursor-pointer group flex flex-col relative overflow-hidden"
+                                className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col relative overflow-hidden h-full"
                             >
-                                <div className={`absolute top-0 left-0 w-2 h-full ${item.category === 'dossie' ? 'bg-brand-blue' :
+                                <div className={`absolute top-0 left-0 w-full h-1 ${item.category === 'dossie' ? 'bg-brand-blue' :
                                     item.category === 'edital' ? 'bg-brand-red' :
-                                        'bg-slate-800'
+                                        item.category === 'ata' ? 'bg-orange-500' :
+                                            'bg-slate-400'
                                     }`}></div>
 
-                                <div className="flex items-start justify-between mb-4 pl-3">
-                                    <div className="flex gap-2">
-                                        <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${item.department === 'DPHAP' ? 'bg-brand-blue/10 text-brand-blue' :
-                                            item.department === 'DPI' ? 'bg-brand-red/10 text-brand-red' :
-                                                'bg-slate-100 text-slate-600'
-                                            }`}>
-                                            {item.department}
-                                        </span>
-                                        <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg bg-slate-50 text-slate-400 flex items-center gap-2">
-                                            {item.format}
-                                        </span>
+                                <div className="p-5 flex flex-col h-full">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className={`p-2 rounded-lg ${item.category === 'dossie' ? 'bg-brand-blue/10 text-brand-blue' :
+                                            item.category === 'edital' ? 'bg-brand-red/10 text-brand-red' :
+                                                item.category === 'ata' ? 'bg-orange-100 text-orange-600' :
+                                                    'bg-slate-100 text-slate-600'
+                                            } transition-colors group-hover:bg-brand-dark group-hover:text-white`}>
+                                            {item.category === 'dossie' ? <ShieldCheck size={16} /> :
+                                                item.category === 'edital' ? <Info size={16} /> :
+                                                    item.category === 'publicacao' ? <FileText size={16} /> :
+                                                        <Archive size={16} />}
+                                        </div>
+                                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{new Date(item.date).getFullYear()}</span>
                                     </div>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                        <Clock size={12} /> {new Date(item.date).getFullYear()}
-                                    </span>
-                                </div>
 
-                                {/* Icon Display for Card */}
-                                <div className="mb-3 pl-3 text-brand-dark opacity-5 group-hover:opacity-100 group-hover:text-brand-blue transition-all duration-500 absolute top-6 right-6 scale-50 group-hover:scale-100 origin-top-right">
-                                    {item.category === 'dossie' ? <ShieldCheck size={40} /> :
-                                        item.category === 'edital' ? <Info size={40} /> :
-                                            item.category === 'publicacao' ? <FileText size={40} /> :
-                                                <Archive size={40} />}
-                                </div>
+                                    <h3 className="text-sm font-black text-brand-dark mb-2 group-hover:text-brand-blue transition-colors leading-tight line-clamp-2">
+                                        {item.title}
+                                    </h3>
 
-                                <h3 className="text-base font-black text-brand-dark mb-2 pl-3 group-hover:text-brand-blue transition-colors leading-tight relative z-10">
-                                    {item.title}
-                                </h3>
+                                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed mb-4 line-clamp-3">
+                                        {item.description}
+                                    </p>
 
-                                <p className="text-[11px] text-slate-500 font-medium leading-relaxed mb-3 pl-3 line-clamp-2 relative z-10">
-                                    {item.description}
-                                </p>
-
-                                <div className="mt-auto pl-3 flex items-center justify-between border-t border-slate-50 pt-4 relative z-10">
-                                    <div className="flex gap-2">
-                                        {item.tags.slice(0, 2).map(tag => (
-                                            <span key={tag} className="text-[9px] font-bold text-slate-400">#{tag}</span>
-                                        ))}
+                                    <div className="mt-auto flex items-center justify-between pt-4 border-t border-slate-50">
+                                        <div className="flex gap-2">
+                                            <span className="text-[9px] font-black py-1 px-2.5 bg-slate-50 text-slate-400 rounded-md uppercase tracking-widest">
+                                                {item.format}
+                                            </span>
+                                            <span className="text-[9px] font-bold text-slate-400 pt-1">
+                                                {item.size}
+                                            </span>
+                                        </div>
+                                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-brand-blue group-hover:text-white transition-all shadow-sm">
+                                            <ArrowRight size={14} />
+                                        </div>
                                     </div>
-                                    <button className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-brand-dark group-hover:bg-brand-blue group-hover:text-white transition-all shadow-md">
-                                        <ArrowRight size={16} />
-                                    </button>
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-12 bg-white rounded-3xl border-2 border-dashed border-slate-100">
-                        <Database size={64} className="mx-auto text-slate-200 mb-6" />
-                        <h3 className="text-2xl font-black text-brand-dark mb-2">Nenhum documento encontrado</h3>
-                        <p className="text-slate-400 font-medium">Tente ajustar seus filtros ou termos de pesquisa.</p>
+                    <div className="text-center py-24 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100 shadow-sm animate-fade-in">
+                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Database size={32} className="text-slate-200" />
+                        </div>
+                        <h3 className="text-xl font-black text-brand-dark mb-2">Nenhum documento encontrado</h3>
+                        <p className="text-slate-400 font-medium text-sm">Tente ajustar seus filtros ou termos de pesquisa.</p>
                         <button
                             onClick={() => { setSearchTerm(''); setActiveCategory('todos'); }}
-                            className="mt-6 text-brand-blue font-black uppercase tracking-widest text-xs hover:underline"
+                            className="mt-8 px-8 py-3 bg-brand-blue text-white rounded-xl font-black uppercase tracking-widest text-[10px] hover:shadow-xl transition-all"
                         >
-                            Limpar filtros
+                            Ver Todos os Arquivos
                         </button>
                     </div>
                 )}
             </div>
 
+
             {/* Document Detail Modal */}
             {selectedItem && (
-                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-brand-dark/90 backdrop-blur-xl" onClick={() => setSelectedItem(null)}></div>
-                    <div className="bg-white relative z-20 w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-200">
-                        <button
-                            onClick={() => setSelectedItem(null)}
-                            className="absolute top-6 right-6 p-2 bg-slate-50 rounded-full text-slate-400 hover:bg-slate-100 transition-colors z-50"
-                        >
-                            <X size={20} />
-                        </button>
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-brand-dark/95 backdrop-blur-md transition-opacity duration-300" onClick={() => setSelectedItem(null)}></div>
+                    <div className="bg-white relative z-20 w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-300 h-auto max-h-[90vh]">
 
-                        <div className="p-6 md:p-8 w-full">
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg ${selectedItem.category === 'dossie' ? 'bg-brand-blue/10 text-brand-blue' :
+                        {/* Left Side: Preview/Icon Section */}
+                        <div className={`hidden md:flex md:w-1/3 items-center justify-center relative overflow-hidden ${selectedItem.category === 'dossie' ? 'bg-brand-blue/90' :
+                            selectedItem.category === 'edital' ? 'bg-brand-red/90' :
+                                selectedItem.category === 'ata' ? 'bg-orange-500/90' :
+                                    'bg-brand-dark/90'
+                            }`}>
+                            <div className="absolute inset-0 opacity-10">
+                                <img src="/imagens/mapa_sao_luiz.jpg" alt="pattern" className="w-full h-full object-cover" />
+                            </div>
+                            <div className="relative text-white flex flex-col items-center text-center p-8">
+                                <div className="w-24 h-24 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-6 border border-white/30 shadow-2xl">
+                                    {selectedItem.format.includes('PDF') ? <FileText size={48} /> :
+                                        selectedItem.category === 'dossie' ? <ShieldCheck size={48} /> : <Archive size={48} />}
+                                </div>
+                                <h4 className="text-2xl font-black uppercase tracking-widest">{selectedItem.format}</h4>
+                                <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.3em] mt-2">{selectedItem.size}</p>
+                            </div>
+                        </div>
+
+                        {/* Right Side: Content */}
+                        <div className="flex-1 p-8 md:p-12 flex flex-col relative overflow-y-auto">
+                            <button
+                                onClick={() => setSelectedItem(null)}
+                                className="absolute top-8 right-8 p-3 bg-slate-50 rounded-full text-slate-400 hover:bg-brand-red hover:text-white transition-all transform hover:rotate-90 z-10 shadow-sm"
+                            >
+                                <X size={20} />
+                            </button>
+
+                            <div className="mb-6">
+                                <span className={`inline-block text-[9px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-xl mb-4 ${selectedItem.category === 'dossie' ? 'bg-brand-blue/10 text-brand-blue' :
                                     selectedItem.category === 'edital' ? 'bg-brand-red/10 text-brand-red' :
                                         'bg-slate-100 text-slate-600'
                                     }`}>
-                                    {selectedItem.category}
+                                    Categoria: {selectedItem.category}
                                 </span>
-                                <span className="w-1 h-3 bg-slate-200 rounded-full"></span>
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                                    {selectedItem.size} • {selectedItem.format}
-                                </span>
+                                <h2 className="text-2xl md:text-3xl font-black text-brand-dark mb-4 leading-tight tracking-tight">
+                                    {selectedItem.title}
+                                </h2>
+                                <div className="flex items-center gap-6 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
+                                    <span className="flex items-center gap-2"><Clock size={14} className="text-brand-blue" /> {new Date(selectedItem.date).toLocaleDateString()}</span>
+                                    <span className="flex items-center gap-2"><Database size={14} className="text-brand-red" /> {selectedItem.department}</span>
+                                </div>
                             </div>
 
-                            <h2 className="text-xl font-black text-brand-dark mb-3 leading-tight">
-                                {selectedItem.title}
-                            </h2>
-
-                            <div className="prose prose-slate prose-sm mb-8">
-                                <p className="text-slate-600 leading-relaxed font-medium text-base">
+                            <div className="prose prose-slate max-w-none mb-8">
+                                <h3 className="text-[10px] font-black text-brand-dark uppercase tracking-widest mb-3 flex items-center gap-2">
+                                    <Info size={12} className="text-brand-blue" /> Visão Geral do Documento
+                                </h3>
+                                <p className="text-slate-500 leading-relaxed font-medium text-sm">
                                     {selectedItem.description}
                                 </p>
                             </div>
 
-                            <div className="flex flex-wrap gap-2 mb-8">
-                                {selectedItem.tags.map(tag => (
-                                    <span key={tag} className="px-3 py-1.5 bg-slate-50 text-slate-500 rounded-lg text-[10px] font-bold border border-slate-100">
-                                        #{tag}
-                                    </span>
-                                ))}
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row gap-4 pt-8 border-t border-slate-100">
-                                <button className="flex-1 py-4 bg-brand-blue text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-brand-dark transition-all flex items-center justify-center gap-3 shadow-xl shadow-brand-blue/20">
-                                    <Download size={18} /> Baixar Arquivo
-                                </button>
-                                <button className="px-6 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold hover:bg-slate-100 transition-all">
-                                    <Share2 size={20} />
-                                </button>
+                            <div className="mt-auto pt-8 border-t border-slate-100">
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <button className="flex-[2] py-5 bg-brand-blue text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-brand-dark transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3 shadow-xl shadow-brand-blue/20">
+                                        <Download size={18} /> Baixar Arquivo em {selectedItem.format}
+                                    </button>
+                                    <button className="flex-1 py-5 bg-slate-50 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-100 transition-all flex items-center justify-center gap-3 border border-slate-100">
+                                        <Share2 size={18} /> Compartilhar
+                                    </button>
+                                </div>
+                                <p className="text-center mt-6 text-[9px] font-bold text-slate-300 uppercase tracking-widest">
+                                    Este é um documento de acesso público disponibilizado pela SPC Maranhão.
+                                </p>
                             </div>
                         </div>
                     </div>

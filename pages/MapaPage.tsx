@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Search,
   Filter,
@@ -9,16 +9,26 @@ import {
   Info,
   Database,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  X,
+  Shield,
+  Layers,
+  Sparkles,
+  Compass
 } from 'lucide-react';
-import HeritageMap from '../components/Map/HeritageMap';
+import GeoManager from '../components/Map/GeoManager';
+import AICommandChat from '../components/Map/AICommandChat';
+import { HERITAGE_SITES, INITIAL_ZONES } from '../data/geoManagerData';
 import { HeritageAsset, HeritageArea } from '../types_patrimonio';
 import { db } from '../firebase';
 import { collection, onSnapshot, addDoc, Timestamp } from 'firebase/firestore';
 import { geocodingService } from '../services/GeocodingService';
 import { patrimonioSeed } from '../data/patrimonioSeed';
 
+import { useAuth } from '../contexts/AuthContext';
+
 const MapaPage: React.FC = () => {
+  const { isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAsset, setSelectedAsset] = useState<HeritageAsset | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -31,11 +41,20 @@ const MapaPage: React.FC = () => {
   const [assets, setAssets] = useState<HeritageAsset[]>([]);
   const [areas, setAreas] = useState<HeritageArea[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // AI Command States
+  const [aiMarkers, setAiMarkers] = useState<any[]>([]);
+  const [aiRoutes, setAiRoutes] = useState<any[]>([]);
+  const [aiPolygons, setAiPolygons] = useState<any[]>([]);
 
   // Admin/Import State
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [reporting, setReporting] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<'assets' | 'areas' | 'analysis'>('assets');
+  const [selectedArea, setSelectedArea] = useState<HeritageArea | null>(null);
 
   useEffect(() => {
     // Real-time subscription
@@ -46,7 +65,19 @@ const MapaPage: React.FC = () => {
     });
 
     const unsubAreas = onSnapshot(collection(db, "heritage_areas"), (snap) => {
-      const data = snap.docs.map(d => d.data() as HeritageArea);
+      const data = snap.docs.map(d => {
+        const docData = d.data();
+        // Handle GeoJSON that might be stored as string to avoid nested array limits
+        if (docData.geojson && typeof docData.geojson === 'string') {
+          try {
+            docData.geojson = JSON.parse(docData.geojson);
+          } catch (e) {
+            console.error("Erro ao fazer parse do GeoJSON da área:", docData.id, e);
+            docData.geojson = null; // Prevent string data from reaching Leaflet
+          }
+        }
+        return docData as HeritageArea;
+      });
       setAreas(data);
     });
 
@@ -54,6 +85,32 @@ const MapaPage: React.FC = () => {
       unsubAssets();
       unsubAreas();
     };
+  }, []);
+
+  const handleAICommand = useCallback(async (command: any) => {
+    const { intent } = command;
+
+    if (intent === 'pin') {
+      const { coordinate, label } = command;
+      setAiMarkers(prev => [...prev, { id: `ai-p-${Date.now()}`, position: coordinate, label }]);
+    } else if (intent === 'polygon') {
+      const { coordinates, color } = command;
+      setAiPolygons(prev => [...prev, { id: `ai-poly-${Date.now()}`, coordinates, color }]);
+    } else if (intent === 'route') {
+      const { waypoints } = command;
+      try {
+        const coordsStr = waypoints.map((w: any) => `${w[1]},${w[0]}`).join(';');
+        const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`);
+        const data = await response.json();
+
+        if (data.routes && data.routes.length > 0) {
+          const routeCoords = data.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]]);
+          setAiRoutes(prev => [...prev, { id: `ai-r-${Date.now()}`, coordinates: routeCoords }]);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar rota OSRM:", err);
+      }
+    }
   }, []);
 
   const filteredAssets = useMemo(() => {
@@ -66,6 +123,39 @@ const MapaPage: React.FC = () => {
       return matchesSearch && matchesCidade && matchesStatus;
     });
   }, [searchTerm, activeFilters, assets]);
+
+  const categorizedAreas = useMemo(() => {
+    const cat = {
+      tombamento: [] as HeritageArea[],
+      ambiental: [] as HeritageArea[],
+      arqueologico: [] as HeritageArea[],
+      outros: [] as HeritageArea[]
+    };
+
+    const allAreas = areas.length > 0 ? areas : INITIAL_ZONES;
+
+    // Filter by search term if active
+    const filtered = allAreas.filter(area =>
+      searchTerm === '' ||
+      area.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      area.cidade.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    filtered.forEach(area => {
+      const type = area.tipo_area;
+      if (['federal', 'estadual', 'municipal', 'centro_historico', 'sitio_historico'].includes(type)) {
+        cat.tombamento.push(area);
+      } else if (['area_paisagistica'].includes(type)) {
+        cat.ambiental.push(area);
+      } else if (['sitio_arqueologico', 'sitio_paleontologico'].includes(type)) {
+        cat.arqueologico.push(area);
+      } else {
+        cat.outros.push(area);
+      }
+    });
+
+    return cat;
+  }, [areas, searchTerm]);
 
   const uniqueCidades = useMemo(() => Array.from(new Set(assets.map(a => a.cidade))).sort(), [assets]);
 
@@ -82,16 +172,18 @@ const MapaPage: React.FC = () => {
   }, [loading, assets.length, isImporting, hasAutoImported]);
 
   const handleImportSeed = async (skipConfirm = false) => {
-    if (skipConfirm || confirm(`Deseja importar ${patrimonioSeed.length} itens do seed? Isso pode demorar.`)) {
+    if (skipConfirm || confirm(`ATENÇÃO: Deseja LIMPAR o banco de dados e re-importar o seed v2.0 (${patrimonioSeed.length} itens)?`)) {
       setIsImporting(true);
       setImportProgress(0);
       try {
+        if (!skipConfirm) await geocodingService.clearDatabase();
         await geocodingService.importSeed(patrimonioSeed, (count) => {
           setImportProgress(count);
         });
-        if (!skipConfirm) alert('Importação finalizada!');
+        if (!skipConfirm) alert('Base de dados atualizada com sucesso!');
       } catch (error) {
         console.error("Erro na importação:", error);
+        alert("Erro na importação: " + error);
       } finally {
         setIsImporting(false);
       }
@@ -122,42 +214,88 @@ const MapaPage: React.FC = () => {
     }
   };
 
+  const clearAIOverlay = () => {
+    setAiMarkers([]);
+    setAiRoutes([]);
+    setAiPolygons([]);
+  };
+
   return (
-    <div className="h-[calc(100vh-5rem)] flex flex-col md:flex-row overflow-hidden relative font-sans">
+    <div className="h-[calc(100vh-5.5rem)] md:h-[calc(100vh-5rem)] flex flex-col md:flex-row overflow-hidden relative font-sans">
+      {/* Mobile Sidebar Toggle */}
+      <div className="md:hidden flex items-center justify-between p-3 bg-white border-b border-slate-200 z-[30]">
+        <h2 className="text-sm font-extrabold text-brand-dark flex items-center gap-2 uppercase tracking-tight">
+          <MapPin size={16} className="text-[#CC343A]" />
+          Patrimônio
+        </h2>
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-xs font-bold text-slate-700 active:scale-95 transition-all shadow-sm"
+        >
+          {isSidebarOpen ? <ChevronLeft size={16} className="rotate-90" /> : <Search size={14} />}
+          {isSidebarOpen ? 'Ver Mapa' : 'Lista & Busca'}
+        </button>
+      </div>
+
       {/* Sidebar Panel */}
-      <div className="w-full md:w-72 bg-white border-r border-slate-200 flex flex-col z-20 shadow-xl overflow-hidden relative">
+      <div className={`
+        fixed inset-0 top-[112px] bottom-0 z-[20] md:relative md:top-0 md:inset-auto
+        w-full md:w-80 bg-white border-r border-slate-200 flex flex-col shadow-xl overflow-hidden
+        transition-transform duration-300 ease-in-out
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        {/* Tab Switcher */}
+        <div className="flex border-b border-slate-200 bg-slate-50/50">
+          <button
+            onClick={() => setActiveTab('assets')}
+            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'assets' ? 'bg-white text-brand-blue border-b-2 border-brand-blue' : 'text-slate-400 hover:bg-slate-100'}`}
+          >
+            Patrimônio
+          </button>
+          <button
+            onClick={() => setActiveTab('areas')}
+            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'areas' ? 'bg-white text-brand-blue border-b-2 border-brand-blue' : 'text-slate-400 hover:bg-slate-100'}`}
+          >
+            Poligonais
+          </button>
+          <button
+            onClick={() => setActiveTab('analysis')}
+            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'analysis' ? 'bg-white text-brand-blue border-b-2 border-brand-blue' : 'text-slate-400 hover:bg-slate-100'}`}
+          >
+            Análise
+          </button>
+        </div>
+
         {/* Search Header */}
-        <div className="p-3 border-b border-slate-100 bg-slate-50/50">
-          <h2 className="text-sm font-extrabold text-brand-dark mb-2 flex items-center gap-2 uppercase tracking-tight">
-            <MapPin size={16} className="text-[#CC343A]" />
-            Mapa do Patrimônio
-          </h2>
+        <div className="p-3 border-b border-slate-100 bg-white">
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-blue transition-colors" size={14} />
             <input
               type="text"
-              placeholder="Buscar por nome, logradouro..."
-              className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue transition-all font-medium"
+              placeholder={activeTab === 'assets' ? "Buscar bens..." : "Buscar poligonais..."}
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-[11px] focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue transition-all font-medium"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          <div className="flex items-center justify-between mt-2">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-bold transition-all uppercase tracking-wide ${showFilters ? 'bg-brand-blue text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200'}`}
-            >
-              <Filter size={10} /> {showFilters ? 'Ocultar' : 'Filtros'}
-            </button>
-            <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">
-              {filteredAssets.length} Resultados
-            </span>
-          </div>
+          {activeTab === 'assets' && (
+            <div className="flex items-center justify-between mt-2">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-bold transition-all uppercase tracking-wide ${showFilters ? 'bg-brand-blue text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200'}`}
+              >
+                <Filter size={10} /> {showFilters ? 'Ocultar' : 'Filtros'}
+              </button>
+              <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">
+                {filteredAssets.length} Resultados
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Filters Panel */}
-        {showFilters && (
+        {showFilters && activeTab === 'assets' && (
           <div className="p-4 border-b border-slate-200 bg-brand-blue/5 space-y-3 animate-in slide-in-from-top-4 duration-300">
             <div>
               <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Cidade</label>
@@ -186,75 +324,226 @@ const MapaPage: React.FC = () => {
           </div>
         )}
 
-        {/* Results List */}
-        <div className="flex-grow overflow-y-auto bg-slate-50/30">
-          {filteredAssets.length === 0 ? (
-            <div className="p-8 text-center space-y-4">
-              <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
-                <Search size={20} />
-              </div>
-              <p className="text-slate-500 text-xs">Nenhum patrimônio encontrado.</p>
 
-              {assets.length === 0 && !loading && (
-                <div className="card p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-xs text-yellow-800 mb-2">Base de dados vazia.</p>
-                  <button
-                    onClick={handleImportSeed}
-                    disabled={isImporting}
-                    className="flex items-center justify-center gap-2 w-full py-2 bg-brand-dark text-white text-xs font-bold rounded hover:bg-black transition-colors"
-                  >
-                    {isImporting ? <Loader2 className="animate-spin" size={14} /> : <Database size={14} />}
-                    {isImporting ? `Importando (${importProgress}/${patrimonioSeed.length})` : 'Importar Seed Inicial'}
-                  </button>
-                  {isImporting && <p className="text-[9px] text-slate-400 mt-2">Aguarde, respeitando rate limit (1req/s)...</p>}
+        {/* Results List */}
+        <div className="flex-grow overflow-y-auto bg-slate-50/30 no-scrollbar">
+          {activeTab === 'assets' && (
+            filteredAssets.length === 0 ? (
+              <div className="p-8 text-center space-y-4">
+                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
+                  <Search size={20} />
                 </div>
+                <p className="text-slate-500 text-xs">Nenhum patrimônio encontrado.</p>
+
+                {assets.length === 0 && !loading && (
+                  <div className="card p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-xs text-yellow-800 mb-2">Base de dados vazia.</p>
+                    <button
+                      onClick={handleImportSeed}
+                      disabled={isImporting}
+                      className="flex items-center justify-center gap-2 w-full py-2 bg-brand-dark text-white text-xs font-bold rounded hover:bg-black transition-colors"
+                    >
+                      {isImporting ? <Loader2 className="animate-spin" size={14} /> : <Database size={14} />}
+                      {isImporting ? `Importando (${importProgress}/${patrimonioSeed.length})` : 'Importar Seed Inicial'}
+                    </button>
+                    {isImporting && <p className="text-[9px] text-slate-400 mt-2">Aguarde, respeitando rate limit (1req/s)...</p>}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {filteredAssets.map(asset => (
+                  <button
+                    key={asset.id}
+                    onClick={() => {
+                      setSelectedAsset(asset);
+                      setSelectedArea(null);
+                      setIsSidebarOpen(false);
+                    }}
+                    className={`w-full p-4 text-left transition-all hover:bg-white hover:shadow-sm border-l-4 ${selectedAsset?.id === asset.id ? 'bg-white border-brand-blue shadow-inner' : 'border-transparent'}`}
+                  >
+                    <div className="flex gap-3 items-center">
+                      <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center ${asset.status === 'ok' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                        <MapPin size={18} />
+                      </div>
+                      <div className="min-w-0 flex-grow">
+                        <h4 className="font-bold text-slate-900 truncate text-xs leading-tight mb-1" title={asset.titulo}>{asset.titulo}</h4>
+                        <div className="flex items-center gap-1.5 text-slate-400 text-[10px] uppercase font-bold tracking-wider">
+                          {asset.cidade}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )
+          )}
+
+          {activeTab === 'areas' && (
+            <div className="p-4 space-y-6">
+              {/* Category: Tombamento */}
+              {categorizedAreas.tombamento.length > 0 && (
+                <section>
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                    <Shield size={14} className="text-brand-red" /> Poligonais de Tombamento
+                  </h3>
+                  <div className="space-y-2">
+                    {categorizedAreas.tombamento.map(area => (
+                      <button
+                        key={area.id}
+                        onClick={() => {
+                          setSelectedArea(area);
+                          setSelectedAsset(null);
+                          setIsSidebarOpen(false);
+                        }}
+                        className={`w-full p-3 bg-white border rounded-xl text-left transition-all hover:border-brand-red group ${selectedArea?.id === area.id ? 'border-brand-red ring-2 ring-brand-red/10' : 'border-slate-100'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-brand-red/5 flex items-center justify-center text-brand-red group-hover:scale-110 transition-transform">
+                            <Layers size={16} />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-bold text-slate-800 uppercase tracking-tight">{area.titulo}</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase">{area.tipo_area}</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Category: Ambiental */}
+              {categorizedAreas.ambiental.length > 0 && (
+                <section>
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                    <MapPin size={14} className="text-emerald-500" /> Ambiental / Paisagística
+                  </h3>
+                  <div className="space-y-2">
+                    {categorizedAreas.ambiental.map(area => (
+                      <button
+                        key={area.id}
+                        onClick={() => {
+                          setSelectedArea(area);
+                          setSelectedAsset(null);
+                          setIsSidebarOpen(false);
+                        }}
+                        className={`w-full p-3 bg-white border rounded-xl text-left transition-all hover:border-emerald-500 group ${selectedArea?.id === area.id ? 'border-emerald-500 ring-2 ring-emerald-500/10' : 'border-slate-100'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-50/50 flex items-center justify-center text-emerald-600">
+                            <Layers size={16} />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-bold text-slate-800 uppercase tracking-tight">{area.titulo}</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase">Paisagística</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Category: Arqueológico */}
+              {categorizedAreas.arqueologico.length > 0 && (
+                <section>
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                    <Info size={14} className="text-amber-500" /> Sítios Arqueológicos
+                  </h3>
+                  <div className="space-y-2">
+                    {categorizedAreas.arqueologico.map(area => (
+                      <button
+                        key={area.id}
+                        onClick={() => {
+                          setSelectedArea(area);
+                          setSelectedAsset(null);
+                          setIsSidebarOpen(false);
+                        }}
+                        className={`w-full p-3 bg-white border rounded-xl text-left transition-all hover:border-amber-500 group ${selectedArea?.id === area.id ? 'border-amber-500 ring-2 ring-amber-500/10' : 'border-slate-100'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                            <Layers size={16} />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-bold text-slate-800 uppercase tracking-tight">{area.titulo}</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase">Arqueológico</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </section>
               )}
             </div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {filteredAssets.map(asset => (
-                <button
-                  key={asset.id}
-                  onClick={() => setSelectedAsset(asset)}
-                  className={`w-full p-2 text-left transition-all hover:bg-white hover:shadow-sm border-l-2 ${selectedAsset?.id === asset.id ? 'bg-white border-brand-blue shadow-inner' : 'border-transparent'}`}
-                >
-                  <div className="flex gap-2 items-center">
-                    <div className={`w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center ${asset.status === 'ok' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                      <MapPin size={14} />
-                    </div>
-                    <div className="min-w-0 flex-grow">
-                      <h4 className="font-bold text-slate-900 truncate text-[11px] leading-tight mb-0.5" title={asset.titulo}>{asset.titulo}</h4>
-                      <div className="flex items-center gap-1 text-slate-400 text-[8px] uppercase font-bold tracking-wider mb-1">
-                        {asset.cidade}
+          )}
+
+          {activeTab === 'analysis' && (
+            <div className="p-6 space-y-6">
+              <section>
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                  <Sparkles size={14} className="text-brand-blue" /> Análise Espacial
+                </h3>
+                <div className="space-y-4">
+                  <div className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-black text-slate-700 uppercase tracking-tight">Heat Map de Ativos</span>
+                      <div className="w-8 h-4 bg-slate-200 rounded-full relative">
+                        <div className="absolute left-1 top-1 w-2 h-2 bg-white rounded-full" />
                       </div>
-                      <div className="flex gap-1">
-                        <span className={`px-1 py-px text-[8px] rounded font-bold uppercase border ${asset.status === 'ok' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
-                          {asset.status === 'ok' ? 'OK' : 'Revisar'}
-                        </span>
-                        {asset.geocode_precision !== 'unknown' && (
-                          <span className="px-1 py-px bg-slate-100 text-slate-500 text-[8px] rounded font-bold uppercase border border-slate-200">{asset.geocode_precision}</span>
-                        )}
+                    </div>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase">Densidade de bens tombados por m²</p>
+                  </div>
+
+                  <div className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm cursor-not-allowed opacity-60">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-black text-slate-700 uppercase tracking-tight">Mapa de Tipologias</span>
+                      <div className="w-8 h-4 bg-slate-200 rounded-full relative">
+                        <div className="absolute left-1 top-1 w-2 h-2 bg-white rounded-full" />
+                      </div>
+                    </div>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase">Categorização por estilo e uso</p>
+                  </div>
+
+                  <div className="p-4 bg-brand-blue/5 border border-brand-blue/10 rounded-2xl">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 rounded-lg bg-brand-blue text-white flex items-center justify-center">
+                        <Compass size={16} />
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-black text-brand-blue uppercase">Geração AI-First</p>
+                        <p className="text-[9px] text-brand-blue/60 font-bold">Use o chat para criar análises automáticas</p>
                       </div>
                     </div>
                   </div>
-                </button>
-              ))}
+                </div>
+              </section>
             </div>
           )}
         </div>
       </div>
 
       {/* Map Content */}
-      <div className="flex-grow relative bg-slate-200 z-10">
-        <HeritageMap
-          assets={filteredAssets}
-          areas={// showPolygons ? areas : []
-            areas // Always pass areas, let map handle showing? No heritageMap uses showPolygons
-          }
-          selectedAssetId={selectedAsset?.id}
-          onSelectAsset={setSelectedAsset}
-          showPolygons={showPolygons}
+      <div className="flex-grow h-full relative bg-slate-200 z-10">
+        <GeoManager
+          assets={assets}
+          areas={areas}
+          selectedAsset={selectedAsset}
+          selectedArea={selectedArea}
+          onAssetClick={setSelectedAsset}
+          onAreaClick={setSelectedArea}
         />
+
+        {/* AI Overlay Clear Button */}
+        {(aiMarkers.length > 0 || aiRoutes.length > 0 || aiPolygons.length > 0) && (
+          <button
+            onClick={clearAIOverlay}
+            className="absolute top-4 left-4 z-[1000] bg-white text-brand-red px-3 py-1.5 rounded-lg shadow-xl border border-slate-200 text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-slate-50 transition-all active:scale-95"
+          >
+            <X size={14} /> Limpar Sobreposição
+          </button>
+        )}
 
         {/* Admin Tools (Floating) */}
         {!isImporting && assets.length > 0 && (
@@ -268,85 +557,10 @@ const MapaPage: React.FC = () => {
             </button>
           </div>
         )}
+
+        {/* AI Command Chat */}
+        <AICommandChat onCommand={handleAICommand} />
       </div>
-
-      {/* Detail Drawer */}
-      {selectedAsset && (
-        <div className="absolute inset-0 md:relative md:w-[350px] bg-white z-[1001] shadow-2xl flex flex-col animate-in slide-in-from-right duration-500 border-l border-slate-200">
-          <div className="sticky top-0 bg-white/90 backdrop-blur-md z-10 p-3 flex items-center justify-between border-b border-slate-100">
-            <button
-              onClick={() => setSelectedAsset(null)}
-              className="p-1.5 hover:bg-slate-100 rounded-full transition-colors"
-            >
-              <ChevronLeft size={16} className="text-slate-600" />
-            </button>
-            <div className="flex gap-1" title="Confidence Score">
-              <span className="text-[9px] font-bold bg-slate-100 px-2 py-0.5 rounded-full text-slate-500">
-                CONF: {(selectedAsset.geocode_confidence * 100).toFixed(0)}%
-              </span>
-            </div>
-          </div>
-
-          <div className="flex-grow overflow-y-auto p-4 space-y-4">
-            <header>
-              <div className="flex gap-2 mb-2">
-                <span className={`px-2 py-0.5 text-[8px] font-black rounded uppercase tracking-widest ${selectedAsset.status === 'ok' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                  {selectedAsset.status === 'ok' ? 'Verificado' : 'Em Revisão'}
-                </span>
-                <span className="px-2 py-0.5 bg-brand-blue/10 text-brand-blue text-[8px] font-black rounded uppercase tracking-widest">
-                  {selectedAsset.geocode_precision}
-                </span>
-              </div>
-              <h1 className="text-lg font-black text-brand-dark leading-tight mb-1">{selectedAsset.titulo}</h1>
-              <p className="flex items-center gap-1.5 text-slate-500 font-medium text-[11px]">
-                <MapPin size={12} className="text-[#CC343A]" /> {selectedAsset.endereco_original}
-              </p>
-              {selectedAsset.endereco_canonico && (
-                <p className="text-[10px] text-slate-400 mt-1 pl-5">
-                  Nominatim: {selectedAsset.endereco_canonico}
-                </p>
-              )}
-            </header>
-
-            <section className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-              <h3 className="text-[9px] font-black text-brand-dark uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                <FileText size={12} className="text-brand-blue" /> Dados do Tombamento
-              </h3>
-              <div className="space-y-2">
-                <p className="text-xs text-slate-600"><strong className="text-slate-900">Cidade:</strong> {selectedAsset.cidade}</p>
-                <p className="text-xs text-slate-600"><strong className="text-slate-900">Categoria:</strong> {selectedAsset.categoria || 'Não informada'}</p>
-              </div>
-            </section>
-
-            {selectedAsset.geocode_source_urls && selectedAsset.geocode_source_urls.length > 0 && (
-              <section>
-                <h3 className="text-[9px] font-black text-brand-dark uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                  <Info size={12} className="text-brand-blue" /> Fontes / Referências
-                </h3>
-                <ul className="space-y-1">
-                  {selectedAsset.geocode_source_urls.map((url, i) => (
-                    <li key={i}>
-                      <a href={url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-brand-blue hover:underline truncate block">
-                        {url}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            <div className="pt-4 border-t border-slate-100">
-              <button
-                onClick={handleReportError}
-                disabled={reporting}
-                className="w-full py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
-              >
-                {reporting ? 'Enviando...' : 'Reportar Erro / Atualizar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

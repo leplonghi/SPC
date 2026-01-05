@@ -13,45 +13,34 @@ import {
     Ruler,
     Building2
 } from 'lucide-react';
+import { PageHero } from '../components/ui/PageHero';
 import { Link } from 'react-router-dom';
 
 const DpePage: React.FC = () => {
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Hero Section */}
-            <section className="bg-[#2D2D2D] pt-12 pb-8 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-60">
-                    <img
-                        src="/imagens/card_especiais.jpg"
-                        alt="Projetos Especiais"
-                        className="w-full h-full object-cover"
-                    />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-[#2D2D2D] via-[#2D2D2D]/95 to-transparent"></div>
-
-                <div className="relative max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                    <div className="space-y-4">
-                        <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-brand-dark/20 text-white border border-white/30 rounded-full text-[9px] font-black uppercase tracking-[0.2em] backdrop-blur-md">
-                            <Hammer size={10} /> Departamento Técnico
-                        </div>
-                        <h1 className="text-xl md:text-3xl font-black text-white leading-tight">
-                            DPE <br />
-                            <span className="text-slate-400">Projetos Especiais</span>
-                        </h1>
-                        <p className="text-xs text-slate-300 leading-relaxed font-medium max-w-lg">
-                            O Departamento de Projetos Especiais gerencia grandes intervenções urbanas, obras de restauro em equipamentos públicos e projetos estruturantes em áreas de interesse histórico e cultural.
-                        </p>
-                        <div className="flex flex-wrap gap-3 pt-2">
-                            <Link to="/servicos" className="px-5 py-2.5 bg-brand-dark text-white border border-white/20 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 active:scale-95 shadow-xl">
-                                Ver Projetos <ArrowRight size={12} />
-                            </Link>
-                            <a href="#contato" className="px-5 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/20 transition-all active:scale-95">
-                                Fale Conosco
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            <PageHero
+                align="left"
+                backgroundImage="/imagens/card_especiais.jpg"
+                badge={{
+                    text: 'Departamento Técnico',
+                    icon: Hammer,
+                    variant: 'dark'
+                }}
+                title={<>DPE <br /><span className="text-slate-400">Projetos Especiais</span></>}
+                description="O Departamento de Projetos Especiais gerencia grandes intervenções urbanas, obras de restauro em equipamentos públicos e projetos estruturantes em áreas de interesse histórico e cultural."
+                actions={
+                    <>
+                        <Link to="/servicos" className="px-5 py-2.5 bg-brand-dark text-white border border-white/20 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 active:scale-95 shadow-xl">
+                            Ver Projetos <ArrowRight size={12} />
+                        </Link>
+                        <a href="#contato" className="px-5 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/20 transition-all active:scale-95">
+                            Fale Conosco
+                        </a>
+                    </>
+                }
+            />
 
             {/* Main Content */}
             <section className="max-w-7xl mx-auto px-6 py-8">

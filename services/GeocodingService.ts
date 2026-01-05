@@ -1,6 +1,6 @@
 
 import { db } from "../firebase";
-import { collection, doc, getDoc, setDoc, query, where, getDocs, Timestamp } from "firebase/firestore";
+import { collection, doc, getDoc, setDoc, query, where, getDocs, Timestamp, deleteDoc } from "firebase/firestore";
 import { HeritageAsset, HeritageArea } from "../types_patrimonio";
 
 const NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org/search";
@@ -13,21 +13,24 @@ class GeocodingService {
 
     constructor() {
         // Start processing loop
-        setInterval(() => this.processQueue(), 1100); // 1.1s to be safe
+        setInterval(() => this.processQueue(), 100); // 100ms (fast processing for manual entries)
     }
 
     private async processQueue() {
         if (this.isProcessing || this.queue.length === 0) return;
         this.isProcessing = true;
 
-        // Process one item
-        const task = this.queue.shift();
-        if (task) {
-            try {
-                await task();
-                this.processedCount++;
-            } catch (e) {
-                console.error("Task failed", e);
+        // Process up to 10 items per tick if they are fast
+        for (let i = 0; i < 50; i++) {
+            if (this.queue.length === 0) break;
+            const task = this.queue.shift();
+            if (task) {
+                try {
+                    await task();
+                    this.processedCount++;
+                } catch (e) {
+                    console.error("Task failed", e);
+                }
             }
         }
 
@@ -61,25 +64,72 @@ class GeocodingService {
     // Bulk import
     async importSeed(items: any[], onProgress: (count: number) => void) {
         console.log(`Starting import of ${items.length} items...`);
-        for (const item of items) {
+
+        // Split into fast (manual) and slow (needs geocoding)
+        const manualItems = items.filter(i => i.lat && i.lng);
+        const autoItems = items.filter(i => !i.lat || !i.lng);
+
+        // Process manual items immediately in parallel
+        console.log(`Processing ${manualItems.length} manual coordinates items...`);
+        /*
+        const batchPromises = manualItems.map(async (item) => {
+             await this.executeGeocoding(item);
+             this.processedCount++;
+             if (this.processedCount % 5 === 0) onProgress(this.processedCount);
+        });
+        await Promise.all(batchPromises);
+        */
+        // Use a simple loop to avoid firestore write contention/rate limits (though 50 is fine)
+        for (const item of manualItems) {
+            await this.executeGeocoding(item);
+            this.processedCount++;
+            onProgress(this.processedCount);
+        }
+
+        // Queue the rest
+        console.log(`Queueing ${autoItems.length} items for geocoding...`);
+        for (const item of autoItems) {
             await this.processItem(item);
             onProgress(this.processedCount);
         }
-        console.log("Import finished queueing.");
+
+        console.log("Import finished.");
+    }
+
+    async clearDatabase() {
+        console.log("Clearing database...");
+        const collections = ["heritage_assets", "heritage_areas", "geocode_cache"];
+        for (const colName of collections) {
+            const q = query(collection(db, colName));
+            const snapshot = await getDocs(q);
+            const batchPromises = snapshot.docs.map(docSnap =>
+                deleteDoc(doc(db, colName, docSnap.id))
+            );
+            await Promise.all(batchPromises);
+            console.log(`Cleared ${colName}`);
+        }
     }
 
     private async executeGeocoding(item: any) {
         const slug = this.createSlug(item.titulo);
+        const hasManualCoords = item.lat && item.lng;
+        // Determine intended type first
+        const isArea = this.isArea(item) && !hasManualCoords;
 
-        // Check if exists in assets
+        // Check if exists in assets (Points)
         const assetRef = doc(db, "heritage_assets", slug);
         const assetSnap = await getDoc(assetRef);
-        if (assetSnap.exists()) {
+
+        // Conflict Resolution: If it exists as a POINT but should be an AREA
+        if (assetSnap.exists() && isArea) {
+            console.log(`Converting ${slug} from Point to Area...`);
+            await deleteDoc(assetRef); // Remove point so we can create area
+        } else if (assetSnap.exists()) {
             const data = assetSnap.data();
-            // Retry if it has failed previously (no lat/lng or status is no_result)
             const hasValidCoords = data.lat && data.lat !== 0;
-            if (data.status === 'ok' && hasValidCoords) {
-                console.log(`Item ${slug} already exists and is valid. Skipping.`);
+            // Only skip if fully valid or manually set, and we're not forcefully overwriting
+            if (data.status === 'ok' && hasValidCoords && !hasManualCoords) {
+                console.log(`Item ${slug} already exists as valid Point. Skipping.`);
                 return;
             }
         }
@@ -87,11 +137,14 @@ class GeocodingService {
         // Also check areas
         const areaRef = doc(db, "heritage_areas", slug);
         const areaSnap = await getDoc(areaRef);
-        // Only return if it exists AND has valid data (geojson or manually marked as processed)
-        if (areaSnap.exists() && (areaSnap.data().geojson || areaSnap.data().status === 'ok')) return;
 
-        // Determine type
-        const isArea = this.isArea(item);
+        // If it exists as AREA and we are processing as AREA, skip if valid
+        if (areaSnap.exists() && isArea) {
+            if (areaSnap.data().geojson || areaSnap.data().status === 'ok') {
+                console.log(`Item ${slug} already exists as Area. Skipping.`);
+                return;
+            }
+        }
 
         if (isArea) {
             // Attempt to fetch polygon for area
@@ -116,19 +169,25 @@ class GeocodingService {
                 id: slug,
                 titulo: item.titulo,
                 cidade: item.cidade,
-                tipo_area: "outro", // default
+                tipo_area: "federal", // Default to broad types, user can refine
                 geojson: geojson,
                 status: geojson ? "ok" : "needs_review",
-                type: "area"
+                type: "area",
+                cor: "#FF0000" // Default highlight color
             };
 
-            await setDoc(areaRef, areaData);
+            // Firestore doesn't support nested arrays, so we stringify the geojson if it exists
+            const areaDataForFirestore = {
+                ...areaData,
+                geojson: geojson ? JSON.stringify(geojson) : null
+            };
+
+            await setDoc(areaRef, areaDataForFirestore);
             console.log(`Area processed: ${slug} (GeoJSON: ${!!geojson})`);
             return;
         }
 
         // Check for manual coordinates in seed
-        const hasManualCoords = item.lat && item.lng;
         let geocodeResult = null;
 
         if (hasManualCoords) {
@@ -161,14 +220,16 @@ class GeocodingService {
             cidade: item.cidade,
             categoria: this.inferCategory(item.titulo),
             endereco_original: item.localizacao,
-            endereco_canonico: geocodeResult ? geocodeResult.display_name : undefined,
+            endereco_canonico: geocodeResult ? geocodeResult.display_name : null,
             lat: geocodeResult ? parseFloat(geocodeResult.lat) : 0,
             lng: geocodeResult ? parseFloat(geocodeResult.lon) : 0,
             geocode_confidence: hasManualCoords ? 1.0 : this.calculateConfidence(geocodeResult, item),
             geocode_precision: hasManualCoords ? 'rooftop' : this.determinePrecision(geocodeResult),
             status: geocodeResult ? "ok" : "no_result",
             type: "point",
-            geocode_source_urls: geocodeResult && !hasManualCoords ? [`https://nominatim.openstreetmap.org/ui/details.html?place_id=${geocodeResult.place_id}`] : []
+            geocode_source_urls: geocodeResult && !hasManualCoords ? [`https://nominatim.openstreetmap.org/ui/details.html?place_id=${geocodeResult.place_id}`] : [],
+            tipologia: item.tipologia || "Não informada",
+            descricao: item.descricao || item.note || null
         };
 
         // Validation
@@ -220,10 +281,21 @@ class GeocodingService {
     private isArea(item: any): boolean {
         const lowerLoc = (item.localizacao || "").toLowerCase();
         const lowerTitle = item.titulo.toLowerCase();
+        const lowerTipologia = (item.tipologia || "").toLowerCase();
 
-        const areaKeywords = ["centro histórico", "sítio", "área paisagística", "reserva", "município de"];
-        if (areaKeywords.some(k => lowerLoc.includes(k) || lowerTitle.includes(k))) return true;
-        if (lowerLoc.includes("diverso")) return true;
+        // Strict definition of Area:
+        // 1. Tipologia is 'Conjunto Urbano'
+        // 2. Title has 'Centro Histórico'
+        // 3. Explicit municipality or broad reservations
+
+        if (lowerTipologia.includes("conjunto urbano")) return true;
+
+        const areaKeywords = ["centro histórico", "município de", "área de proteção"];
+        if (areaKeywords.some(k => lowerTitle.includes(k))) return true;
+
+        // 4. Forced Polygons for Requested Cities
+        const forcedPolygons = ["caxias", "alcântara", "alcantara", "viana", "carolina"];
+        if (forcedPolygons.some(p => lowerTitle === p || lowerTitle === `centro de ${p}` || lowerTitle === `município de ${p}`)) return true;
 
         return false;
     }

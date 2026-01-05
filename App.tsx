@@ -10,6 +10,7 @@ import {
   Menu,
   X,
   ShieldAlert,
+  ShieldCheck,
   Mail,
   HelpCircle,
   Users,
@@ -30,7 +31,42 @@ import RepositorioPage from './pages/RepositorioPage';
 import DphapPage from './pages/DphapPage';
 import DpiPage from './pages/DpiPage';
 import DpePage from './pages/DpePage';
+import LoginPage from './pages/LoginPage';
 import { UserRole, User as UserType } from './types';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { LogOut } from 'lucide-react';
+
+const PrivateRoute = ({ children, roleRequired }: { children: React.ReactNode, roleRequired?: UserRole[] }) => {
+  const { user, loading, isAdmin } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-brand-blue border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Carregando Ecossistema...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  if (roleRequired && !roleRequired.includes(user.role) && !isAdmin) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center space-y-6">
+        <ShieldAlert size={80} className="text-brand-red" />
+        <h2 className="text-3xl font-black text-brand-dark">Acesso Restrito</h2>
+        <p className="text-slate-500 max-w-md">Você não tem permissão para acessar esta área. Entre em contato com a administração.</p>
+        <Link to="/" className="px-8 py-3 bg-brand-blue text-white rounded-xl font-bold">Voltar ao Início</Link>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+};
 
 const Navigation = () => {
   const location = useLocation();
@@ -52,13 +88,17 @@ const Navigation = () => {
     };
   }, [scrolled]);
 
+  const { user, logout, isAdmin } = useAuth();
+
   const navItems = [
     { label: 'A SPC', path: '/institucional', icon: <Info size={18} /> },
     { label: 'Serviços', path: '/servicos', icon: <FileText size={18} /> },
     { label: 'Acervo Digital', path: '/acervo-digital', icon: <Library size={18} /> },
     { label: 'Mapa', path: '/mapa', icon: <MapIcon size={18} /> },
-    { label: 'Admin', path: '/admin', icon: <Settings size={18} /> },
   ];
+
+  // Only show Admin and Login/Logout buttons appropriately
+  const adminItem = isAdmin ? { label: 'Admin', path: '/admin', icon: <Settings size={18} /> } : null;
 
   return (
     <nav
@@ -74,9 +114,9 @@ const Navigation = () => {
             <div className="relative">
               <div className="absolute -inset-2 bg-gradient-to-r from-brand-blue to-brand-red rounded-full opacity-0 group-hover:opacity-20 blur-xl transition-all duration-500"></div>
               <img
-                src="/imagens/logo_spc.jpg"
+                src="/spc-logo.png"
                 alt="SPC Logo"
-                className="h-10 w-auto relative transform transition-all duration-500 group-hover:scale-110 group-hover:rotate-1"
+                className="h-16 w-auto relative transform transition-all duration-500 group-hover:scale-110 group-hover:rotate-1"
               />
             </div>
             <div className={`hidden lg:block border-l pl-4 transition-all duration-500 ${scrolled ? 'border-slate-300' : 'border-slate-400/50'}`}>
@@ -101,12 +141,44 @@ const Navigation = () => {
                     {item.icon}
                   </span>
                   <span className="relative z-10">{item.label}</span>
-                  {location.pathname !== item.path && (
-                    <div className="absolute inset-0 bg-gradient-to-tr from-white to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  )}
                 </Link>
               ))}
+
+              {adminItem && (
+                <Link
+                  to={adminItem.path}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 relative group overflow-hidden ${location.pathname === adminItem.path
+                    ? 'text-brand-red bg-white shadow-md shadow-brand-red/10 scale-100 ring-1 ring-black/5'
+                    : 'text-brand-red hover:bg-brand-red/10'
+                    }`}
+                >
+                  <span className={`relative z-10 transition-transform duration-300 group-hover:-translate-y-0.5 ${location.pathname === adminItem.path ? 'text-brand-red' : 'text-brand-red/70 group-hover:text-brand-red'}`}>
+                    {adminItem.icon}
+                  </span>
+                  <span className="relative z-10">{adminItem.label}</span>
+                </Link>
+              )}
             </div>
+
+            <div className="h-6 w-px bg-slate-200 mx-3"></div>
+
+            {user ? (
+              <button
+                onClick={logout}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 group"
+                title={`Logado como ${user.name}`}
+              >
+                <LogOut size={14} className="group-hover:text-brand-red transition-colors" /> Sair
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="px-4 py-2 bg-brand-dark hover:bg-brand-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-slate-200"
+              >
+                Gerenciamento
+              </Link>
+            )}
+
             <div className="h-6 w-px bg-slate-200 mx-3"></div>
             <img
               src="/imagens/logo_governo.png"
@@ -143,6 +215,41 @@ const Navigation = () => {
                 <span className="text-sm">{item.label}</span>
               </Link>
             ))}
+
+            {adminItem && (
+              <Link
+                to={adminItem.path}
+                className={`flex items-center space-x-3 p-3 rounded-xl font-bold transition-all ${location.pathname === adminItem.path
+                  ? 'bg-gradient-to-r from-brand-red to-red-600 text-white shadow-lg shadow-brand-red/30 scale-[1.02]'
+                  : 'text-brand-red hover:bg-red-50 active:scale-95'
+                  }`}
+                onClick={() => setIsOpen(false)}
+              >
+                <span className={`${location.pathname === adminItem.path ? 'text-white' : 'text-brand-red'}`}>
+                  {adminItem.icon}
+                </span>
+                <span className="text-sm">{adminItem.label}</span>
+              </Link>
+            )}
+
+            {user ? (
+              <button
+                onClick={() => { logout(); setIsOpen(false); }}
+                className="w-full flex items-center space-x-3 p-3 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-all"
+              >
+                <LogOut size={18} />
+                <span className="text-sm">Sair</span>
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="flex items-center space-x-3 p-3 rounded-xl font-bold text-brand-dark bg-slate-50"
+                onClick={() => setIsOpen(false)}
+              >
+                <ShieldCheck size={18} />
+                <span className="text-sm">Acesso Restrito</span>
+              </Link>
+            )}
           </div>
         </div>
       )}
@@ -159,7 +266,7 @@ const Footer = () => (
       <div className="col-span-1 md:col-span-2 space-y-4">
         <h3 className="text-white font-black text-lg flex items-center gap-2.5 tracking-tight">
           <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
-            <img src="/imagens/logo_spc.jpg" alt="SPC" className="h-4 w-auto brightness-0 invert opacity-90" />
+            <img src="/spc-logo.png" alt="SPC" className="h-4 w-auto brightness-0 invert opacity-90" />
           </div>
           SPC Maranhão
         </h3>
@@ -252,43 +359,47 @@ const Footer = () => (
 );
 
 const App: React.FC = () => {
-  const [user] = useState<UserType | null>({
-    id: 'u-1',
-    name: 'Gestor SPC',
-    role: UserRole.SUPER_ADMIN
-  });
-
   return (
-    <HashRouter>
-      <div className="min-h-screen flex flex-col font-sans selection:bg-brand-blue selection:text-white">
-        <Navigation />
-        <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/mapa" element={<MapaPage />} />
-            <Route path="/institucional" element={<InstitucionalPage />} />
-            <Route path="/servicos" element={<ServicosPage />} />
-            <Route path="/acervo-digital" element={<AcervoDigitalPage />} />
-            <Route path="/acervo" element={<AcervoPage />} />
-            <Route path="/repositorio" element={<RepositorioPage />} />
-            <Route path="/legislacao" element={<LegislacaoPage />} />
-            <Route path="/dphap" element={<DphapPage />} />
-            <Route path="/dpi" element={<DpiPage />} />
-            <Route path="/dpe" element={<DpePage />} />
-            <Route path="/admin" element={<AdminDashboard user={user} />} />
-            <Route path="*" element={
-              <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
-                <ShieldAlert size={80} className="text-brand-red" />
-                <h2 className="text-3xl font-black text-brand-dark">Módulo em Atualização</h2>
-                <p className="text-slate-500 max-w-md text-center">Estamos trabalhando para disponibilizar este conteúdo em breve seguindo as novas diretrizes.</p>
-                <Link to="/" className="px-8 py-3 bg-brand-blue text-white rounded-xl font-bold hover:shadow-xl transition-all">Voltar ao Início</Link>
-              </div>
-            } />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </HashRouter>
+    <AuthProvider>
+      <HashRouter>
+        <div className="min-h-screen flex flex-col font-sans selection:bg-brand-blue selection:text-white">
+          <Navigation />
+          <main className="flex-grow">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/mapa" element={<MapaPage />} />
+              <Route path="/institucional" element={<InstitucionalPage />} />
+              <Route path="/servicos" element={<ServicosPage />} />
+              <Route path="/acervo-digital" element={<AcervoDigitalPage />} />
+              <Route path="/acervo" element={<AcervoPage />} />
+              <Route path="/repositorio" element={<RepositorioPage />} />
+              <Route path="/legislacao" element={<LegislacaoPage />} />
+              <Route path="/dphap" element={<DphapPage />} />
+              <Route path="/dpi" element={<DpiPage />} />
+              <Route path="/dpe" element={<DpePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                path="/admin"
+                element={
+                  <PrivateRoute>
+                    <AdminDashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route path="*" element={
+                <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+                  <ShieldAlert size={80} className="text-brand-red" />
+                  <h2 className="text-3xl font-black text-brand-dark">Módulo em Atualização</h2>
+                  <p className="text-slate-500 max-w-md text-center">Estamos trabalhando para disponibilizar este conteúdo em breve seguindo as novas diretrizes.</p>
+                  <Link to="/" className="px-8 py-3 bg-brand-blue text-white rounded-xl font-bold hover:shadow-xl transition-all">Voltar ao Início</Link>
+                </div>
+              } />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </HashRouter>
+    </AuthProvider>
   );
 };
 

@@ -24,7 +24,7 @@ const DeptCard = ({ title, description, icon: Icon, colorClass, image, link }: a
   <div className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group flex flex-col h-full overflow-hidden">
     <div className="h-32 overflow-hidden relative">
       <img src={image} alt={title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-brand-blue/80 to-transparent"></div>
       <div className={`absolute bottom-3 left-4 w-8 h-8 rounded-lg ${colorClass} flex items-center justify-center text-white shadow-lg`}>
         <Icon size={16} />
       </div>
@@ -99,8 +99,8 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* Modern Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/90 via-brand-dark/50 to-transparent z-10"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-transparent to-transparent z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-blue/90 via-brand-blue/50 to-transparent z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-blue via-transparent to-transparent z-10"></div>
 
         {/* Carousel Indicators */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2">

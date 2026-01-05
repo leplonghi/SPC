@@ -20,6 +20,7 @@ import {
   Award,
   Briefcase
 } from 'lucide-react';
+import { PageHero } from '../components/ui/PageHero';
 
 const StaffCard = ({ name, role, dept, image, color }: { name: string, role: string, dept: string, image: string, color: string }) => (
   <div className="group bg-white rounded-2xl border border-slate-100 p-4 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
@@ -62,28 +63,16 @@ const InstitucionalPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
       {/* Hero Section - Condensed */}
-      <section className="bg-brand-dark pt-12 pb-8 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-60">
-          <img
-            src="/imagens/CH 01.jpg"
-            alt="Centro Histórico de São Luís"
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-brand-dark/80 to-brand-dark/40"></div>
-
-        <div className="relative max-w-7xl mx-auto px-6 text-center space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-red/20 text-brand-red border border-brand-red/30 rounded-full text-[9px] font-black uppercase tracking-[0.2em] backdrop-blur-sm">
-            Institucional
-          </div>
-          <h1 className="text-xl md:text-3xl font-black text-white leading-tight tracking-tight">
-            Identidade e <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-red to-orange-500">Memória</span>
-          </h1>
-          <p className="text-xs md:text-sm text-slate-300 max-w-xl mx-auto leading-relaxed font-medium">
-            A SPC é a guardiã oficial do rico patrimônio cultural maranhense, atuando na proteção e valorização do nosso legado histórico para as futuras gerações.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        align="center"
+        backgroundImage="/imagens/CH 01.jpg"
+        badge={{
+          text: 'Institucional',
+          variant: 'red'
+        }}
+        title={<>Identidade e <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-red to-orange-500">Memória</span></>}
+        description="A SPC é a guardiã oficial do rico patrimônio cultural maranhense, atuando na proteção e valorização do nosso legado histórico para as futuras gerações."
+      />
 
       {/* Navigation Tabs - Modern Pill Style */}
       <div className="sticky top-20 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/50 shadow-sm supports-[backdrop-filter]:bg-white/60">
@@ -182,25 +171,25 @@ const InstitucionalPage: React.FC = () => {
               {/* Chefes de Departamento Grid - Dense */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <StaffCard
-                  name="Arq. Mariana Rocha"
-                  role="Diretora do Departamento de Patrimônio Material. Especialista em Restauro."
+                  name="Arq. Giuliane Brito"
+                  role="Diretora do Departamento de Patrimônio Material."
                   dept="Chefia DPHAP"
                   image="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=800"
                   color="bg-brand-blue"
                 />
                 <StaffCard
-                  name="Profa. Benedita Soares"
-                  role="Diretora de Patrimônio Imaterial. Antropóloga focada em culturas quilombolas."
+                  name="Neto de Azile"
+                  role="Diretor do Departamento de Patrimônio Imaterial."
                   dept="Chefia DPI"
-                  image="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800"
+                  image="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=800"
                   color="bg-brand-red"
                 />
                 <StaffCard
-                  name="Eng. Carlos Alberto"
-                  role="Diretor de Projetos Especiais. Especialista em infraestrutura de centros históricos."
-                  dept="Chefia DPE"
-                  image="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=800"
-                  color="bg-brand-dark"
+                  name="Arq. Keila Maria Espíndola"
+                  role="Arquiteta e Urbanista do DPHAP."
+                  dept="DPHAP"
+                  image="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800"
+                  color="bg-brand-blue"
                 />
               </div>
             </div>
