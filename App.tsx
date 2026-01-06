@@ -257,106 +257,112 @@ const Navigation = () => {
   );
 };
 
-const Footer = () => (
-  <footer className="bg-[#1e1e1e] text-slate-400 py-6 border-t border-white/5 font-sans relative overflow-hidden">
-    {/* Decorative element */}
-    <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-brand-blue/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+const Footer = () => {
+  const location = useLocation();
 
-    <div className="max-w-[1440px] mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8 relative z-10">
-      <div className="col-span-1 md:col-span-2 space-y-4">
-        <h3 className="text-white font-black text-lg flex items-center gap-2.5 tracking-tight">
-          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
-            <img src="/spc-logo.png" alt="SPC" className="h-4 w-auto brightness-0 invert opacity-90" />
+  if (location.pathname === '/mapa') return null;
+
+  return (
+    <footer className="bg-[#1e1e1e] text-slate-400 py-6 border-t border-white/5 font-sans relative overflow-hidden">
+      {/* Decorative element */}
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-brand-blue/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+      <div className="max-w-[1440px] mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8 relative z-10">
+        <div className="col-span-1 md:col-span-2 space-y-4">
+          <h3 className="text-white font-black text-lg flex items-center gap-2.5 tracking-tight">
+            <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
+              <img src="/spc-logo.png" alt="SPC" className="h-4 w-auto brightness-0 invert opacity-90" />
+            </div>
+            SPC Maranhão
+          </h3>
+          <p className="text-[11px] leading-relaxed opacity-60 font-medium max-w-sm">
+            A Superintendência de Patrimônio Cultural do Maranhão trabalha para preservar, valorizar e difundir nossa memória e identidade cultural através da salvaguarda de bens materiais e imateriais.
+          </p>
+          <div className="flex gap-2 pt-1">
+            <a href="mailto:contato@spc.ma.gov.br" className="p-2 bg-white/5 rounded-lg hover:bg-brand-red hover:text-white border border-white/5 hover:border-transparent transition-all hover:scale-105 active:scale-95 group">
+              <Mail size={14} className="opacity-70 group-hover:opacity-100" />
+            </a>
+            <Link to="/ajuda" className="p-2 bg-white/5 rounded-lg hover:bg-brand-blue hover:text-white border border-white/5 hover:border-transparent transition-all hover:scale-105 active:scale-95 group">
+              <HelpCircle size={14} className="opacity-70 group-hover:opacity-100" />
+            </Link>
+            <a href="#" className="p-2 bg-white/5 rounded-lg hover:bg-white hover:text-brand-dark border border-white/5 hover:border-transparent transition-all hover:scale-105 active:scale-95 group">
+              <Users size={14} className="opacity-70 group-hover:opacity-100" />
+            </a>
           </div>
-          SPC Maranhão
-        </h3>
-        <p className="text-[11px] leading-relaxed opacity-60 font-medium max-w-sm">
-          A Superintendência de Patrimônio Cultural do Maranhão trabalha para preservar, valorizar e difundir nossa memória e identidade cultural através da salvaguarda de bens materiais e imateriais.
-        </p>
-        <div className="flex gap-2 pt-1">
-          <a href="mailto:contato@spc.ma.gov.br" className="p-2 bg-white/5 rounded-lg hover:bg-brand-red hover:text-white border border-white/5 hover:border-transparent transition-all hover:scale-105 active:scale-95 group">
-            <Mail size={14} className="opacity-70 group-hover:opacity-100" />
-          </a>
-          <Link to="/ajuda" className="p-2 bg-white/5 rounded-lg hover:bg-brand-blue hover:text-white border border-white/5 hover:border-transparent transition-all hover:scale-105 active:scale-95 group">
-            <HelpCircle size={14} className="opacity-70 group-hover:opacity-100" />
-          </Link>
-          <a href="#" className="p-2 bg-white/5 rounded-lg hover:bg-white hover:text-brand-dark border border-white/5 hover:border-transparent transition-all hover:scale-105 active:scale-95 group">
-            <Users size={14} className="opacity-70 group-hover:opacity-100" />
-          </a>
+        </div>
+
+        <div>
+          <h4 className="text-white font-bold mb-3 text-[10px] uppercase tracking-[0.2em] border-l-2 border-brand-red pl-2.5">Departamentos</h4>
+          <ul className="space-y-2 text-[11px] font-medium">
+            <li>
+              <Link to="/dphap" className="group flex items-center gap-2 hover:text-brand-blue transition-all">
+                <span className="w-1 h-1 rounded-full bg-slate-600 group-hover:bg-brand-blue group-hover:w-1.5 transition-all"></span>
+                DPHAP (Material)
+              </Link>
+            </li>
+            <li>
+              <Link to="/dpi" className="group flex items-center gap-2 hover:text-brand-red transition-all">
+                <span className="w-1 h-1 rounded-full bg-slate-600 group-hover:bg-brand-red group-hover:w-1.5 transition-all"></span>
+                DPI (Imaterial)
+              </Link>
+            </li>
+            <li>
+              <Link to="/dpe" className="group flex items-center gap-2 hover:text-white transition-all">
+                <span className="w-1 h-1 rounded-full bg-slate-600 group-hover:bg-white group-hover:w-1.5 transition-all"></span>
+                DPE (Especiais)
+              </Link>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="text-white font-bold mb-3 text-[10px] uppercase tracking-[0.2em] border-l-2 border-brand-blue pl-2.5">Institucional</h4>
+          <ul className="space-y-2 text-[11px] font-medium">
+            <li>
+              <Link to="/institucional" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
+                Quem Somos
+              </Link>
+            </li>
+            <li>
+              <Link to="/servicos" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
+                Serviços ao Cidadão
+              </Link>
+            </li>
+            <li>
+              <Link to="/acervo-digital" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
+                Acervo Digital
+              </Link>
+            </li>
+            <li>
+              <Link to="/repositorio" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
+                Repositório
+              </Link>
+            </li>
+            <li>
+              <Link to="/legislacao" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
+                Legislação
+              </Link>
+            </li>
+            <li>
+              <Link to="/institucional" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
+                Transparência
+              </Link>
+            </li>
+          </ul>
         </div>
       </div>
 
-      <div>
-        <h4 className="text-white font-bold mb-3 text-[10px] uppercase tracking-[0.2em] border-l-2 border-brand-red pl-2.5">Departamentos</h4>
-        <ul className="space-y-2 text-[11px] font-medium">
-          <li>
-            <Link to="/dphap" className="group flex items-center gap-2 hover:text-brand-blue transition-all">
-              <span className="w-1 h-1 rounded-full bg-slate-600 group-hover:bg-brand-blue group-hover:w-1.5 transition-all"></span>
-              DPHAP (Material)
-            </Link>
-          </li>
-          <li>
-            <Link to="/dpi" className="group flex items-center gap-2 hover:text-brand-red transition-all">
-              <span className="w-1 h-1 rounded-full bg-slate-600 group-hover:bg-brand-red group-hover:w-1.5 transition-all"></span>
-              DPI (Imaterial)
-            </Link>
-          </li>
-          <li>
-            <Link to="/dpe" className="group flex items-center gap-2 hover:text-white transition-all">
-              <span className="w-1 h-1 rounded-full bg-slate-600 group-hover:bg-white group-hover:w-1.5 transition-all"></span>
-              DPE (Especiais)
-            </Link>
-          </li>
-        </ul>
+      <div className="max-w-[1440px] mx-auto px-6 mt-8 pt-6 border-t border-white/5 text-[9px] flex flex-col md:flex-row justify-between items-center gap-4 opacity-40 font-semibold uppercase tracking-widest hover:opacity-100 transition-opacity duration-300">
+        <p>© 2024 Governo do Estado do Maranhão</p>
+        <div className="flex gap-6">
+          <span className="hover:text-white cursor-pointer transition-colors">Política de Privacidade</span>
+          <span className="hover:text-white cursor-pointer transition-colors">Termos de Uso</span>
+          <span className="flex items-center gap-1.5"><Database size={9} /> v2.4.0</span>
+        </div>
       </div>
-
-      <div>
-        <h4 className="text-white font-bold mb-3 text-[10px] uppercase tracking-[0.2em] border-l-2 border-brand-blue pl-2.5">Institucional</h4>
-        <ul className="space-y-2 text-[11px] font-medium">
-          <li>
-            <Link to="/institucional" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
-              Quem Somos
-            </Link>
-          </li>
-          <li>
-            <Link to="/servicos" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
-              Serviços ao Cidadão
-            </Link>
-          </li>
-          <li>
-            <Link to="/acervo-digital" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
-              Acervo Digital
-            </Link>
-          </li>
-          <li>
-            <Link to="/repositorio" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
-              Repositório
-            </Link>
-          </li>
-          <li>
-            <Link to="/legislacao" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
-              Legislação
-            </Link>
-          </li>
-          <li>
-            <Link to="/institucional" className="block hover:text-white hover:translate-x-1 transition-all duration-300">
-              Transparência
-            </Link>
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <div className="max-w-[1440px] mx-auto px-6 mt-8 pt-6 border-t border-white/5 text-[9px] flex flex-col md:flex-row justify-between items-center gap-4 opacity-40 font-semibold uppercase tracking-widest hover:opacity-100 transition-opacity duration-300">
-      <p>© 2024 Governo do Estado do Maranhão</p>
-      <div className="flex gap-6">
-        <span className="hover:text-white cursor-pointer transition-colors">Política de Privacidade</span>
-        <span className="hover:text-white cursor-pointer transition-colors">Termos de Uso</span>
-        <span className="flex items-center gap-1.5"><Database size={9} /> v2.4.0</span>
-      </div>
-    </div>
-  </footer>
-);
+    </footer>
+  );
+};
 
 const App: React.FC = () => {
   return (

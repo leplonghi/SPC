@@ -13,24 +13,22 @@ class GeocodingService {
 
     constructor() {
         // Start processing loop
-        setInterval(() => this.processQueue(), 100); // 100ms (fast processing for manual entries)
+        // Respect Nominatim Rate Limit (1 req/s)
+        setInterval(() => this.processQueue(), 1200);
     }
 
     private async processQueue() {
         if (this.isProcessing || this.queue.length === 0) return;
         this.isProcessing = true;
 
-        // Process up to 10 items per tick if they are fast
-        for (let i = 0; i < 50; i++) {
-            if (this.queue.length === 0) break;
-            const task = this.queue.shift();
-            if (task) {
-                try {
-                    await task();
-                    this.processedCount++;
-                } catch (e) {
-                    console.error("Task failed", e);
-                }
+        // Process 1 item per tick to respect rate limits
+        const task = this.queue.shift();
+        if (task) {
+            try {
+                await task();
+                this.processedCount++;
+            } catch (e) {
+                console.error("Task failed", e);
             }
         }
 

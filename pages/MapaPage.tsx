@@ -14,7 +14,8 @@ import {
   Shield,
   Layers,
   Sparkles,
-  Compass
+  Compass,
+  Building2
 } from 'lucide-react';
 import GeoManager from '../components/Map/GeoManager';
 import AICommandChat from '../components/Map/AICommandChat';
@@ -26,6 +27,33 @@ import { geocodingService } from '../services/GeocodingService';
 import { patrimonioSeed } from '../data/patrimonioSeed';
 
 import { useAuth } from '../contexts/AuthContext';
+
+// Helper for colors/categories (matching GeoManager)
+const getUseColor = (uso?: string) => {
+  if (!uso) return '#757575';
+  const u = uso.toLowerCase();
+  if (u.includes('religio') || u.includes('igreja') || u.includes('capela')) return '#8E24AA'; // Purple
+  if (u.includes('institucional') || u.includes('publico') || u.includes('público') || u.includes('governo')) return '#1E88E5'; // Blue
+  if (u.includes('comercial') || u.includes('loja') || u.includes('serviço') || u.includes('mercado')) return '#F59E0B'; // Amber
+  if (u.includes('residencial') || u.includes('moradia') || u.includes('habita')) return '#43A047'; // Green
+  if (u.includes('militar') || u.includes('forte') || u.includes('quartel')) return '#3949AB'; // Indigo
+  if (u.includes('monumento') || u.includes('estátua') || u.includes('fonte')) return '#E91E63'; // Pink
+  if (u.includes('cultural') || u.includes('teatro') || u.includes('museu')) return '#00ACC1'; // Cyan
+  return '#757575';
+};
+
+const getUseCategory = (uso?: string) => {
+  if (!uso) return 'Outros';
+  const u = uso.toLowerCase();
+  if (u.includes('religio') || u.includes('igreja') || u.includes('capela')) return 'Religioso';
+  if (u.includes('institucional') || u.includes('publico') || u.includes('público') || u.includes('governo')) return 'Institucional';
+  if (u.includes('comercial') || u.includes('loja') || u.includes('serviço') || u.includes('mercado')) return 'Comercial';
+  if (u.includes('residencial') || u.includes('moradia') || u.includes('habita')) return 'Residencial';
+  if (u.includes('militar') || u.includes('forte') || u.includes('quartel')) return 'Militar';
+  if (u.includes('monumento') || u.includes('estátua') || u.includes('fonte')) return 'Monumentos';
+  if (u.includes('cultural') || u.includes('teatro') || u.includes('museu')) return 'Cultural';
+  return 'Outros';
+};
 
 const MapaPage: React.FC = () => {
   const { isAdmin } = useAuth();
@@ -158,6 +186,23 @@ const MapaPage: React.FC = () => {
   }, [areas, searchTerm]);
 
   const uniqueCidades = useMemo(() => Array.from(new Set(assets.map(a => a.cidade))).sort(), [assets]);
+
+  const categorizedAssets = useMemo(() => {
+    const groups: Record<string, HeritageAsset[]> = {};
+    const order = ['Religioso', 'Institucional', 'Cultural', 'Residencial', 'Comercial', 'Militar', 'Monumentos', 'Outros'];
+
+    // Sort logic could go here if needed
+    filteredAssets.forEach(asset => {
+      const cat = getUseCategory(asset.uso_atual || asset.tipologia);
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(asset);
+    });
+
+    return order.filter(k => groups[k]?.length > 0).map(k => ({
+      category: k,
+      items: groups[k]
+    }));
+  }, [filteredAssets]);
 
   // State to track if we've already attempted auto-import in this session
   const [hasAutoImported, setHasAutoImported] = useState(false);
@@ -351,29 +396,64 @@ const MapaPage: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
-                {filteredAssets.map(asset => (
-                  <button
-                    key={asset.id}
-                    onClick={() => {
-                      setSelectedAsset(asset);
-                      setSelectedArea(null);
-                      setIsSidebarOpen(false);
-                    }}
-                    className={`w-full p-4 text-left transition-all hover:bg-white hover:shadow-sm border-l-4 ${selectedAsset?.id === asset.id ? 'bg-white border-brand-blue shadow-inner' : 'border-transparent'}`}
-                  >
-                    <div className="flex gap-3 items-center">
-                      <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center ${asset.status === 'ok' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                        <MapPin size={18} />
-                      </div>
-                      <div className="min-w-0 flex-grow">
-                        <h4 className="font-bold text-slate-900 truncate text-xs leading-tight mb-1" title={asset.titulo}>{asset.titulo}</h4>
-                        <div className="flex items-center gap-1.5 text-slate-400 text-[10px] uppercase font-bold tracking-wider">
-                          {asset.cidade}
-                        </div>
-                      </div>
+              <div className="pb-6">
+                {categorizedAssets.map(group => (
+                  <div key={group.category} className="mb-4">
+                    <div className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-sm px-4 py-2 border-y border-slate-100 mb-2 flex items-center gap-2 shadow-sm">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: getUseColor(group.category) }} />
+                      <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex-grow">
+                        {group.category}
+                      </h3>
+                      <span className="px-1.5 py-0.5 bg-slate-200 rounded text-[9px] font-bold text-slate-600">
+                        {group.items.length}
+                      </span>
                     </div>
-                  </button>
+
+                    <div className="px-2 space-y-1">
+                      {group.items.map(asset => (
+                        <button
+                          key={asset.id}
+                          onClick={() => {
+                            setSelectedAsset(asset);
+                            setSelectedArea(null);
+                            setIsSidebarOpen(false);
+                          }}
+                          className={`w-full group relative overflow-hidden text-left transition-all duration-200 rounded-xl border ${selectedAsset?.id === asset.id ? 'bg-white border-brand-blue shadow-lg scale-[1.02]' : 'bg-white border-slate-100 hover:border-slate-300 hover:shadow-md'}`}
+                        >
+                          <div className={`absolute left-0 top-0 bottom-0 w-1 transition-colors ${selectedAsset?.id === asset.id ? 'bg-brand-blue' : 'bg-transparent group-hover:bg-slate-200'}`} style={{ backgroundColor: selectedAsset?.id === asset.id ? undefined : getUseColor(asset.uso_atual || asset.tipologia) + '40' }} />
+
+                          <div className="p-3 pl-4 flex gap-3 items-center">
+                            <div
+                              className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold shadow-sm"
+                              style={{ backgroundColor: getUseColor(asset.uso_atual || asset.tipologia) }}
+                            >
+                              {group.category === 'Religioso' && <span className="text-[10px]">†</span>}
+                              {group.category === 'Institucional' && <Building2 size={12} />}
+                              {group.category === 'Cultural' && <Sparkles size={12} />}
+                              {(!['Religioso', 'Institucional', 'Cultural'].includes(group.category)) && <MapPin size={12} />}
+                            </div>
+
+                            <div className="min-w-0 flex-grow">
+                              <h4 className="font-bold text-slate-800 truncate text-[11px] leading-tight mb-0.5 group-hover:text-brand-blue transition-colors">
+                                {asset.titulo}
+                              </h4>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] text-slate-400 font-medium uppercase tracking-wider truncate">
+                                  {asset.endereco_original || asset.cidade}
+                                </span>
+                              </div>
+                            </div>
+
+                            {asset.status === 'ok' && (
+                              <div className="text-emerald-500" title="Geolocalizado">
+                                <Shield size={10} className="fill-current" />
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             )
@@ -533,6 +613,7 @@ const MapaPage: React.FC = () => {
           selectedArea={selectedArea}
           onAssetClick={setSelectedAsset}
           onAreaClick={setSelectedArea}
+          onReportError={handleReportError}
         />
 
         {/* AI Overlay Clear Button */}
@@ -559,7 +640,7 @@ const MapaPage: React.FC = () => {
         )}
 
         {/* AI Command Chat */}
-        <AICommandChat onCommand={handleAICommand} />
+        {/* <AICommandChat onCommand={handleAICommand} /> */}
       </div>
     </div>
   );

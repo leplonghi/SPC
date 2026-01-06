@@ -14,6 +14,11 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { PageHero } from '../components/ui/PageHero';
+import { useAuth } from '../contexts/AuthContext';
+import { FileUpload } from '../components/ui/FileUpload';
+import { db } from '../firebase';
+import { collection, onSnapshot, addDoc, Timestamp, query, orderBy } from 'firebase/firestore';
+
 
 interface Document {
   id: string;
@@ -23,7 +28,9 @@ interface Document {
   size: string;
   description: string;
   tags: string[];
+  url?: string;
 }
+
 
 const DOCUMENTS: Document[] = [
   {
@@ -94,8 +101,25 @@ const DOCUMENTS: Document[] = [
 const LegislacaoPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
+  const { isEditor } = useAuth();
+  const [dbDocs, setDbDocs] = useState<Document[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const filteredDocs = DOCUMENTS.filter(doc => {
+  React.useEffect(() => {
+    const q = query(collection(db, "legislation"), orderBy("date", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      })) as Document[];
+      setDbDocs(docs);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const allDocuments = [...dbDocs, ...DOCUMENTS];
+
+  const filteredDocs = allDocuments.filter(doc => {
     const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       doc.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = activeCategory === 'Todos' || doc.category === activeCategory;
@@ -103,6 +127,7 @@ const LegislacaoPage: React.FC = () => {
   });
 
   const categories = ['Todos', 'Lei', 'Decreto', 'Portaria', 'Manual', 'Edital'];
+
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -178,6 +203,49 @@ const LegislacaoPage: React.FC = () => {
             </div>
           </div>
 
+          {isEditor && (
+            <div className="mb-8 p-6 bg-white rounded-3xl border-2 border-dashed border-brand-blue/20">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-black text-brand-dark uppercase tracking-tight">Painel de Upload</h3>
+                  <p className="text-[10px] text-slate-500 font-medium">Adicione novas leis, decretos ou manuais ao sistema.</p>
+                </div>
+                <button
+                  onClick={() => setIsUploading(!isUploading)}
+                  className="px-4 py-2 bg-brand-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-dark transition-all"
+                >
+                  {isUploading ? 'Fechar Editor' : 'Novo Documento'}
+                </button>
+              </div>
+
+              {isUploading && (
+                <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+                  <FileUpload
+                    path="legislation"
+                    onUploadComplete={async (file) => {
+                      const title = prompt("Digite o título do documento:", file.name);
+                      if (!title) return;
+                      const category = prompt("Categoria (Lei, Decreto, Portaria, Manual, Edital, Outro):", "Lei") as any;
+
+                      await addDoc(collection(db, "legislation"), {
+                        title,
+                        category,
+                        date: new Date().toISOString().split('T')[0],
+                        size: "---", // Could calculate from file size if needed
+                        description: `Documento enviado em ${new Date().toLocaleDateString()}`,
+                        tags: [category, 'Upload'],
+                        url: file.url
+                      });
+                      setIsUploading(false);
+                      alert("Documento adicionado com sucesso!");
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+
           {filteredDocs.length === 0 ? (
             <div className="text-center py-20 bg-white rounded-3xl border border-slate-100">
               <BookOpen className="mx-auto text-slate-200 mb-4" size={48} />
@@ -218,13 +286,14 @@ const LegislacaoPage: React.FC = () => {
 
                   <div className="flex flex-col gap-2 min-w-[120px]">
                     <a
-                      href={doc.id === 'infog-1' ? '/imagens/infografico_engenhos.jpg' : '#'}
-                      target={doc.id === 'infog-1' ? '_blank' : undefined}
-                      rel={doc.id === 'infog-1' ? 'noopener noreferrer' : undefined}
+                      href={doc.url || (doc.id === 'infog-1' ? '/imagens/infografico_engenhos.jpg' : '#')}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className={`w-full flex items-center justify-center gap-2 px-4 py-2 text-white rounded-lg font-black uppercase tracking-widest text-[9px] transition-all active:scale-95 ${doc.id === 'infog-1' ? 'bg-brand-red animate-pulse shadow-lg shadow-brand-red/20' : 'bg-brand-blue hover:bg-brand-blue/90'}`}
                     >
-                      {doc.id === 'infog-1' ? 'Ver Infográfico' : 'Download'} <Download size={12} />
+                      {doc.id === 'infog-1' ? 'Ver Infográfico' : 'Ver / Download'} <Download size={12} />
                     </a>
+
                     <span className="text-[8px] text-center font-bold text-slate-300 uppercase tracking-widest">Tamanho: {doc.size}</span>
                   </div>
                 </div>

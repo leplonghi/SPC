@@ -98,7 +98,7 @@ const AICommandChat: React.FC<AICommandChatProps> = ({ onCommand }) => {
     }
 
     return (
-        <div className="fixed bottom-6 right-6 z-[2000] w-[350px] max-w-[90vw] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-6 left-4 right-4 md:left-auto md:right-6 z-[2000] md:w-[350px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
             {/* Header */}
             <div className="bg-brand-blue p-4 flex items-center justify-between text-white">
                 <div className="flex items-center gap-2">
@@ -117,8 +117,8 @@ const AICommandChat: React.FC<AICommandChatProps> = ({ onCommand }) => {
                 {messages.map((m, i) => (
                     <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[80%] p-3 rounded-2xl text-[13px] font-medium leading-relaxed ${m.role === 'user'
-                                ? 'bg-brand-blue text-white rounded-tr-none'
-                                : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none shadow-sm'
+                            ? 'bg-brand-blue text-white rounded-tr-none'
+                            : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none shadow-sm'
                             }`}>
                             {m.content}
                         </div>

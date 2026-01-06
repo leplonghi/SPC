@@ -33,7 +33,15 @@ export interface HeritageAsset {
     inventory?: HeritageSiteInventory;
     conservation_status?: "Regular" | "Em Obras" | "Alerta";
     tipologia?: string;
+    entrance?: { lat: number; lng: number };
+    documentos?: {
+        name: string;
+        url: string;
+        type: 'pdf' | 'image' | 'doc' | 'other';
+        uploadedAt: string;
+    }[];
 }
+
 
 export interface HeritageArea {
     id: string;
@@ -44,7 +52,14 @@ export interface HeritageArea {
     status: "ok" | "needs_review";
     type: "area";
     cor?: string;
+    documentos?: {
+        name: string;
+        url: string;
+        type: 'pdf' | 'image' | 'doc' | 'other';
+        uploadedAt: string;
+    }[];
 }
+
 
 export interface InfractionRule {
     tipo: string;
@@ -60,5 +75,15 @@ export interface Waypoint {
 
 export interface Connection {
     from: string;
+
     to: string;
+}
+
+export interface DraftZone {
+    id?: string;
+    points: [number, number][];
+    title: string;
+    type: 'federal' | 'estadual' | 'municipal';
+    color: string;
+    areaM2?: number;
 }

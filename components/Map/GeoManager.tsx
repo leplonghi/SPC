@@ -12,8 +12,11 @@ import {
 } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { db } from '../../firebase';
-import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, addDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+
 import {
     Settings,
     Shield,
@@ -37,13 +40,34 @@ import {
     User,
     Home,
     Image as ImageIcon,
-    BookOpen
+    BookOpen,
+    Heart,
+    PenTool,
+    FilePlus,
+    Camera,
+    Send,
+    MapPin,
+    Globe,
+    Map as MapIcon,
+    Download,
+    ExternalLink,
+    File,
+    FileText,
+    Check
 } from 'lucide-react';
+import { FileUpload } from '../ui/FileUpload';
+
 import { HeritageAsset, HeritageArea } from '../../types_patrimonio';
 import { HERITAGE_SITES, INITIAL_ZONES, WAYPOINTS, CONNECTIONS } from '../../data/geoManagerData';
 import { findDetailedPath } from '../../services/routingEngine';
 import { useAuth } from '../../contexts/AuthContext';
 import { TourismRoutesPanel } from './TourismRoutesPanel';
+import { TouristRoute } from '../../data/touristData';
+import { RouteReport } from './RouteReport';
+import MarkerClusterGroup from './MarkerClusterGroup';
+import { PrecisionEditor, EditorMode } from './PrecisionEditor';
+import { GlassPanel } from '../ui/GlassPanel';
+import { getDocs, query, where } from 'firebase/firestore';
 import { ADDITIONAL_SITES, EXTENDED_WAYPOINTS, EXTENDED_CONNECTIONS } from '../../data/touristData';
 
 // --- Types ---
@@ -57,7 +81,7 @@ const Plus = ({ size, className }: { size: number, className?: string }) => (
 );
 
 type AppMode = 'management' | 'tourism';
-type EditorMode = 'create' | 'edit' | null;
+// EditorMode imported from PrecisionEditor
 
 interface GeoManagerProps {
     assets?: HeritageAsset[];
@@ -95,24 +119,32 @@ const calculateArea = (coords: [number, number][]) => {
 };
 
 // --- Icons & Markers ---
+// Helper for colors
+export const getUseColor = (uso?: string) => {
+    if (!uso) return '#757575';
+    const u = uso.toLowerCase();
+    if (u.includes('religio') || u.includes('igreja') || u.includes('capela')) return '#8E24AA'; // Purple
+    if (u.includes('institucional') || u.includes('publico') || u.includes('público') || u.includes('governo')) return '#1E88E5'; // Blue
+    if (u.includes('comercial') || u.includes('loja') || u.includes('serviço') || u.includes('mercado')) return '#F59E0B'; // Amber
+    if (u.includes('residencial') || u.includes('moradia') || u.includes('habita')) return '#43A047'; // Green
+    if (u.includes('militar') || u.includes('forte') || u.includes('quartel')) return '#3949AB'; // Indigo
+    if (u.includes('monumento') || u.includes('estátua') || u.includes('fonte')) return '#E91E63'; // Pink
+    if (u.includes('cultural') || u.includes('teatro') || u.includes('museu')) return '#00ACC1'; // Cyan
+    return '#757575';
+};
+
 const getMarkerIcon = (site: HeritageAsset, mode: AppMode) => {
-    let color = '#546E7A';
+    let color = getUseColor(site.uso_atual || site.tipologia); // Default to Category Color
 
     if (mode === 'management') {
+        // Overlay Status Color if present, otherwise keep Category Color
         switch (site.conservation_status) {
             case 'Regular': color = '#2E7D32'; break;
             case 'Em Obras': color = '#1E88E5'; break;
             case 'Alerta': color = '#CC343A'; break;
         }
-    } else {
-        switch (site.tipologia) {
-            case 'Religioso': color = '#5D4037'; break;
-            case 'Civil': color = '#1E88E5'; break;
-            case 'Militar': color = '#2E7D32'; break;
-            case 'Monumento': color = '#8E24AA'; break;
-            default: color = '#F59E0B'; break;
-        }
     }
+    // Tourism mode automatically uses the default 'color' set above
 
     return L.divIcon({
         html: `
@@ -145,381 +177,473 @@ const NodeRealIcon = L.divIcon({
     iconAnchor: [6, 6]
 });
 
-const NodeVirtualIcon = L.divIcon({
-    html: `<div style="width: 8px; height: 8px; background: rgba(255,255,255,0.6); border: 1px solid rgba(204,52,58,0.4); border-radius: 50%;"></div>`,
-    className: 'node-virtual',
-    iconSize: [8, 8],
-    iconAnchor: [4, 4]
+const NodeMidIcon = L.divIcon({
+    html: `<div style="width: 10px; height: 10px; background: #CC343A; border: 2px solid white; border-radius: 50%; opacity: 0.5; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`,
+    className: 'node-mid',
+    iconSize: [10, 10],
+    iconAnchor: [5, 5]
 });
+
+const getRouteMarkerIcon = (index: number) => {
+    const color = '#1E88E5';
+    return L.divIcon({
+        html: `
+            <div style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                <div style="
+                    position: absolute;
+                    width: 40px;
+                    height: 40px;
+                    background: rgba(30,136,229,0.2);
+                    border-radius: 50%;
+                    animation: marker-pulse-simple 2s infinite;
+                "></div>
+                <div style="
+                    position: relative;
+                    width: 32px;
+                    height: 32px;
+                    background: ${color};
+                    border: 3px solid white;
+                    border-radius: 50% 50% 50% 0;
+                    transform: rotate(-45deg);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 4px 15px rgba(30,136,229,0.5);
+                    z-index: 2;
+                ">
+                    <div style="transform: rotate(45deg); color: white; font-weight: 900; font-size: 14px; font-family: sans-serif;">
+                        ${index + 1}
+                    </div>
+                </div>
+            </div>
+            <style>
+                @keyframes marker-pulse-simple {
+                    0% { transform: scale(0.6); opacity: 1; }
+                    100% { transform: scale(1.5); opacity: 0; }
+                }
+            </style>`,
+        className: 'route-marker-simple',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+        popupAnchor: [0, -20]
+    });
+};
+
 
 // --- Components ---
 
-const GlassPanel: React.FC<{ children: React.ReactNode, className?: string }> = ({ children, className }) => (
-    <div className={`backdrop-blur-xl bg-white/80 border border-white/20 shadow-2xl rounded-3xl overflow-hidden transition-all hover:shadow-brand-blue/10 ${className}`}>
-        {children}
-    </div>
-);
+// --- Components ---
 
 const AIConsultantPanel: React.FC<{ site: HeritageAsset, mode: AppMode }> = ({ site, mode }) => (
-    <div className="flex flex-col h-full space-y-4">
-        <div className="bg-brand-blue/5 border border-brand-blue/10 p-4 rounded-2xl">
-            <h4 className="text-[10px] font-black uppercase text-brand-blue flex items-center gap-2 mb-3">
-                <Sparkles size={14} /> Consultant AI Analysis
+    <div className="flex flex-col space-y-3">
+        <div className="bg-gradient-to-br from-brand-blue/5 to-white border border-brand-blue/10 p-4 rounded-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Sparkles size={48} className="text-brand-blue" />
+            </div>
+
+            <h4 className="text-[10px] font-black uppercase text-brand-blue flex items-center gap-2 mb-2">
+                <Sparkles size={12} /> {mode === 'management' ? 'Análise Técnica AI' : 'Guia Inteligente'}
             </h4>
-            <div className="text-xs font-bold text-slate-700 leading-relaxed">
+
+            <div className="text-xs font-medium text-slate-700 leading-relaxed z-10 relative">
                 {mode === 'management'
-                    ? `Analisando situação de "${site.titulo}" em relação à lei 10.089/86. Natureza ${site.propriedade || 'não especificada'}. O status "${site.conservation_status || 'Regular'}" sugere prioridade ${site.conservation_status === 'Alerta' ? 'Máxima' : 'Média'}.`
-                    : `Explorando o patrimônio ${site.estilo_arquitetonico || 'histórico'}. Posso descrever as influências presentes e a cronologia iniciada em ${site.ano_construcao || 'período colonial'}.`
+                    ? <>
+                        <p className="mb-2"><strong>Status:</strong> {site.conservation_status || 'Regular'}. Requer monitoramento {site.conservation_status === 'Alerta' ? 'constante' : 'periódico'}.</p>
+                        <p className="text-slate-500 text-[10px]">Sugestão: Agendar vistoria técnica para avaliar estrutura do telhado.</p>
+                    </>
+                    : <>
+                        <p>Este imóvel é um exemplar clássico do <strong>{site.estilo_arquitetonico || 'período colonial'}</strong>.</p>
+                        <p className="mt-1 text-[11px] text-slate-500">Curiosidade: Elementos da fachada indicam reformas no séc. XIX.</p>
+                    </>
                 }
             </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-            <button className="p-3 bg-white border border-slate-100 rounded-xl hover:border-brand-blue transition-all group">
-                <p className="text-[9px] font-black text-slate-400 uppercase group-hover:text-brand-blue">Ação Sugerida</p>
-                <p className="text-[11px] font-bold text-slate-700 mt-1">{mode === 'management' ? 'Solicitar Vistoria' : 'Rota Histórica'}</p>
+            <button className="flex items-center justify-center gap-2 p-2 bg-white border border-slate-100 rounded-xl hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all group">
+                <div className="p-1.5 bg-brand-blue/10 text-brand-blue rounded-lg group-hover:bg-brand-blue group-hover:text-white transition-colors">
+                    <Navigation size={12} />
+                </div>
+                <div className="text-left">
+                    <p className="text-[8px] font-black text-slate-400 uppercase">Ação</p>
+                    <p className="text-[10px] font-bold text-slate-700 whitespace-nowrap">{mode === 'management' ? 'Vistoria' : 'Como chegar'}</p>
+                </div>
             </button>
-            <button className="p-3 bg-white border border-slate-100 rounded-xl hover:border-brand-blue transition-all group">
-                <p className="text-[9px] font-black text-slate-400 uppercase group-hover:text-brand-blue">Documentação</p>
-                <p className="text-[11px] font-bold text-slate-700 mt-1">{mode === 'management' ? 'Ver Processos' : 'Galeria 3D'}</p>
+            <button className="flex items-center justify-center gap-2 p-2 bg-white border border-slate-100 rounded-xl hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all group">
+                <div className="p-1.5 bg-purple-50 text-purple-600 rounded-lg group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                    <FilePlus size={12} />
+                </div>
+                <div className="text-left">
+                    <p className="text-[8px] font-black text-slate-400 uppercase">Dados</p>
+                    <p className="text-[10px] font-bold text-slate-700 whitespace-nowrap">{mode === 'management' ? 'Docs' : 'Saber mais'}</p>
+                </div>
             </button>
-        </div>
-
-        <div className="mt-auto bg-slate-50 p-4 rounded-2xl border border-slate-100 italic text-[10px] font-medium text-slate-500">
-            \"Insight em tempo real: O entorno gráfico deste ativo mostra valorização de 12% após a última restauração em 2023.\"
         </div>
     </div>
 );
+
+// --- Viewer Components ---
+
+const SuggestionModal: React.FC<{ site: HeritageAsset, onClose: () => void }> = ({ site, onClose }) => {
+    const { user } = useAuth();
+    const [type, setType] = useState<'text' | 'photo' | 'doc'>('text');
+    const [content, setContent] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async () => {
+        if (!content.trim()) return;
+        setIsSubmitting(true);
+        try {
+            await addDoc(collection(db, "suggestions"), {
+                assetId: site.id,
+                assetTitle: site.titulo,
+                userId: user?.id,
+                userName: user?.name,
+                type,
+                content,
+                status: 'pending',
+                createdAt: new Date(),
+                votes: 0
+            });
+            alert("Sugestão enviada para análise técnica!");
+            onClose();
+        } catch (e) {
+            console.error("Erro ao enviar sugestão", e);
+            alert("Erro ao enviar. Tente novamente.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[1005] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-700 flex items-center gap-2">
+                        <Sparkles size={14} className="text-brand-blue" />
+                        Colaborar com o Acervo
+                    </h3>
+                    <button onClick={onClose} className="p-1 hover:bg-slate-200 rounded-full transition-colors"><X size={16} /></button>
+                </div>
+
+                <div className="p-6 space-y-4">
+                    <p className="text-xs text-slate-500 font-medium">
+                        Você está sugerindo melhorias para: <strong className="text-slate-800">{site.titulo}</strong>
+                    </p>
+
+                    <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
+                        <button
+                            onClick={() => setType('text')}
+                            className={`flex-1 py-2 rounded-md text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${type === 'text' ? 'bg-white text-brand-dark shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                            <PenTool size={12} /> Texto
+                        </button>
+                        <button
+                            onClick={() => setType('photo')}
+                            className={`flex-1 py-2 rounded-md text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${type === 'photo' ? 'bg-white text-brand-blue shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                            <Camera size={12} /> Foto
+                        </button>
+                        <button
+                            onClick={() => setType('doc')}
+                            className={`flex-1 py-2 rounded-md text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${type === 'doc' ? 'bg-white text-brand-red shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                            <FilePlus size={12} /> Doc
+                        </button>
+                    </div>
+
+                    <div>
+                        <textarea
+                            value={content}
+                            onChange={(e) => setContent(e.target.value)}
+                            placeholder={type === 'text' ? "Descreva a correção ou adição histórica..." : type === 'photo' ? "Cole aqui o link da imagem ou descreva a foto que possui..." : "Cole o link do documento ou descreva a fonte..."}
+                            className="w-full h-32 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue outline-none resize-none"
+                        />
+                        <p className="text-[9px] text-slate-400 mt-2 text-right">
+                            *Sua contribuição será avaliada pela equipe técnica do DPHAP.
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={handleSubmit}
+                        disabled={isSubmitting || !content.trim()}
+                        className="w-full py-3 bg-brand-blue text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-brand-blue/30"
+                    >
+                        {isSubmitting ? <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" /> : <Send size={14} />}
+                        Enviar Colaboração
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const DetailDrawer: React.FC<{
     site: HeritageAsset,
     mode: AppMode,
     onClose: () => void,
-    onReportError?: () => void
-}> = ({ site, mode, onClose, onReportError }) => (
-    <div className="absolute top-6 bottom-6 right-6 w-[400px] z-[1001] animate-slide-in-right">
-        <GlassPanel className="h-full flex flex-col">
-            <div className="relative h-56 w-full overflow-hidden">
-                <img
-                    src={site.imagens_historicas && site.imagens_historicas.length > 0 ? site.imagens_historicas[0] : `https://images.unsplash.com/photo-1590603740183-980e7f83a2d3?auto=format&fit=crop&q=80&w=800`}
-                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
-                    alt={site.titulo}
-                />
-                <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-                    <span className="px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[9px] font-black text-brand-dark uppercase tracking-widest shadow-lg">
-                        ID: {site.id}
-                    </span>
-                    {site.geocode_confidence !== undefined && (
-                        <span className="px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[9px] font-black text-slate-500 uppercase tracking-widest shadow-lg">
-                            CONF: {(site.geocode_confidence * 100).toFixed(0)}%
-                        </span>
-                    )}
-                    {site.propriedade && (
-                        <span className="px-3 py-1 bg-brand-blue/90 backdrop-blur-md rounded-full text-[9px] font-black text-white uppercase tracking-widest shadow-lg flex items-center gap-1">
-                            <User size={8} /> {site.propriedade}
-                        </span>
-                    )}
-                </div>
-                <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md transition-all">
-                    <X size={16} />
-                </button>
-                <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
-            </div>
+    onReportError?: () => void,
+    onEditEntrance?: () => void
+}> = ({ site, mode, onClose, onReportError, onEditEntrance }) => {
+    const { isEditor, user } = useAuth();
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [showSuggestion, setShowSuggestion] = useState(false);
 
-            <div className="flex-1 overflow-y-auto no-scrollbar p-6">
-                <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-black text-brand-blue uppercase tracking-widest">{site.categoria}</span>
-                        {site.tipologia && (
-                            <>
-                                <span className="text-slate-300">/</span>
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{site.tipologia}</span>
-                            </>
-                        )}
-                    </div>
-                    <h2 className="text-2xl font-black text-slate-800 leading-tight uppercase font-sans mb-2">{site.titulo}</h2>
-                    <p className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
-                        <Navigation size={10} className="text-brand-blue" /> {site.endereco_original}, São Luís - MA
-                    </p>
-                </div>
+    // Check favorite status
+    useEffect(() => {
+        if (user) {
+            const favs = localStorage.getItem(`fav_${user.id}`);
+            if (favs && JSON.parse(favs).includes(site.id)) {
+                setIsFavorite(true);
+            } else {
+                setIsFavorite(false);
+            }
+        }
+    }, [site.id, user]);
 
-                {site.descricao && (
-                    <div className="mb-8">
-                        <p className="text-xs font-medium text-slate-600 leading-relaxed border-l-4 border-slate-100 pl-4 py-1 italic">
-                            "{site.descricao}"
-                        </p>
-                    </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100/50">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter flex items-center gap-1">
-                            <Shield size={10} className="text-brand-red" /> Conservação
-                        </p>
-                        <p className={`text-xs font-black mt-1 ${site.conservation_status === 'Alerta' ? 'text-brand-red' : 'text-emerald-600'}`}>
-                            {site.conservation_status || 'Regular'}
-                        </p>
-                    </div>
-                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100/50">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter flex items-center gap-1">
-                            <Home size={10} className="text-brand-blue" /> Uso Atual
-                        </p>
-                        <p className="text-xs font-black text-slate-800 mt-1 truncate">
-                            {site.uso_atual || 'Institucional'}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="space-y-6">
-                    <div>
-                        <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3 flex items-center gap-2">
-                            <History size={14} className="text-brand-blue" /> Cronologia & Estilo
-                        </h4>
-                        <div className="grid grid-cols-2 gap-y-3 gap-x-6 p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
-                            <div className="space-y-1">
-                                <span className="text-[9px] font-black text-slate-400 uppercase">Ano Const.</span>
-                                <p className="text-[11px] font-bold text-slate-700 flex items-center gap-1"><Calendar size={10} /> {site.ano_construcao || 'Séc. XVIII'}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <span className="text-[9px] font-black text-slate-400 uppercase">Estilo</span>
-                                <p className="text-[11px] font-bold text-slate-700 flex items-center gap-1"><Building2 size={10} /> {site.estilo_arquitetonico || 'Colonial'}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {site.imagens_historicas && site.imagens_historicas.length > 0 && (
-                        <div>
-                            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3 flex items-center gap-2">
-                                <ImageIcon size={14} className="text-brand-blue" /> Galeria Histórica
-                            </h4>
-                            <div className="grid grid-cols-3 gap-2">
-                                {site.imagens_historicas.slice(0, 3).map((img, i) => (
-                                    <div key={i} className="aspect-square rounded-xl overflow-hidden border border-slate-100 group cursor-zoom-in">
-                                        <img src={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt="hist" />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    <div>
-                        <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3 flex items-center gap-2">
-                            <Info size={14} className="text-brand-blue" /> Detalhes do Inventário
-                        </h4>
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                <span className="text-[11px] font-bold text-slate-500">Inscrição de Tombo:</span>
-                                <span className="text-[11px] font-black text-slate-700">{site.inventory?.inscricao || '---'}</span>
-                            </div>
-                            <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                <span className="text-[11px] font-bold text-slate-500">Data do Decreto:</span>
-                                <span className="text-[11px] font-black text-slate-700">{site.inventory?.data_tombamento || '---'}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <AIConsultantPanel site={site} mode={mode} />
-                </div>
-            </div>
-
-            <div className="p-6 border-t border-slate-100 bg-slate-50/50">
-                <button className="w-full py-4 bg-brand-dark text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-black transition-all flex items-center justify-center gap-3 active:scale-[0.98]">
-                    {mode === 'management' ? 'Gerar Relatório Técnico' : 'Iniciar Guia Turístico'}
-                    <ChevronRight size={16} />
-                </button>
-                {mode === 'management' && onReportError && (
-                    <button
-                        onClick={onReportError}
-                        className="w-full mt-2 py-2 border border-slate-200 rounded-xl text-[10px] font-black text-slate-500 uppercase tracking-widest hover:bg-white transition-all"
-                    >
-                        Reportar Erro / Atualizar
-                    </button>
-                )}
-            </div>
-        </GlassPanel>
-    </div>
-);
-
-const AreaDetailDrawer: React.FC<{
-    area: HeritageArea,
-    onClose: () => void
-}> = ({ area, onClose }) => (
-    <div className="absolute top-6 bottom-6 right-6 w-[350px] z-[1001] animate-slide-in-right">
-        <GlassPanel className="h-full flex flex-col p-6">
-            <div className="flex items-start justify-between mb-6">
-                <div>
-                    <span className="px-3 py-1 bg-brand-blue/10 rounded-full text-[9px] font-black text-brand-blue uppercase tracking-widest">
-                        Poligonal
-                    </span>
-                    <h2 className="text-2xl font-black text-slate-800 leading-tight uppercase font-sans mt-3">{area.titulo}</h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">{area.cidade}</p>
-                </div>
-                <button onClick={onClose} className="p-2 bg-slate-100/50 hover:bg-slate-200 text-slate-500 rounded-full transition-all">
-                    <X size={16} />
-                </button>
-            </div>
-
-            <div className="space-y-4">
-                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter flex items-center gap-1 mb-2">
-                        <Layers size={12} className="text-brand-blue" /> Tipo de Área
-                    </p>
-                    <p className="text-sm font-bold text-slate-800 uppercase">{area.tipo_area.replace('_', ' ')}</p>
-                </div>
-
-                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter flex items-center gap-1 mb-2">
-                        <Shield size={12} className="text-emerald-500" /> Status
-                    </p>
-                    <p className="text-sm font-bold text-slate-800 uppercase flex items-center gap-2">
-                        {area.status === 'ok' ? (
-                            <><span className="w-2 h-2 rounded-full bg-emerald-500" /> Oficial / Homologada</>
-                        ) : (
-                            <><span className="w-2 h-2 rounded-full bg-orange-500" /> Em Análise</>
-                        )}
-                    </p>
-                </div>
-            </div>
-
-            <div className="mt-auto">
-                <button className="w-full py-4 bg-brand-dark text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2">
-                    <BookOpen size={14} /> Ver Legislação
-                </button>
-            </div>
-        </GlassPanel>
-    </div>
-);
-
-const ZoneEditorPanel: React.FC<{
-    draft: DraftZone,
-    setDraft: (d: DraftZone) => void,
-    onSave: () => void,
-    onCancel: () => void,
-    editorMode: EditorMode
-}> = ({ draft, setDraft, onSave, onCancel, editorMode }) => {
-    const areaFormatted = draft.areaM2 ? (draft.areaM2 > 10000 ? `${(draft.areaM2 / 10000).toFixed(2)} ha` : `${draft.areaM2.toFixed(0)} m²`) : '0 m²';
+    const toggleFavorite = () => {
+        if (!user) return;
+        const newStatus = !isFavorite;
+        setIsFavorite(newStatus);
+        const favs = JSON.parse(localStorage.getItem(`fav_${user.id}`) || '[]');
+        if (newStatus) {
+            favs.push(site.id);
+        } else {
+            const idx = favs.indexOf(site.id);
+            if (idx > -1) favs.splice(idx, 1);
+        }
+        localStorage.setItem(`fav_${user.id}`, JSON.stringify(favs));
+    };
 
     return (
-        <div className="absolute top-24 left-6 z-[1001] w-64 animate-slide-in-left">
-            <GlassPanel className="p-4 border-brand-red/30">
-                <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-[11px] font-black text-brand-red uppercase tracking-widest flex items-center gap-2 font-sans">
-                        <Shield size={14} /> Precision Editor v36
-                    </h3>
-                    <button onClick={onCancel} className="p-1 hover:bg-slate-100 rounded-full"><X size={14} /></button>
+        <div className="fixed inset-0 z-[1001] md:absolute md:inset-auto md:top-4 md:bottom-4 md:right-4 md:w-[420px] animate-slide-in-right flex items-end md:block pointer-events-none">
+            {showSuggestion && <SuggestionModal site={site} onClose={() => setShowSuggestion(false)} />}
+
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm md:hidden pointer-events-auto" onClick={onClose} />
+            <GlassPanel className="w-full h-[90vh] md:h-full rounded-t-3xl md:rounded-3xl pointer-events-auto flex flex-col bg-white/95 shadow-2xl border-white/40">
+                {/* Hero Image Section */}
+                <div className="relative h-64 shrink-0 w-full overflow-hidden group">
+                    <img
+                        src={site.imagens_historicas && site.imagens_historicas.length > 0 ? site.imagens_historicas[0] : `https://images.unsplash.com/photo-1590603740183-980e7f83a2d3?auto=format&fit=crop&q=80&w=800`}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        alt={site.titulo}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                    {/* Top Actions */}
+                    <div className="absolute top-4 right-4 flex gap-2">
+                        {!isEditor && user && (
+                            <button
+                                onClick={toggleFavorite}
+                                className={`p-2.5 rounded-full backdrop-blur-md transition-all shadow-lg ${isFavorite ? 'bg-brand-red text-white' : 'bg-white/20 text-white hover:bg-white hover:text-brand-red'}`}
+                            >
+                                <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
+                            </button>
+                        )}
+                        <button onClick={onClose} className="p-2.5 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md transition-all">
+                            <X size={18} />
+                        </button>
+                    </div>
+
+                    {/* Bottom Info on Image */}
+                    <div className="absolute bottom-4 left-6 right-6 text-white">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="px-2 py-0.5 bg-brand-blue rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm">
+                                {site.categoria}
+                            </span>
+                            {site.propriedade && (
+                                <span className="px-2 py-0.5 bg-white/20 backdrop-blur-md rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                                    <User size={10} /> {site.propriedade}
+                                </span>
+                            )}
+                        </div>
+                        <h2 className="text-2xl font-black leading-tight uppercase font-sans mb-1 text-white drop-shadow-lg">{site.titulo}</h2>
+                        <p className="text-xs font-medium text-white/80 flex items-center gap-1">
+                            <Navigation size={12} className="text-brand-blue" /> {site.endereco_original}, São Luís
+                        </p>
+                    </div>
                 </div>
 
-                <div className="space-y-3">
-                    {editorMode === 'edit' && !draft.id ? (
-                        <div className="p-4 bg-brand-blue/5 border border-dashed border-brand-blue/30 rounded-xl text-center">
-                            <Navigation size={20} className="mx-auto text-brand-blue mb-2 animate-pulse" />
-                            <p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">Aguardando seleção de polígono no mapa...</p>
-                        </div>
-                    ) : (
-                        <>
-                            <input
-                                type="text"
-                                value={draft.title}
-                                onChange={e => setDraft({ ...draft, title: e.target.value })}
-                                placeholder="Nome da Poligonal..."
-                                className="w-full bg-white border border-slate-100 shadow-sm rounded-lg px-3 py-2 text-[11px] font-bold outline-none focus:ring-2 focus:ring-brand-red/10"
-                            />
-
-                            <div className="grid grid-cols-3 gap-1">
-                                {(['federal', 'estadual', 'municipal'] as const).map(t => (
-                                    <button
-                                        key={t}
-                                        onClick={() => setDraft({ ...draft, type: t })}
-                                        className={`py-1.5 rounded-md text-[8px] font-black uppercase tracking-tight border transition-all ${draft.type === t ? 'bg-brand-red text-white border-brand-red shadow-md' : 'bg-white text-slate-400 border-slate-100'}`}
-                                    >
-                                        {t}
-                                    </button>
-                                ))}
+                {/* Content Body */}
+                <div className="flex-1 overflow-y-auto no-scrollbar">
+                    <div className="p-6 space-y-6">
+                        {/* Meta Tags Horizontal Scroll */}
+                        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                            <div className="px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg whitespace-nowrap">
+                                <span className="text-[9px] font-black text-slate-400 uppercase mr-2">ID</span>
+                                <span className="text-[10px] font-bold text-slate-700 font-mono">#{site.id}</span>
                             </div>
-
-                            <div className="p-3 bg-brand-red/5 rounded-2xl border border-brand-red/10">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-[9px] font-black text-brand-red uppercase">Customização & SIG</span>
-                                    <span className="text-[9px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-100">{areaFormatted}</span>
+                            {site.geocode_confidence !== undefined && isEditor && (
+                                <div className="px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg whitespace-nowrap">
+                                    <span className="text-[9px] font-black text-slate-400 uppercase mr-2">Conf</span>
+                                    <span className={`text-[10px] font-bold ${site.geocode_confidence > 0.8 ? 'text-emerald-600' : 'text-orange-500'}`}>
+                                        {(site.geocode_confidence * 100).toFixed(0)}%
+                                    </span>
                                 </div>
+                            )}
+                            <div className="px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg whitespace-nowrap">
+                                <span className="text-[9px] font-black text-slate-400 uppercase mr-2">Tombo</span>
+                                <span className="text-[10px] font-bold text-slate-700">{site.inventory?.inscricao || '---'}</span>
+                            </div>
+                        </div>
 
-                                {/* Color Picker Presets */}
-                                <div className="flex gap-2 mb-3">
-                                    {['#CC343A', '#1E88E5', '#43A047', '#FB8C00', '#8E24AA', '#546E7A'].map(c => (
-                                        <button
-                                            key={c}
-                                            onClick={() => setDraft({ ...draft, color: c })}
-                                            className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-125 ${draft.color === c ? 'border-white ring-2 ring-brand-red' : 'border-transparent opacity-80'}`}
-                                            style={{ backgroundColor: c }}
-                                        />
+                        {/* Description */}
+                        {site.descricao && (
+                            <p className="text-sm text-slate-600 leading-relaxed font-normal">
+                                {site.descricao}
+                            </p>
+                        )}
+
+                        {/* Main Info Grid */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Conservação</p>
+                                <div className="flex items-center gap-2">
+                                    <Shield size={16} className={site.conservation_status === 'Alerta' ? 'text-red-500' : 'text-emerald-500'} />
+                                    <span className="text-xs font-bold text-slate-800">{site.conservation_status || 'Regular'}</span>
+                                </div>
+                            </div>
+                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Uso Atual</p>
+                                <div className="flex items-center gap-2">
+                                    <Home size={16} className="text-brand-blue" />
+                                    <span className="text-xs font-bold text-slate-800 truncate" title={site.uso_atual}>{site.uso_atual || 'Institucional'}</span>
+                                </div>
+                            </div>
+                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Construção</p>
+                                <div className="flex items-center gap-2">
+                                    <Calendar size={16} className="text-slate-500" />
+                                    <span className="text-xs font-bold text-slate-800">{site.ano_construcao || 'Séc. XVIII'}</span>
+                                </div>
+                            </div>
+                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Estilo</p>
+                                <div className="flex items-center gap-2">
+                                    <Building2 size={16} className="text-purple-500" />
+                                    <span className="text-xs font-bold text-slate-800 truncate">{site.estilo_arquitetonico || 'Colonial'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Gallery */}
+                        {site.imagens_historicas && site.imagens_historicas.length > 0 && (
+                            <div>
+                                <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3 flex items-center gap-2">
+                                    <ImageIcon size={14} /> Galeria
+                                </h4>
+                                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                                    {site.imagens_historicas.map((img, i) => (
+                                        <div key={i} className="h-24 w-24 shrink-0 rounded-lg overflow-hidden border border-slate-100 cursor-zoom-in relative group">
+                                            <img src={img} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="hist" />
+                                        </div>
                                     ))}
                                 </div>
+                            </div>
+                        )}
 
-                                {/* Undo/Redo Actions */}
-                                <div className="grid grid-cols-2 gap-2 mb-2">
-                                    <button
-                                        onClick={(draft as any).onUndo}
-                                        disabled={!(draft as any).canUndo}
-                                        className="py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-slate-50 disabled:opacity-30 transition-all flex items-center justify-center gap-2"
-                                        title="Ctrl + Z"
-                                    >
-                                        <Undo2 size={12} /> Desfazer
-                                    </button>
-                                    <button
-                                        onClick={(draft as any).onRedo}
-                                        disabled={!(draft as any).canRedo}
-                                        className="py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-slate-50 disabled:opacity-30 transition-all flex items-center justify-center gap-2"
-                                        title="Ctrl + Y"
-                                    >
-                                        <RotateCcw size={12} className="rotate-180" /> Refazer
-                                    </button>
+
+                        {/* Documents Section */}
+                        <div className="space-y-4">
+                            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2">
+                                <FileText size={14} /> Documentos e Legislação
+                            </h4>
+
+                            <div className="space-y-2">
+                                {site.documentos?.map((d, idx) => (
+                                    <div key={idx} className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md transition-all group">
+                                        <div className={`p-2 rounded-lg ${d.type === 'pdf' ? 'bg-red-50 text-red-500' : d.type === 'image' ? 'bg-blue-50 text-blue-500' : 'bg-slate-100 text-slate-500'}`}>
+                                            {d.type === 'image' ? <ImageIcon size={16} /> : <FileText size={16} />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[11px] font-bold text-slate-700 truncate">{d.name}</p>
+                                            <p className="text-[9px] text-slate-400 font-medium">{new Date(d.uploadedAt).toLocaleDateString()}</p>
+                                        </div>
+                                        <a
+                                            href={d.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-2 text-slate-400 hover:text-brand-blue hover:bg-brand-blue/5 rounded-lg transition-all"
+                                        >
+                                            <Download size={16} />
+                                        </a>
+                                    </div>
+                                ))}
+
+                                {(!site.documentos || site.documentos.length === 0) && (
+                                    <p className="text-[10px] text-slate-400 italic">Nenhum documento anexado.</p>
+                                )}
+                            </div>
+
+                            {isEditor && (
+                                <div className="mt-4">
+                                    <FileUpload
+                                        path={`heritage_assets/${site.id}/docs`}
+                                        onUploadComplete={async (fileData) => {
+                                            try {
+                                                const assetRef = doc(db, "heritage_assets", site.id);
+                                                await updateDoc(assetRef, {
+                                                    documentos: arrayUnion(fileData)
+                                                });
+                                            } catch (e) {
+                                                console.error("Erro ao atualizar documento no Firestore", e);
+                                                alert("Upload concluído, mas erro ao salvar referência no banco.");
+                                            }
+                                        }}
+                                    />
                                 </div>
+                            )}
+                        </div>
 
-                                {/* Cycle Overlapping */}
-                                {(draft as any).potentialCount > 1 && (
+                        <AIConsultantPanel site={site} mode={mode} />
+
+                    </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="p-5 border-t border-slate-100 bg-white/50 backdrop-blur-md shrink-0">
+                    <div className="flex flex-col gap-2">
+                        {isEditor ? (
+                            <div className="flex gap-2 w-full">
+                                <button className="flex-1 py-4 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2 group">
+                                    <span>Relatório</span>
+                                    <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                                </button>
+                                {onEditEntrance && (
                                     <button
-                                        onClick={(draft as any).onCycle}
-                                        className="w-full mb-2 py-2 bg-brand-blue/10 border border-brand-blue/20 text-brand-blue rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-brand-blue/20 transition-all flex items-center justify-center gap-2"
+                                        onClick={onEditEntrance}
+                                        className="flex-1 py-4 bg-lime-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-lime-700 transition-all shadow-lg flex items-center justify-center gap-2"
                                     >
-                                        <Layers size={12} /> Camada ({(draft as any).potentialIndex + 1}/{(draft as any).potentialCount})
+                                        <MapPin size={14} /> Entrada
                                     </button>
                                 )}
-
-                                <div className="flex flex-col gap-1.5 pt-3 border-t border-brand-red/10 mt-2">
-                                    <button
-                                        disabled={draft.points.length < 3}
-                                        onClick={onSave}
-                                        className="w-full py-2 bg-brand-dark text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-black disabled:opacity-30 transition-all flex items-center justify-center gap-2 shadow-lg group"
-                                    >
-                                        <Save size={12} className="group-hover:scale-110 transition-transform" /> Salvar Polígono
-                                    </button>
-
-                                    {draft.id && (
-                                        <button
-                                            onClick={(draft as any).onDelete}
-                                            className="w-full py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all flex items-center justify-center gap-2"
-                                        >
-                                            <Trash2 size={12} /> Excluir
-                                        </button>
-                                    )}
-                                </div>
                             </div>
-                        </>
-                    )}
+                        ) : (
+                            <button className="w-full py-4 bg-brand-blue text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-brand-dark transition-all shadow-lg shadow-brand-blue/20 flex items-center justify-center gap-2 group">
+                                <Compass size={16} />
+                                <span>Iniciar Tour Virtual</span>
+                                <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        )}
 
-                    <div className="px-2 space-y-1">
-                        <p className="text-[8px] font-bold text-slate-400 leading-tight flex items-center gap-1">
-                            <CheckCircle2 size={10} className="text-emerald-500" /> {editorMode === 'create' ? 'Clique p/ adicionar pontos' : 'Clique no polígono p/ editar'}
-                        </p>
-                        <p className="text-[8px] font-bold text-slate-400 leading-tight flex items-center gap-1">
-                            <CheckCircle2 size={10} className="text-emerald-500" /> Arraste círculos brancos p/ novos pontos
-                        </p>
-                        <p className="text-[8px] font-bold text-slate-400 leading-tight flex items-center gap-1">
-                            <CheckCircle2 size={10} className="text-emerald-500" /> Duplo-clique no ponto para excluir
-                        </p>
-                        <p className="text-[8px] font-bold text-slate-400 leading-tight flex items-center gap-1">
-                            <CheckCircle2 size={10} className="text-emerald-500" /> <span className="text-slate-500">ESC</span> Cancela, <span className="text-slate-500">SHIFT</span> Trava
-                        </p>
+                        <div className="flex gap-2">
+                            {!isEditor && (
+                                <button
+                                    onClick={() => setShowSuggestion(true)}
+                                    className="flex-1 py-3 border border-slate-200 hover:border-brand-blue text-slate-600 hover:text-brand-blue rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                >
+                                    <PenTool size={14} /> Contribuir
+                                </button>
+                            )}
+                            {isEditor && onReportError && (
+                                <button
+                                    onClick={onReportError}
+                                    className="flex-1 py-3 border border-red-200 hover:bg-red-50 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                >
+                                    Reportar Erro
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </GlassPanel>
@@ -527,32 +651,190 @@ const ZoneEditorPanel: React.FC<{
     );
 };
 
-const RoutePlannerPanel: React.FC<{ sequence: HeritageAsset[], onClear: () => void, onClose: () => void }> = ({ sequence, onClear, onClose }) => (
-    <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-[1001] w-[500px] animate-slide-in-bottom">
-        <GlassPanel className="p-4 border-brand-blue/30 overflow-visible">
-            <div className="flex items-center gap-4">
-                <div className="flex-1 flex gap-2 items-center overflow-x-auto no-scrollbar pb-1">
+
+const AreaDetailDrawer: React.FC<{
+    area: HeritageArea,
+    onClose: () => void
+}> = ({ area, onClose }) => {
+    const { isEditor } = useAuth();
+
+    return (
+        <div className="fixed inset-0 z-[1001] md:absolute md:inset-auto md:top-6 md:bottom-6 md:right-6 md:w-[350px] animate-slide-in-right flex items-end md:block pointer-events-none">
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm md:hidden pointer-events-auto" onClick={onClose} />
+            <GlassPanel className="w-full h-[60vh] md:h-full rounded-t-3xl md:rounded-3xl pointer-events-auto flex flex-col p-6 font-sans">
+                <div className="flex items-start justify-between mb-6">
+                    <div>
+                        <span className="px-3 py-1 bg-brand-blue/10 rounded-full text-[9px] font-black text-brand-blue uppercase tracking-widest">
+                            Poligonal
+                        </span>
+                        <h2 className="text-2xl font-black text-slate-800 leading-tight uppercase mt-3">{area.titulo}</h2>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">{area.cidade}</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 bg-slate-100/50 hover:bg-slate-200 text-slate-500 rounded-full transition-all">
+                        <X size={16} />
+                    </button>
+                </div>
+
+                <div className="space-y-4">
+                    <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter flex items-center gap-1 mb-2">
+                            <Layers size={12} className="text-brand-blue" /> Tipo de Área
+                        </p>
+                        <p className="text-sm font-bold text-slate-800 uppercase">{area.tipo_area?.replace('_', ' ')}</p>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter flex items-center gap-1 mb-2">
+                            <Shield size={12} className="text-emerald-500" /> Status
+                        </p>
+                        <p className="text-sm font-bold text-slate-800 uppercase flex items-center gap-2">
+                            {area.status === 'ok' ? (
+                                <><span className="w-2 h-2 rounded-full bg-emerald-500" /> Oficial / Homologada</>
+                            ) : (
+                                <><span className="w-2 h-2 rounded-full bg-orange-500" /> Em Análise</>
+                            )}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="mt-6">
+                    <button className="w-full py-4 bg-brand-dark text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2">
+                        <BookOpen size={14} /> Ver Legislação
+                    </button>
+
+                    {/* Documents / Upload for Areas */}
+                    <div className="mt-8 space-y-4">
+                        <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2">
+                            <FileText size={14} /> Documentos Anexos
+                        </h4>
+
+                        <div className="space-y-2">
+                            {area.documentos?.map((d, idx) => (
+                                <div key={idx} className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md transition-all group">
+                                    <div className={`p-2 rounded-lg ${d.type === 'pdf' ? 'bg-red-50 text-red-500' : d.type === 'image' ? 'bg-blue-50 text-blue-500' : 'bg-slate-100 text-slate-500'}`}>
+                                        {d.type === 'image' ? <ImageIcon size={16} /> : <FileText size={16} />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[11px] font-bold text-slate-700 truncate">{d.name}</p>
+                                        <p className="text-[9px] text-slate-400 font-medium">{new Date(d.uploadedAt).toLocaleDateString()}</p>
+                                    </div>
+                                    <a
+                                        href={d.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-2 text-slate-400 hover:text-brand-blue hover:bg-brand-blue/5 rounded-lg transition-all"
+                                    >
+                                        <Download size={16} />
+                                    </a>
+                                </div>
+                            ))}
+
+                            {(!area.documentos || area.documentos.length === 0) && (
+                                <p className="text-[10px] text-slate-400 italic font-medium pt-2">Nenhum documento anexado.</p>
+                            )}
+                        </div>
+
+                        {isEditor && (
+                            <div className="mt-4">
+                                <FileUpload
+                                    path={`heritage_areas/${area.id}/docs`}
+                                    onUploadComplete={async (fileData) => {
+                                        try {
+                                            const areaRef = doc(db, "heritage_areas", area.id);
+                                            await updateDoc(areaRef, {
+                                                documentos: arrayUnion(fileData)
+                                            });
+                                        } catch (e) {
+                                            console.error("Erro ao atualizar polígono no Firestore", e);
+                                            alert("Upload concluído, mas erro ao salvar referência no banco.");
+                                        }
+                                    }}
+                                />
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </GlassPanel>
+        </div>
+    );
+};
+
+
+// ZoneEditorPanel removed - replaced by PrecisionEditor
+
+const RoutePlannerPanel: React.FC<{
+    sequence: HeritageAsset[],
+    onClear: () => void,
+    onClose: () => void,
+    onSave: () => void,
+    onExport: () => void
+}> = ({ sequence, onClear, onClose, onSave, onExport }) => (
+    <div className="absolute bottom-24 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-max max-w-[calc(100vw-2rem)] z-[1001] animate-slide-in-bottom">
+        <GlassPanel className="p-3 md:p-4 border-brand-blue/30 overflow-visible shadow-2xl bg-white/95">
+            <div className="flex flex-col md:flex-row items-center gap-4">
+                <div className="flex-1 flex gap-3 items-center overflow-x-auto no-scrollbar pb-2 pt-1 px-1">
                     {sequence.length === 0 ? (
-                        <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 rounded-2xl border border-dashed border-slate-200 w-full justify-center">
-                            <Navigation size={14} className="text-slate-400" />
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Selecione pontos no mapa para criar rota</span>
+                        <div className="flex items-center gap-3 px-6 py-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 w-full justify-center">
+                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                                <Navigation size={14} className="animate-pulse" />
+                            </div>
+                            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Selecione pontos no mapa</span>
                         </div>
                     ) : (
                         sequence.map((s, idx) => (
                             <React.Fragment key={s.id}>
-                                <div className="flex flex-col items-center min-w-[100px] p-2 bg-white border border-slate-100 rounded-xl shadow-sm">
-                                    <span className="text-[8px] font-black text-brand-blue/50 mb-1">{idx + 1}º PARADA</span>
-                                    <span className="text-[10px] font-black text-slate-700 truncate w-full text-center">{s.titulo}</span>
+                                <div className="flex items-center gap-3 p-2 pr-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-all shrink-0">
+                                    <div className="w-7 h-7 rounded-full bg-brand-blue text-white text-[11px] font-black flex items-center justify-center shadow-lg shadow-brand-blue/20">
+                                        {idx + 1}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[7px] font-black text-brand-blue/60 uppercase tracking-tighter mb-0.5">Parada</p>
+                                        <p className="text-[10px] font-black text-slate-800 truncate max-w-[120px] uppercase leading-none">{s.titulo}</p>
+                                    </div>
                                 </div>
-                                {idx < sequence.length - 1 && <ChevronRight size={14} className="text-slate-300" />}
+                                {idx < sequence.length - 1 && (
+                                    <div className="flex items-center text-slate-300">
+                                        <ChevronRight size={16} />
+                                    </div>
+                                )}
                             </React.Fragment>
                         ))
-                    )
-                    }
+                    )}
                 </div>
-                <div className="flex gap-2">
-                    <button onClick={onClear} className="p-3 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition-all"><RotateCcw size={16} /></button>
-                    <button onClick={onClose} className="p-3 bg-brand-dark text-white rounded-xl shadow-xl hover:bg-black transition-all font-black text-[10px] px-6 uppercase tracking-widest">Finalizar</button>
+                <div className="flex gap-2 w-full md:w-auto border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-4">
+                    {sequence.length >= 2 && (
+                        <button
+                            onClick={onExport}
+                            className="flex-1 md:flex-none p-3 bg-brand-dark/10 text-brand-dark rounded-2xl hover:bg-brand-dark/20 transition-all flex items-center justify-center border border-brand-dark/10"
+                            title="Exportar Roteiro (PDF/Print)"
+                        >
+                            <FileText size={18} />
+                        </button>
+                    )}
+                    {sequence.length >= 2 && (
+                        <button
+                            onClick={onSave}
+                            className="flex-1 md:flex-none p-3 bg-brand-blue/10 text-brand-blue rounded-2xl hover:bg-brand-blue/20 transition-all flex items-center justify-center border border-brand-blue/10"
+                            title="Salvar Roteiro"
+                        >
+                            <Save size={18} />
+                        </button>
+                    )}
+                    <button
+                        onClick={onClose}
+                        className="flex-[2] md:flex-none p-3 bg-brand-dark text-white rounded-2xl shadow-xl hover:bg-black transition-all font-black text-[11px] px-8 uppercase tracking-widest"
+                    >
+                        Finalizar
+                    </button>
+                    {sequence.length > 0 && (
+                        <button
+                            onClick={onClear}
+                            className="p-3 text-slate-400 hover:text-red-500 transition-colors"
+                            title="Limpar"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    )}
                 </div>
             </div>
         </GlassPanel>
@@ -560,21 +842,43 @@ const RoutePlannerPanel: React.FC<{ sequence: HeritageAsset[], onClear: () => vo
 );
 
 const FloatingNav: React.FC<{ mode: AppMode, setMode: (m: AppMode) => void }> = ({ mode, setMode }) => (
-    <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] pointer-events-auto">
-        <GlassPanel className="p-2 flex gap-1">
+    <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] pointer-events-auto w-auto md:w-auto">
+        <GlassPanel className="p-2 flex gap-1 justify-center">
             <button
                 onClick={() => setMode('management')}
-                className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all ${mode === 'management' ? 'bg-brand-dark text-white shadow-xl translate-y-[-1px]' : 'text-slate-400 hover:text-slate-600 hover:bg-white'}`}
+                className={`flex items-center gap-3 px-3 md:px-6 py-3 rounded-2xl transition-all ${mode === 'management' ? 'bg-brand-dark text-white shadow-xl translate-y-[-1px]' : 'text-slate-400 hover:text-slate-600 hover:bg-white'}`}
             >
                 <Shield size={18} />
-                <span className="text-xs font-black uppercase tracking-widest">Geomanagement</span>
+                <span className="text-xs font-black uppercase tracking-widest hidden md:block">Geomapa</span>
             </button>
             <button
                 onClick={() => setMode('tourism')}
-                className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all ${mode === 'tourism' ? 'bg-brand-blue text-white shadow-xl translate-y-[-1px]' : 'text-slate-400 hover:text-slate-600 hover:bg-white'}`}
+                className={`flex items-center gap-3 px-3 md:px-6 py-3 rounded-2xl transition-all ${mode === 'tourism' ? 'bg-brand-blue text-white shadow-xl translate-y-[-1px]' : 'text-slate-400 hover:text-slate-600 hover:bg-white'}`}
             >
                 <Compass size={18} />
-                <span className="text-xs font-black uppercase tracking-widest">Tourism AI</span>
+                <span className="text-xs font-black uppercase tracking-widest hidden md:block">Roteiros</span>
+            </button>
+        </GlassPanel>
+    </div>
+);
+
+const SatelliteToggle: React.FC<{
+    base: string,
+    setBase: (b: 'streets' | 'satellite') => void
+}> = ({ base, setBase }) => (
+    <div className="absolute top-24 right-4 md:top-20 md:right-6 z-[900] pointer-events-auto">
+        <GlassPanel className="p-2 transition-all hover:scale-105 active:scale-95 group" title={base === 'streets' ? "Ativar Modo Satélite" : "Voltar para Mapa"}>
+            <button
+                onClick={() => setBase(base === 'streets' ? 'satellite' : 'streets')}
+                className={`w-10 h-10 rounded-xl transition-all flex items-center justify-center ${base === 'satellite'
+                    ? 'bg-brand-blue text-white shadow-lg shadow-brand-blue/20 ring-2 ring-brand-blue/20'
+                    : 'bg-white text-slate-600 hover:text-brand-blue hover:bg-slate-50'
+                    }`}
+            >
+                {base === 'streets'
+                    ? <Globe size={20} strokeWidth={2} />
+                    : <MapIcon size={20} strokeWidth={2} />
+                }
             </button>
         </GlassPanel>
     </div>
@@ -591,7 +895,7 @@ const LayerControl: React.FC<{
     hasZones: boolean,
     canEdit: boolean
 }> = ({ base, setBase, showZones, setShowZones, onNewZone, onEditMode, isEditing, hasZones, canEdit }) => (
-    <div className="absolute top-6 left-6 z-[1000] flex flex-col gap-2 pointer-events-auto">
+    <div className="absolute top-24 left-4 md:top-6 md:left-6 z-[1000] flex flex-col gap-2 pointer-events-auto">
         <GlassPanel className="p-3 w-14 hover:w-64 group transition-all duration-500 ease-in-out">
             <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-4 overflow-hidden">
@@ -685,6 +989,20 @@ const SelectedAreaHandler = ({ area }: { area: HeritageArea | null }) => {
     return null;
 };
 
+const RouteBoundsHandler = ({ route, sequence }: { route: [number, number][] | null, sequence: HeritageAsset[] }) => {
+    const map = useMap();
+    useEffect(() => {
+        if (route && route.length > 0) {
+            const bounds = L.latLngBounds(route);
+            map.flyToBounds(bounds, { padding: [100, 100], duration: 1.5 });
+        } else if (sequence.length > 0) {
+            const bounds = L.latLngBounds(sequence.map(s => [s.lat, s.lng]));
+            map.flyToBounds(bounds, { padding: [150, 150], duration: 1.5 });
+        }
+    }, [route, sequence, map]);
+    return null;
+};
+
 // --- Main Component ---
 
 const GeoManager: React.FC<GeoManagerProps> = ({
@@ -696,8 +1014,8 @@ const GeoManager: React.FC<GeoManagerProps> = ({
     onAreaClick,
     onReportError
 }) => {
-    const { isEditor } = useAuth();
-    const [mode, setMode] = useState<AppMode>('management');
+    const { isEditor, user } = useAuth();
+    const [mode, setMode] = useState<AppMode>('tourism');
     const [showPolygons, setShowPolygons] = useState(true);
     const [baseLayer, setBaseLayer] = useState<'streets' | 'satellite'>('streets');
     const [activeRoute, setActiveRoute] = useState<[number, number][] | null>(null);
@@ -714,6 +1032,11 @@ const GeoManager: React.FC<GeoManagerProps> = ({
 
     const [isPlanningRoute, setIsPlanningRoute] = useState(false);
     const [routeSequence, setRouteSequence] = useState<HeritageAsset[]>([]);
+    const [activeCuratedRoute, setActiveCuratedRoute] = useState<TouristRoute | null>(null);
+    const [showRouteExport, setShowRouteExport] = useState(false);
+
+    // Entrance Editing State
+    const [entranceDraft, setEntranceDraft] = useState<{ lat: number, lng: number } | null>(null);
 
     // Keyboard Shortcuts
     useEffect(() => {
@@ -743,16 +1066,7 @@ const GeoManager: React.FC<GeoManagerProps> = ({
 
     useEffect(() => { setLocalAreas(areas); }, [areas]);
 
-    const midpoints = useMemo(() => {
-        if (!isEditingZones || draftZone.points.length < 2) return [];
-        return draftZone.points.map((p, i) => {
-            const next = draftZone.points[(i + 1) % draftZone.points.length];
-            return {
-                pos: [(p[0] + next[0]) / 2, (p[1] + next[1]) / 2] as [number, number],
-                index: i + 1
-            };
-        });
-    }, [draftZone.points, isEditingZones]);
+
 
     const MapEditorHandler = () => {
         const map = useMap();
@@ -781,6 +1095,8 @@ const GeoManager: React.FC<GeoManagerProps> = ({
                         ...prev,
                         points: [...prev.points, [e.latlng.lat, e.latlng.lng]]
                     }));
+                } else if (editorMode === 'entrance') {
+                    setEntranceDraft({ lat: e.latlng.lat, lng: e.latlng.lng });
                 }
             };
 
@@ -836,19 +1152,21 @@ const GeoManager: React.FC<GeoManagerProps> = ({
         });
     };
 
-    const promoteMidpoint = (index: number, pos: [number, number]) => {
-        addToHistory(draftZone.points);
-        setDraftZone(prev => {
-            const newPoints = [...prev.points];
-            newPoints.splice(index, 0, pos);
-            return { ...prev, points: newPoints };
-        });
-    };
+
 
     const deleteNode = (index: number) => {
         addToHistory(draftZone.points);
         setDraftZone(prev => {
             const newPoints = prev.points.filter((_, i) => i !== index);
+            return { ...prev, points: newPoints };
+        });
+    };
+
+    const addNode = (index: number, position: [number, number]) => {
+        addToHistory(draftZone.points);
+        setDraftZone(prev => {
+            const newPoints = [...prev.points];
+            newPoints.splice(index + 1, 0, position);
             return { ...prev, points: newPoints };
         });
     };
@@ -869,39 +1187,57 @@ const GeoManager: React.FC<GeoManagerProps> = ({
 
     const saveDraftZone = async () => {
         if (draftZone.points.length < 3) return;
+
+        // Prepare coordinates: convert [lat, lng] (Leaflet) to [lng, lat] (GeoJSON)
         const normalizedPoints = draftZone.points.map(p => [p[1], p[0]]);
         const closedPoints = [...normalizedPoints, normalizedPoints[0]];
         const areaId = draftZone.id || `zone-${Date.now()}`;
+
+        // Find original area if editing to preserve fields (like city, other metadata)
+        const originalArea = localAreas.find(a => a.id === areaId);
+
         const areaData: HeritageArea = {
             id: areaId,
-            titulo: draftZone.title || 'Nova Zona',
-            cidade: 'São Luís',
-            tipo_area: draftZone.type,
-            status: 'ok',
+            titulo: draftZone.title || originalArea?.titulo || 'Nova Zona',
+            cidade: originalArea?.cidade || 'São Luís', // Preserve city if exists
+            tipo_area: draftZone.type as any, // Cast to handle the wider HeritageArea types
+            status: originalArea?.status || 'ok',
             type: 'area',
             cor: draftZone.color,
             geojson: {
                 type: 'Feature',
-                geometry: { type: 'Polygon', coordinates: [closedPoints] }
+                geometry: { type: 'Polygon', coordinates: [closedPoints] },
+                properties: {
+                    title: draftZone.title || 'Nova Zona',
+                    type: draftZone.type,
+                    color: draftZone.color
+                }
             }
         };
 
         try {
-            // Firestore doesn't support nested arrays (like GeoJSON coordinates [[[lng, lat], ...]])
-            // So we stringify the geojson property for storage while keeping it as an object locally.
+            // Firestore doesn't always support deep nested arrays well, and previous code stringified it.
+            // We continue this pattern for consistency with the read logic in MapaPage.
             const areaDataForFirestore = {
                 ...areaData,
                 geojson: JSON.stringify(areaData.geojson)
             };
 
-            console.log("Saving area to Firestore (stringified):", areaId);
-            await setDoc(doc(db, "heritage_areas", areaId), areaDataForFirestore);
+            console.log("Saving area to Firestore:", areaId, areaDataForFirestore);
 
+            // Use setDoc with merge: true for updates to be safer, though we are replacing the geojson primarily
+            await setDoc(doc(db, "heritage_areas", areaId), areaDataForFirestore, { merge: true });
+
+            console.log("Save successful");
+
+            // Optimistic update of local state
             if (draftZone.id) {
                 setLocalAreas(prev => prev.map(a => a.id === draftZone.id ? areaData : a));
             } else {
                 setLocalAreas(prev => [...prev, areaData]);
             }
+
+            alert(draftZone.id ? "Área atualizada com sucesso!" : "Nova área criada com sucesso!");
             cancelEdit();
         } catch (error: any) {
             console.error("Erro ao salvar área no Firestore:", error);
@@ -919,9 +1255,32 @@ const GeoManager: React.FC<GeoManagerProps> = ({
         setPotentialIndex(0);
         setHistory([]);
         setRedoStack([]);
+        setEntranceDraft(null);
+    };
+
+    const saveEntrance = async () => {
+        if (!entranceDraft || !selectedAsset) return;
+        try {
+            await setDoc(doc(db, "heritage_assets", selectedAsset.id), {
+                ...selectedAsset,
+                entrance: entranceDraft
+            }, { merge: true });
+            cancelEdit();
+            alert("Ponto de acesso (Entrance) atualizado com sucesso!");
+        } catch (e) {
+            console.error("Error saving entrance:", e);
+            alert("Erro ao salvar acesso.");
+        }
     };
 
     const handleSiteClick = (site: HeritageAsset) => {
+        if (editorMode === 'entrance') {
+            // If we are in entrance mode, select this asset to edit
+            // (Though typically we arrive here from the UI button, if logic permits)
+            if (onAssetClick) onAssetClick(site);
+            return;
+        }
+
         if (isPlanningRoute) {
             setRouteSequence(prev => {
                 if (prev.find(s => s.id === site.id)) return prev;
@@ -934,28 +1293,141 @@ const GeoManager: React.FC<GeoManagerProps> = ({
         }
     };
 
-    const runTourismRoute = (targetIds: string[]) => {
-        if (targetIds.length < 2) return;
+    const fetchHeritageRoute = async (start: HeritageAsset, end: HeritageAsset): Promise<[number, number][]> => {
+        // Strict routing: ONLY verify heritage_routes collection. No external calls.
 
-        // Merge routing data dynamically or statically
-        const allWaypoints = [...WAYPOINTS, ...(EXTENDED_WAYPOINTS || [])];
-        const allConnections = [...CONNECTIONS, ...(EXTENDED_CONNECTIONS || [])];
+        // 1. Check if start/end have defined ENTRANCE points. 
+        // If so, the route typically connects these entrances.
+        // If not, we fall back to asset centroid (lat/lng) but this is technically against the 'rules' 
+        // ("Nunca usar centroide", so we should ideally warn or require entrance).
+        // For now, if no entrance, we assume the stored lat/lng is the "access point".
 
-        const fullPath: [number, number][] = [];
-        for (let i = 0; i < targetIds.length - 1; i++) {
-            const result = findDetailedPath(targetIds[i], targetIds[i + 1], allWaypoints, allConnections);
-            if (result.path.length > 0) {
-                if (i > 0) result.path.shift();
-                fullPath.push(...result.path);
+        const startId = start.id;
+        const endId = end.id;
+
+        try {
+            // Forward check
+            const q1 = query(collection(db, "heritage_routes"), where("from", "==", startId), where("to", "==", endId));
+            const snap1 = await getDocs(q1);
+            if (!snap1.empty) {
+                const data = snap1.docs[0].data();
+                // Assuming stored as [lng, lat] GeoJSON style or [lat, lng] Leaflet. 
+                // Let's assume GeoJSON [lng, lat] for compatibility with standard tools.
+                return data.coordinates.map((c: any) => [c[1], c[0]] as [number, number]);
+            }
+
+            // Reverse check (if bidirectional)
+            const q2 = query(collection(db, "heritage_routes"), where("from", "==", endId), where("to", "==", startId));
+            const snap2 = await getDocs(q2);
+            if (!snap2.empty) {
+                const data = snap2.docs[0].data();
+                const coords = data.coordinates.map((c: any) => [c[1], c[0]] as [number, number]);
+                return coords.reverse();
+            }
+        } catch (e) {
+            console.error("Failed to load heritage route:", e);
+        }
+
+        // If no official route found, return empty or straight line?
+        // Requirement: "Eliminar linhas retas". 
+        // Ideally we return null or specific indicator. But UI needs points.
+        // We will return empty array to indicate "No Valid Route Information".
+        return [];
+    };
+
+    const saveCurrentRoute = async () => {
+        if (routeSequence.length < 2) return;
+
+        const name = prompt("Nome do Roteiro:");
+        if (!name) return;
+
+        const routeData = {
+            userId: user?.id || 'anon',
+            userName: user?.name || 'Anonimo',
+            name,
+            waypoints: routeSequence.map(s => s.id),
+            createdAt: new Date(),
+            preview: routeSequence.map(s => s.titulo).join(" -> ")
+        };
+
+        try {
+            await addDoc(collection(db, "user_routes"), routeData);
+            alert("Roteiro salvo com sucesso!");
+            setIsPlanningRoute(false);
+            setRouteSequence([]);
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao salvar roteiro.");
+        }
+    };
+
+    const runTourismRoute = async (sequence: HeritageAsset[]) => {
+        if (sequence.length < 2) {
+            setActiveRoute(null);
+            return;
+        }
+
+        let aggregatedPath: [number, number][] = [];
+
+        for (let i = 0; i < sequence.length - 1; i++) {
+            const start = sequence[i];
+            const end = sequence[i + 1];
+
+            const segment = await fetchHeritageRoute(start, end);
+            if (segment.length > 0) {
+                // If appending a new segment, remove the first point if it matches the last of current path to avoid double nodes
+                if (aggregatedPath.length > 0) {
+                    const lastPoint = aggregatedPath[aggregatedPath.length - 1];
+                    const firstNew = segment[0];
+                    if (Math.abs(lastPoint[0] - firstNew[0]) < 0.0001 && Math.abs(lastPoint[1] - firstNew[1]) < 0.0001) {
+                        aggregatedPath.push(...segment.slice(1));
+                    } else {
+                        aggregatedPath.push(...segment);
+                    }
+                } else {
+                    aggregatedPath.push(...segment);
+                }
+            } else {
+                // FALLBACK TO OSRM for street-exact paths
+                try {
+                    const response = await fetch(`https://router.project-osrm.org/route/v1/walking/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson`);
+                    const data = await response.json();
+                    if (data.routes && data.routes.length > 0) {
+                        const coords = data.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]] as [number, number]);
+
+                        if (aggregatedPath.length > 0) {
+                            const lastPoint = aggregatedPath[aggregatedPath.length - 1];
+                            const firstNew = coords[0];
+                            if (Math.abs(lastPoint[0] - firstNew[0]) < 0.0001 && Math.abs(lastPoint[1] - firstNew[1]) < 0.0001) {
+                                aggregatedPath.push(...coords.slice(1));
+                            } else {
+                                aggregatedPath.push(...coords);
+                            }
+                        } else {
+                            aggregatedPath.push(...coords);
+                        }
+                    }
+                } catch (err) {
+                    console.error("OSRM Error:", err);
+                    aggregatedPath.push([start.lat, start.lng], [end.lat, end.lng]);
+                }
             }
         }
-        setActiveRoute(fullPath);
+
+        // Use entrance points for start/end of rendering if available
+        if (aggregatedPath.length > 0) {
+            const first = sequence[0];
+            const last = sequence[sequence.length - 1];
+            if (first.entrance) aggregatedPath[0] = [first.entrance.lat, first.entrance.lng];
+            // Logic to append/prepend entrance segments if route stops at street center
+        }
+
+        setActiveRoute(aggregatedPath);
     };
 
     useEffect(() => {
         if (routeSequence.length >= 2) {
-            const nodeIds = routeSequence.map(s => s.graphNode).filter(Boolean) as string[];
-            if (nodeIds.length >= 2) runTourismRoute(nodeIds);
+            runTourismRoute(routeSequence);
         } else {
             setActiveRoute(null);
         }
@@ -981,9 +1453,10 @@ const GeoManager: React.FC<GeoManagerProps> = ({
                 <MapEditorHandler />
                 <SelectedAssetHandler asset={selectedAsset || null} />
                 <SelectedAreaHandler area={selectedArea || null} />
+                <RouteBoundsHandler route={activeRoute} sequence={routeSequence} />
 
-                {/* Legal Zones */}
-                {showPolygons && localAreas.map(area => area.geojson && (
+                {/* Legal Zones - Hidden when route is active for focus */}
+                {showPolygons && !activeRoute && localAreas.map(area => area.geojson && (
                     <GeoJSON
                         key={area.id}
                         data={area.geojson}
@@ -1039,60 +1512,145 @@ const GeoManager: React.FC<GeoManagerProps> = ({
 
                         {/* Nodes (Vertices) */}
                         {draftZone.points.map((p, i) => (
-                            <Marker
-                                key={`node-${i}`}
-                                position={p}
-                                draggable={true}
-                                icon={NodeRealIcon}
-                                eventHandlers={{
-                                    dragend: (e) => {
-                                        const latlng = (e.target as any).getLatLng();
-                                        updateNodePos(i, [latlng.lat, latlng.lng]);
-                                    },
-                                    dblclick: () => deleteNode(i),
-                                    contextmenu: () => deleteNode(i)
-                                }}
-                            />
+                            <React.Fragment key={`node-group-${i}`}>
+                                <Marker
+                                    key={`node-${i}`}
+                                    position={p}
+                                    draggable={true}
+                                    icon={NodeRealIcon}
+                                    eventHandlers={{
+                                        dragend: (e) => {
+                                            const latlng = (e.target as any).getLatLng();
+                                            updateNodePos(i, [latlng.lat, latlng.lng]);
+                                        },
+                                        dblclick: () => deleteNode(i),
+                                        contextmenu: () => deleteNode(i)
+                                    }}
+                                >
+                                    <Popup className="minimal-popup" closeButton={false} offset={[0, -10]}>
+                                        <div className="p-1">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    deleteNode(i);
+                                                }}
+                                                className="flex items-center gap-2 px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-md transition-colors w-full whitespace-nowrap"
+                                            >
+                                                <Trash2 size={12} />
+                                                <span className="text-[10px] font-black uppercase tracking-widest">Excluir Nó</span>
+                                            </button>
+                                        </div>
+                                    </Popup>
+                                </Marker>
+                                {/* Midpoint Node */}
+                                {(draftZone.points.length > 2 || (draftZone.points.length > 1 && i < draftZone.points.length - 1)) && (
+                                    <Marker
+                                        position={[
+                                            (p[0] + draftZone.points[(i + 1) % draftZone.points.length][0]) / 2,
+                                            (p[1] + draftZone.points[(i + 1) % draftZone.points.length][1]) / 2
+                                        ]}
+                                        draggable={true}
+                                        icon={NodeMidIcon}
+                                        opacity={0.8}
+                                        eventHandlers={{
+                                            dragend: (e) => {
+                                                const latlng = (e.target as any).getLatLng();
+                                                addNode(i, [latlng.lat, latlng.lng]);
+                                            }
+                                        }}
+                                        title="Arraste para criar novo ponto"
+                                    />
+                                )}
+                            </React.Fragment>
                         ))}
 
-                        {/* Midpoints (Virtual Nodes) */}
-                        {midpoints.map((m, idx) => (
-                            <Marker
-                                key={`mid-${idx}`}
-                                position={m.pos}
-                                draggable={true}
-                                icon={NodeVirtualIcon}
-                                eventHandlers={{
-                                    dragend: (e) => {
-                                        const latlng = (e.target as any).getLatLng();
-                                        promoteMidpoint(m.index, [latlng.lat, latlng.lng]);
-                                    }
-                                }}
-                            />
-                        ))}
+
                     </>
                 )}
 
                 {/* Site Markers */}
-                {assets.map(site => (
+                {assets.map(site => {
+                    // Match by ID OR normalized Title to handle Firestore ID mismatches
+                    const routeIndex = routeSequence.findIndex(s =>
+                        s.id === site.id ||
+                        s.titulo?.toLowerCase() === site.titulo?.toLowerCase() ||
+                        geocodingService.createSlug(s.titulo) === site.id
+                    );
+                    const isInRoute = routeIndex !== -1;
+                    const isFocusMode = routeSequence.length > 0 || isPlanningRoute;
+
+                    // If a route/planning is active, only show markers that are part of the route
+                    if (isFocusMode && !isInRoute) return null;
+
+                    return (
+                        <Marker
+                            key={site.id}
+                            position={[site.lat, site.lng]}
+                            icon={isInRoute ? getRouteMarkerIcon(routeIndex) : getMarkerIcon(site, mode)}
+                            eventHandlers={{ click: () => handleSiteClick(site) }}
+                            zIndexOffset={isInRoute ? 1000 : 0}
+                        >
+                            {(mode === 'tourism' && !isPlanningRoute && !isInRoute) && (
+                                <Popup className="minimal-popup" closeButton={false}>
+                                    <div className="text-center py-1">
+                                        <p className="text-[9px] font-black text-slate-700 uppercase">{site.titulo}</p>
+                                    </div>
+                                </Popup>
+                            )}
+                            {isInRoute && (
+                                <Popup className="brand-popup" offset={[0, -20]}>
+                                    <div className="p-3 text-center">
+                                        <p className="text-[8px] font-black text-brand-blue uppercase mb-1">{routeIndex + 1}ª PARADA</p>
+                                        <p className="text-xs font-black text-slate-800 uppercase">{site.titulo}</p>
+                                    </div>
+                                </Popup>
+                            )}
+                        </Marker>
+                    );
+                })}
+
+                {/* Entrance Draft Marker */}
+                {editorMode === 'entrance' && entranceDraft && (
                     <Marker
-                        key={site.id}
-                        position={[site.lat, site.lng]}
-                        icon={getMarkerIcon(site, mode)}
-                        eventHandlers={{ click: () => handleSiteClick(site) }}
-                    >
-                        {mode === 'tourism' && !isPlanningRoute && (
-                            <Popup className="minimal-popup" closeButton={false}>
-                                <div className="text-center py-1">
-                                    <p className="text-[9px] font-black text-slate-700 uppercase">{site.titulo}</p>
-                                </div>
-                            </Popup>
-                        )}
-                    </Marker>
-                ))}
+                        position={[entranceDraft.lat, entranceDraft.lng]}
+                        draggable={true}
+                        icon={L.divIcon({
+                            html: `<div style="width: 14px; height: 14px; background: #059669; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 0 2px #059669;"></div>`,
+                            className: 'entrance-marker',
+                            iconSize: [14, 14],
+                            iconAnchor: [7, 7]
+                        })}
+                        eventHandlers={{
+                            dragend: (e) => {
+                                const latlng = e.target.getLatLng();
+                                setEntranceDraft({ lat: latlng.lat, lng: latlng.lng });
+                            }
+                        }}
+                    />
+                )}
 
                 {/* Active Route Display */}
-                {activeRoute && <Polyline positions={activeRoute} color="#1E88E5" weight={6} opacity={0.8} lineCap="round" lineJoin="round" dashArray="1, 12" />}
+                {activeRoute && (
+                    <>
+                        <Polyline
+                            positions={activeRoute}
+                            color="#1E88E5"
+                            weight={6}
+                            opacity={0.6}
+                            lineCap="round"
+                            lineJoin="round"
+                        />
+                        <Polyline
+                            positions={activeRoute}
+                            color="#FFFFFF"
+                            weight={2}
+                            opacity={0.8}
+                            lineCap="round"
+                            lineJoin="round"
+                            dashArray="10, 20"
+                        />
+                    </>
+                )}
             </MapContainer>
 
             {/* Overlays */}
@@ -1113,10 +1671,17 @@ const GeoManager: React.FC<GeoManagerProps> = ({
                 }}
                 isEditing={isEditingZones}
                 hasZones={localAreas.length > 0}
+                canEdit={isEditor}
             />
 
+            <SatelliteToggle base={baseLayer} setBase={setBaseLayer} />
+
             {isEditingZones && (
-                <ZoneEditorPanel
+                <PrecisionEditor
+                    editorMode={editorMode}
+                    onCancel={cancelEdit}
+
+                    // Zone Mode
                     draft={{
                         ...draftZone,
                         potentialCount: potentialAreas.length,
@@ -1131,19 +1696,27 @@ const GeoManager: React.FC<GeoManagerProps> = ({
                             setPotentialIndex(nextIdx);
                             loadAreaForEdit(potentialAreas[nextIdx]);
                         }
-                    } as any}
+                    }}
                     setDraft={setDraftZone}
                     onSave={saveDraftZone}
-                    onCancel={cancelEdit}
-                    editorMode={editorMode}
+
+                    // Entrance Mode
+                    asset={selectedAsset}
+                    entranceDraft={entranceDraft}
+                    onSaveEntrance={saveEntrance}
                 />
             )}
 
             {(isPlanningRoute || (mode === 'tourism' && routeSequence.length > 0)) && (
                 <RoutePlannerPanel
                     sequence={routeSequence}
-                    onClear={() => setRouteSequence([])}
+                    onClear={() => {
+                        setRouteSequence([]);
+                        setActiveCuratedRoute(null);
+                    }}
                     onClose={() => setIsPlanningRoute(false)}
+                    onSave={saveCurrentRoute}
+                    onExport={() => setShowRouteExport(true)}
                 />
             )}
 
@@ -1151,16 +1724,19 @@ const GeoManager: React.FC<GeoManagerProps> = ({
 
             {mode === 'tourism' && !selectedAsset && !isPlanningRoute && (
                 <TourismRoutesPanel
-                    onSelectRoute={(assets) => {
+                    onSelectRoute={(assets, route) => {
                         setRouteSequence(assets);
+                        setActiveCuratedRoute(route);
                         // Auto-start route visually
                         setIsPlanningRoute(true);
                     }}
                     onCreateRoute={() => {
                         setRouteSequence([]);
+                        setActiveCuratedRoute(null);
                         setIsPlanningRoute(true);
                     }}
-                    currentRouteId={null} // You could track this state if needed
+                    currentRouteId={activeCuratedRoute?.id}
+                    canCreate={isEditor}
                 />
             )}
 
@@ -1173,6 +1749,24 @@ const GeoManager: React.FC<GeoManagerProps> = ({
                     mode={mode}
                     onClose={() => onAssetClick?.(null)}
                     onReportError={onReportError}
+                    onEditEntrance={isEditor ? () => {
+                        setEditorMode('entrance');
+                        setIsEditingZones(true);
+                        if (selectedAsset.entrance) {
+                            setEntranceDraft(selectedAsset.entrance);
+                        } else {
+                            setEntranceDraft({ lat: selectedAsset.lat, lng: selectedAsset.lng });
+                        }
+                    } : undefined}
+                />
+            )}
+
+            {showRouteExport && (
+                <RouteReport
+                    sequence={routeSequence}
+                    routeInfo={activeCuratedRoute}
+                    activeRoute={activeRoute}
+                    onClose={() => setShowRouteExport(false)}
                 />
             )}
 
@@ -1184,7 +1778,7 @@ const GeoManager: React.FC<GeoManagerProps> = ({
             )}
 
             {/* Legend / Branding Overlay */}
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[500] pointer-events-none">
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[500] pointer-events-none hidden md:block">
                 <GlassPanel className="px-6 py-2 border-white/50 bg-white/30">
                     <div className="flex items-center gap-3">
                         <img src="/spc-logo.png" className="h-6 opacity-80" alt="SPC" />
@@ -1220,6 +1814,52 @@ const GeoManager: React.FC<GeoManagerProps> = ({
         }
         .animate-slide-in-bottom { animation: slide-in-bottom 0.4s ease-out forwards; }
         .draft-polygon-glow { filter: drop-shadow(0 0 10px rgba(204,52,58,0.3)); }
+
+        .route-marker-container {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .route-marker-pin {
+            width: 32px;
+            height: 32px;
+            background: #1E88E5;
+            border: 3px solid white;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(30,136,229,0.5);
+            z-index: 2;
+        }
+        .route-marker-number {
+            transform: rotate(45deg);
+            color: white;
+            font-weight: 900;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+        }
+        .route-marker-pulse {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: rgba(30,136,229,0.2);
+            border-radius: 50%;
+            animation: marker-pulse 2s infinite;
+            z-index: 1;
+        }
+        @keyframes marker-pulse {
+            0% { transform: scale(0.6); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        @keyframes marker-pulse-simple {
+            0% { transform: scale(0.6); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
     `}} />
         </div>
     );
