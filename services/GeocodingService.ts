@@ -298,7 +298,7 @@ class GeocodingService {
         return false;
     }
 
-    private createSlug(text: string): string {
+    public createSlug(text: string): string {
         return text.toString().toLowerCase()
             .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
             .replace(/\s+/g, '-')

@@ -16,8 +16,10 @@ import {
 import { PageHero } from '../components/ui/PageHero';
 import { useAuth } from '../contexts/AuthContext';
 import { FileUpload } from '../components/ui/FileUpload';
-import { db } from '../firebase';
-import { collection, onSnapshot, addDoc, Timestamp, query, orderBy } from 'firebase/firestore';
+import { db, storage } from '../firebase';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Trash2, Edit2, RefreshCw, Loader2 } from 'lucide-react';
 
 
 interface Document {
@@ -99,11 +101,19 @@ const DOCUMENTS: Document[] = [
 ];
 
 const LegislacaoPage: React.FC = () => {
+  const { user, isAdmin } = useAuth();
+  const isEditor = user?.role === 'editor' || isAdmin;
+
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('Todos');
-  const { isEditor } = useAuth();
   const [dbDocs, setDbDocs] = useState<Document[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Management states
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [isEditing, setIsEditing] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Document>>({});
+  const [replacingId, setReplacingId] = useState<string | null>(null);
 
   React.useEffect(() => {
     const q = query(collection(db, "legislation"), orderBy("date", "desc"));
@@ -113,20 +123,89 @@ const LegislacaoPage: React.FC = () => {
         ...d.data()
       })) as Document[];
       setDbDocs(docs);
+      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("Deseja realmente excluir este documento legal?")) return;
+    try {
+      await deleteDoc(doc(db, "legislation", id));
+    } catch (error) {
+      console.error("Erro ao deletar:", error);
+      alert("Erro ao deletar documento.");
+    }
+  };
+
+  const handleUpdate = async (id: string, updates: Partial<Document>) => {
+    try {
+      await updateDoc(doc(db, "legislation", id), updates);
+      setIsEditing(null);
+    } catch (error) {
+      console.error("Erro ao atualizar:", error);
+      alert("Erro ao atualizar documento.");
+    }
+  };
+
+  const handleReplaceFile = async (id: string, file: File) => {
+    setReplacingId(id);
+    try {
+      const storageRef = ref(storage, `legislation/${Date.now()}_${file.name}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(snapshot.ref);
+
+      const size = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+
+      await updateDoc(doc(db, "legislation", id), {
+        url,
+        size,
+        title: file.name
+      });
+      alert("Arquivo substituído com sucesso!");
+    } catch (error) {
+      console.error("Erro ao substituir:", error);
+      alert("Erro ao substituir arquivo.");
+    } finally {
+      setReplacingId(null);
+    }
+  };
+
+  const handleAddNew = async (formData: Partial<Document>) => {
+    if (!formData.title || !formData.url) {
+      alert("Por favor, preencha o título e faça o upload do documento.");
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "legislation"), {
+        ...formData,
+        date: formData.date || new Date().toISOString().split('T')[0],
+        tags: typeof formData.tags === 'string' ? (formData.tags as string).split(',').map(t => t.trim()) : (formData.tags || []),
+        size: formData.size || "N/A"
+      });
+      setIsAddingNew(false);
+      setEditForm({});
+      alert("Documento adicionado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao adicionar:", error);
+      alert("Erro ao adicionar documento.");
+    }
+  };
+
   const allDocuments = [...dbDocs, ...DOCUMENTS];
 
-  const filteredDocs = allDocuments.filter(doc => {
-    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = activeCategory === 'Todos' || doc.category === activeCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredDocs = React.useMemo(() => {
+    return allDocuments.filter(doc => {
+      const matchesSearch = (doc.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (doc.description?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (doc.tags || []).some(t => t.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesCategory = activeCategory === 'Todos' || doc.category === activeCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [allDocuments, searchTerm, activeCategory]);
 
-  const categories = ['Todos', 'Lei', 'Decreto', 'Portaria', 'Manual', 'Edital'];
+  const categories = ['Todos', 'Lei', 'Decreto', 'Portaria', 'Manual', 'Edital', 'Outro'];
 
 
   return (
@@ -204,42 +283,85 @@ const LegislacaoPage: React.FC = () => {
           </div>
 
           {isEditor && (
-            <div className="mb-8 p-6 bg-white rounded-3xl border-2 border-dashed border-brand-blue/20">
-              <div className="flex items-center justify-between mb-4">
+            <div className="mb-12 p-8 bg-white rounded-3xl border-2 border-dashed border-brand-blue/30 animate-in fade-in slide-in-from-top-4 duration-300">
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-sm font-black text-brand-dark uppercase tracking-tight">Painel de Upload</h3>
-                  <p className="text-[10px] text-slate-500 font-medium">Adicione novas leis, decretos ou manuais ao sistema.</p>
+                  <h3 className="text-sm font-black text-brand-dark uppercase tracking-tight">Gestão de Documentos Legais</h3>
+                  <p className="text-[10px] text-slate-500 font-medium">Adicione novas leis, decretos ou manuais ao sistema oficial.</p>
                 </div>
                 <button
-                  onClick={() => setIsUploading(!isUploading)}
-                  className="px-4 py-2 bg-brand-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-dark transition-all"
+                  onClick={() => setIsAddingNew(!isAddingNew)}
+                  className="px-4 py-2 bg-brand-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-dark transition-all shadow-lg shadow-brand-blue/20"
                 >
-                  {isUploading ? 'Fechar Editor' : 'Novo Documento'}
+                  {isAddingNew ? 'Fechar Painel' : 'Novo Documento'}
                 </button>
               </div>
 
-              {isUploading && (
-                <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-                  <FileUpload
-                    path="legislation"
-                    onUploadComplete={async (file) => {
-                      const title = prompt("Digite o título do documento:", file.name);
-                      if (!title) return;
-                      const category = prompt("Categoria (Lei, Decreto, Portaria, Manual, Edital, Outro):", "Lei") as any;
-
-                      await addDoc(collection(db, "legislation"), {
-                        title,
-                        category,
-                        date: new Date().toISOString().split('T')[0],
-                        size: "---", // Could calculate from file size if needed
-                        description: `Documento enviado em ${new Date().toLocaleDateString()}`,
-                        tags: [category, 'Upload'],
-                        url: file.url
-                      });
-                      setIsUploading(false);
-                      alert("Documento adicionado com sucesso!");
-                    }}
-                  />
+              {isAddingNew && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-50 rounded-2xl">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Título da Norma</label>
+                      <input
+                        type="text"
+                        className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-bold"
+                        placeholder="Ex: Lei Estadual nº..."
+                        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Descrição / Resumo</label>
+                      <textarea
+                        className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-medium h-24"
+                        placeholder="Breve descrição do conteúdo jurídico..."
+                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Categoria</label>
+                        <select
+                          className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-bold"
+                          onChange={(e) => setEditForm({ ...editForm, category: e.target.value as any })}
+                        >
+                          <option value="Lei">Lei</option>
+                          <option value="Decreto">Decreto</option>
+                          <option value="Portaria">Portaria</option>
+                          <option value="Manual">Manual</option>
+                          <option value="Edital">Edital</option>
+                          <option value="Outro">Outro</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Tags (vírgula)</label>
+                        <input
+                          type="text"
+                          className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-bold"
+                          placeholder="Jurídico, Tombamento"
+                          onChange={(e) => setEditForm({ ...editForm, tags: e.target.value as any })}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Arquivo Legal</label>
+                      <FileUpload
+                        onUploadComplete={(fileData) => setEditForm({
+                          ...editForm,
+                          url: fileData.url,
+                          size: (fileData.file.size / (1024 * 1024)).toFixed(1) + ' MB'
+                        })}
+                        folder="legislation"
+                      />
+                    </div>
+                    <button
+                      onClick={() => handleAddNew(editForm)}
+                      className="w-full py-4 bg-brand-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-dark transition-all shadow-xl shadow-brand-blue/20"
+                    >
+                      Publicar Documento No Portal
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -253,48 +375,109 @@ const LegislacaoPage: React.FC = () => {
               <button onClick={() => { setSearchTerm(''); setActiveCategory('Todos') }} className="mt-4 text-brand-blue font-black uppercase tracking-widest text-[10px]">Limpar filtros</button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-2">
-              {filteredDocs.map(doc => (
-                <div key={doc.id} className="bg-white p-4 rounded-xl border border-slate-100 hover:border-brand-blue/30 hover:shadow-lg transition-all group flex flex-col md:flex-row md:items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${doc.category === 'Lei' ? 'bg-brand-red/10 text-brand-red' :
-                    doc.category === 'Decreto' ? 'bg-brand-blue/10 text-brand-blue' :
+            <div className="grid grid-cols-1 gap-3">
+              {filteredDocs.map(docItem => (
+                <div key={docItem.id} className="bg-white p-5 rounded-2xl border border-slate-100 hover:border-brand-blue/30 hover:shadow-xl transition-all group flex flex-col md:flex-row md:items-center gap-6 relative">
+
+                  {isEditor && docItem.id.length > 10 && (
+                    <div className="absolute top-4 right-4 flex gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                      <button
+                        onClick={() => {
+                          setEditForm(docItem);
+                          setIsEditing(docItem.id);
+                        }}
+                        className="p-2 bg-slate-50 text-amber-500 rounded-lg hover:bg-amber-500 hover:text-white transition-all shadow-sm"
+                        title="Editar"
+                      >
+                        <Edit2 size={12} />
+                      </button>
+                      <label className="p-2 bg-slate-50 text-brand-blue rounded-lg hover:bg-brand-blue hover:text-white transition-all cursor-pointer shadow-sm" title="Substituir arquivo">
+                        {replacingId === docItem.id ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                        <input
+                          type="file"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleReplaceFile(docItem.id, file);
+                          }}
+                        />
+                      </label>
+                      <button
+                        onClick={() => handleDelete(docItem.id)}
+                        className="p-2 bg-slate-50 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                        title="Excluir"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  )}
+
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${docItem.category === 'Lei' ? 'bg-brand-red/10 text-brand-red' :
+                    docItem.category === 'Decreto' ? 'bg-brand-blue/10 text-brand-blue' :
                       'bg-slate-100 text-slate-500'
-                    }`}>
-                    <FileText size={24} />
+                    } transition-colors group-hover:bg-brand-dark group-hover:text-white`}>
+                    <FileText size={28} />
                   </div>
 
-                  <div className="flex-grow space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${doc.category === 'Lei' ? 'bg-[#CC343A] text-white' :
-                        doc.category === 'Decreto' ? 'bg-brand-blue text-white' :
+                  <div className="flex-grow space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg ${docItem.category === 'Lei' ? 'bg-[#CC343A] text-white' :
+                        docItem.category === 'Decreto' ? 'bg-brand-blue text-white' :
                           'bg-slate-900 text-white'
                         }`}>
-                        {doc.category}
+                        {docItem.category}
                       </span>
-                      <span className="flex items-center gap-1 text-[9px] font-bold text-slate-400 uppercase">
-                        <Calendar size={10} /> {new Date(doc.date).toLocaleDateString('pt-BR')}
+                      <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                        <Calendar size={12} className="text-brand-blue" /> {new Date(docItem.date).toLocaleDateString('pt-BR')}
                       </span>
                     </div>
-                    <h3 className="text-lg font-black text-brand-dark group-hover:text-brand-blue transition-colors leading-tight">{doc.title}</h3>
-                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed max-w-2xl">{doc.description}</p>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {doc.tags.map(tag => (
-                        <span key={tag} className="text-[8px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">#{tag}</span>
+
+                    {isEditing === docItem.id ? (
+                      <div className="space-y-3 py-2">
+                        <input
+                          type="text"
+                          className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+                          value={editForm.title}
+                          onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                        />
+                        <textarea
+                          className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-medium h-20"
+                          value={editForm.description}
+                          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                        />
+                        <div className="flex gap-2">
+                          <button onClick={() => handleUpdate(docItem.id, editForm)} className="flex-1 py-2 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest">Salvar</button>
+                          <button onClick={() => setIsEditing(null)} className="flex-1 py-2 bg-slate-200 text-slate-500 rounded-lg text-[9px] font-black uppercase tracking-widest">Cancelar</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <h3 className="text-lg font-black text-brand-dark group-hover:text-brand-blue transition-colors leading-tight">{docItem.title}</h3>
+                        <p className="text-[12px] text-slate-500 font-medium leading-relaxed max-w-2xl">{docItem.description}</p>
+                      </>
+                    )}
+
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {docItem.tags.map(tag => (
+                        <span key={tag} className="text-[9px] font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100">#{tag}</span>
                       ))}
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2 min-w-[120px]">
+                  <div className="flex flex-col gap-3 min-w-[140px] pt-4 md:pt-0 md:border-l border-slate-50 md:pl-6">
                     <a
-                      href={doc.url || (doc.id === 'infog-1' ? '/imagens/infografico_engenhos.jpg' : '#')}
+                      href={docItem.url || (docItem.id === 'infog-1' ? '/imagens/infografico_engenhos.jpg' : '#')}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`w-full flex items-center justify-center gap-2 px-4 py-2 text-white rounded-lg font-black uppercase tracking-widest text-[9px] transition-all active:scale-95 ${doc.id === 'infog-1' ? 'bg-brand-red animate-pulse shadow-lg shadow-brand-red/20' : 'bg-brand-blue hover:bg-brand-blue/90'}`}
+                      className={`w-full flex items-center justify-center gap-3 px-5 py-3 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all hover:translate-y-[-2px] active:scale-95 shadow-lg ${docItem.id === 'infog-1' ? 'bg-brand-red shadow-brand-red/20' : 'bg-brand-blue hover:bg-brand-dark shadow-brand-blue/20'}`}
                     >
-                      {doc.id === 'infog-1' ? 'Ver Infográfico' : 'Ver / Download'} <Download size={12} />
+                      {docItem.id === 'infog-1' ? 'Ver Guia' : 'Download'} <Download size={14} />
                     </a>
-
-                    <span className="text-[8px] text-center font-bold text-slate-300 uppercase tracking-widest">Tamanho: {doc.size}</span>
+                    <div className="flex items-center justify-center gap-3">
+                      <span className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em]">{docItem.size}</span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-100"></div>
+                      <span className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em]">PDF</span>
+                    </div>
                   </div>
                 </div>
               ))}

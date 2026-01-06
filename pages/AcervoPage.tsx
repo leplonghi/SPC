@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     Search,
     Filter,
@@ -12,10 +11,31 @@ import {
     Download,
     Share2,
     Info,
-    ArrowLeft
+    ArrowLeft,
+    Plus,
+    Edit2,
+    Trash2,
+    RefreshCw,
+    Loader2
 } from 'lucide-react';
 import { PageHero } from '../components/ui/PageHero';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { db, storage } from '../firebase';
+import {
+    collection,
+    onSnapshot,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    doc,
+    query,
+    orderBy
+} from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { FileUpload } from '../components/ui/FileUpload';
+
+import { acervoSeed } from '../data/acervoSeed';
 
 interface AcervoItem {
     id: string;
@@ -28,137 +48,89 @@ interface AcervoItem {
     location?: string;
 }
 
-const acervoData: AcervoItem[] = [
-    {
-        id: '1',
-        title: 'Anúncio Veritas - Rua Histórica',
-        description: 'Fotografia colorizada de uma rua histórica com um grande anúncio do distribuidor Veritas. Observa-se a arquitetura colonial e o cotidiano urbano.',
-        category: 'fotografia',
-        tags: ['Histórico', 'Arquitetura', 'Publicidade', 'Rua'],
-        imageUrl: '/imagens/veritas_ads.jpg',
-        date: 'Século XX',
-        location: 'Centro Histórico, São Luís'
-    },
-    {
-        id: '2',
-        title: 'Cotidiano e Bondes',
-        description: 'Registro do centro comercial com trilhos de bonde e pessoas em trajes de época. Destaque para o edifício "Ferro de Engomar".',
-        category: 'fotografia',
-        tags: ['Histórico', 'Transporte', 'Pessoas', 'Rua'],
-        imageUrl: '/imagens/rua_dos_bondes.jpg',
-        date: 'c. 1920',
-        location: 'Rua Grande(?), São Luís'
-    },
-    {
-        id: '3',
-        title: 'Avenida Pedro II - Vista Panorâmica',
-        description: 'Vista ampla da Avenida Pedro II com destaque para a fonte luminosa e edifícios institucionais ao fundo. Carros de época estacionados.',
-        category: 'fotografia',
-        tags: ['Histórico', 'Praça', 'Urbanismo', 'Vista Aérea'],
-        imageUrl: '/imagens/avenida_pedro_ii.jpg',
-        date: 'c. 1950',
-        location: 'Avenida Pedro II, São Luís'
-    },
-    {
-        id: '4',
-        title: 'Praça Pedro II - Atualidade',
-        description: 'Vista contemporânea da Praça Pedro II a partir de um dos casarões históricos. Contraste entre a preservação e a vida urbana moderna.',
-        category: 'fotografia',
-        tags: ['Moderno', 'Praça', 'Arquitetura', 'Preservação'],
-        imageUrl: '/imagens/vista_praca_pedro_ii.jpg',
-        date: '2024',
-        location: 'Praça Pedro II, São Luís'
-    },
-    {
-        id: '5',
-        title: 'Planta da Cidade de S. Luiz (Maranhão)',
-        description: 'Mapa histórico detalhado da cidade de São Luís, mostrando o traçado urbano e pontos de interesse da época.',
-        category: 'mapa',
-        tags: ['Histórico', 'Cartografia', 'Urbanismo', 'Mapas'],
-        imageUrl: '/imagens/mapa_sao_luiz.jpg',
-        date: 'Século XIX',
-        location: 'São Luís'
-    },
-    {
-        id: '6',
-        title: 'Mapa Justo Jansen - 1912',
-        description: 'Cartografia original elaborada por Justo Jansen em 1912, fundamental para o estudo do crescimento urbano de São Luís.',
-        category: 'mapa',
-        tags: ['Histórico', 'Cartografia', 'Justo Jansen', '1912'],
-        imageUrl: '/imagens/1912 - justo jansen - mapa.jpg',
-        date: '1912',
-        location: 'São Luís'
-    },
-    {
-        id: '7',
-        title: 'Pianta della Cittá di S. Luigi - 1698',
-        description: 'Planta histórica italiana da cidade de São Luís datada de 1698, um dos registros cartográficos mais antigos do período colonial.',
-        category: 'mapa',
-        tags: ['Histórico', 'Colonial', 'Cartografia', 'Italiano'],
-        imageUrl: '/imagens/Pianta della cittá di S. Luigi metropoli del Maragnone.jpg',
-        date: '1698',
-        location: 'São Luís'
-    },
-    {
-        id: '8',
-        title: 'Centro Histórico - Fachada Colonial I',
-        description: 'Detalhe da arquitetura colonial no Centro Histórico de São Luís, evidenciando o uso de azulejos e elementos ornamentais.',
-        category: 'fotografia',
-        tags: ['Arquitetura', 'Azulejos', 'Patrimônio', 'Centro Histórico'],
-        imageUrl: '/imagens/CH 01.jpg',
-        location: 'Centro Histórico, São Luís'
-    },
-    {
-        id: '9',
-        title: 'Casarões da Praia Grande',
-        description: 'Vista dos casarões históricos na região da Praia Grande, um dos núcleos mais importantes do patrimônio mundial pela UNESCO.',
-        category: 'fotografia',
-        tags: ['UNESCO', 'Patrimônio', 'Arquitetura', 'Praia Grande'],
-        imageUrl: '/imagens/CH 03.jpg',
-        location: 'Praia Grande, São Luís'
-    },
-    {
-        id: '10',
-        title: 'Ladeira do Centro Histórico',
-        description: 'Perspectiva de uma das ladeiras pavimentadas com pedras de cantaria no Centro Histórico de São Luís.',
-        category: 'fotografia',
-        tags: ['Urbanismo', 'Cantaria', 'Rua', 'Centro Histórico'],
-        imageUrl: '/imagens/CH 04.jpg',
-        location: 'Centro Histórico, São Luís'
-    },
-    {
-        id: '11',
-        title: 'Casarão de Azulejos - Detalhe',
-        description: 'Close em uma fachada revestida com azulejos portugueses, característica icônica da ilha de São Luís.',
-        category: 'fotografia',
-        tags: ['Azulejaria', 'Histórico', 'Arquitetura'],
-        imageUrl: '/imagens/CH 05.jpg',
-        location: 'São Luís'
-    },
-    {
-        id: '12',
-        title: 'Rua de Cantaria e Casarões',
-        description: 'Registro de rua estreita no núcleo antigo, preservando a escala humana e a densidade construtiva colonial.',
-        category: 'fotografia',
-        tags: ['Centro Histórico', 'Rua', 'Patrimônio'],
-        imageUrl: '/imagens/CH 06.jpg',
-        location: 'São Luís'
-    },
-    {
-        id: '13',
-        title: 'Patrimônio em Perspectiva',
-        description: 'Vista angular de quarteirão histórico demonstrando a harmonia volumétrica do conjunto tombado.',
-        category: 'fotografia',
-        tags: ['Urbanismo', 'Arquitetura', 'Conjunto Tombado'],
-        imageUrl: '/imagens/CH 07.jpg',
-        location: 'Centro Histórico, São Luís'
-    }
-];
-
 const AcervoPage: React.FC = () => {
+    const { user, isAdmin } = useAuth();
+    const isEditor = user?.role === 'editor' || isAdmin;
+
     const [searchTerm, setSearchTerm] = useState('');
     const [activeCategory, setActiveCategory] = useState<string>('todas');
     const [selectedItem, setSelectedItem] = useState<AcervoItem | null>(null);
+    const [dbDocs, setDbDocs] = useState<AcervoItem[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    // Management states
+    const [isAddingNew, setIsAddingNew] = useState(false);
+    const [isEditing, setIsEditing] = useState<string | null>(null);
+    const [editForm, setEditForm] = useState<Partial<AcervoItem>>({});
+    const [replacingId, setReplacingId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const q = query(collection(db, "acervo_digital"), orderBy("title", "asc"));
+        const unsub = onSnapshot(q, (snap) => {
+            const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as AcervoItem));
+            setDbDocs(data);
+            setLoading(false);
+        });
+        return () => unsub();
+    }, []);
+
+    const acervoData = useMemo(() => {
+        return [...acervoSeed, ...dbDocs].map((item, idx) => ({
+            ...item,
+            id: item.id || `seed-${idx}`,
+            tags: item.tags || [],
+            title: item.title || 'Sem Título',
+            description: item.description || ''
+        }));
+    }, [dbDocs]);
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Deseja realmente excluir este item do acervo?")) return;
+        try {
+            await deleteDoc(doc(db, "acervo_digital", id));
+        } catch (error) {
+            console.error("Erro ao deletar item:", error);
+            alert("Erro ao deletar item.");
+        }
+    };
+
+    const handleUpdate = async (id: string, updates: Partial<AcervoItem>) => {
+        try {
+            await updateDoc(doc(db, "acervo_digital", id), updates);
+            setIsEditing(null);
+        } catch (error) {
+            console.error("Erro ao atualizar item:", error);
+            alert("Erro ao atualizar item.");
+        }
+    };
+
+    const handleReplaceImage = async (id: string, file: File) => {
+        setReplacingId(id);
+        try {
+            const storageRef = ref(storage, `acervo/${Date.now()}_${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            await updateDoc(doc(db, "acervo_digital", id), { imageUrl: downloadURL });
+        } catch (error) {
+            console.error("Erro ao substituir imagem:", error);
+            alert("Erro ao substituir imagem.");
+        } finally {
+            setReplacingId(null);
+        }
+    };
+
+    const handleAddNew = async (item: Partial<AcervoItem>) => {
+        try {
+            await addDoc(collection(db, "acervo_digital"), {
+                ...item,
+                tags: typeof item.tags === 'string' ? (item.tags as string).split(',').map(t => t.trim()) : item.tags,
+            });
+            setIsAddingNew(false);
+        } catch (error) {
+            console.error("Erro ao adicionar item:", error);
+            alert("Erro ao adicionar item.");
+        }
+    };
 
     const categories = [
         { id: 'todas', label: 'Todos', icon: History },
@@ -169,15 +141,15 @@ const AcervoPage: React.FC = () => {
 
     const filteredItems = useMemo(() => {
         return acervoData.filter(item => {
-            const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+            const matchesSearch = (item.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (item.description?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                (item.tags || []).some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
 
             const matchesCategory = activeCategory === 'todas' || item.category === activeCategory;
 
             return matchesSearch && matchesCategory;
         });
-    }, [searchTerm, activeCategory]);
+    }, [searchTerm, activeCategory, acervoData]);
 
     const allTags = useMemo(() => {
         const tags = new Set<string>();
@@ -257,16 +229,149 @@ const AcervoPage: React.FC = () => {
                         <ImageIcon size={14} className="text-[#CC343A]" />
                         {filteredItems.length} itens encontrados
                     </h2>
+
+                    {isEditor && (
+                        <button
+                            onClick={() => {
+                                setEditForm({ category: 'fotografia', tags: [] });
+                                setIsAddingNew(true);
+                            }}
+                            className="px-4 py-2 bg-brand-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-brand-dark transition-all shadow-lg shadow-brand-blue/20"
+                        >
+                            <Plus size={16} /> Novo Item
+                        </button>
+                    )}
                 </div>
+
+                {isAddingNew && (
+                    <div className="mb-8 p-8 bg-white rounded-3xl border-2 border-dashed border-brand-blue/30 animate-in fade-in slide-in-from-top-4 duration-300">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">Novo Item no Acervo</h3>
+                            <button onClick={() => setIsAddingNew(false)} className="p-2 hover:bg-slate-100 rounded-full transition-all">
+                                <X size={20} className="text-slate-400" />
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Título</label>
+                                    <input
+                                        type="text"
+                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+                                        placeholder="Título da obra/foto"
+                                        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Descrição</label>
+                                    <textarea
+                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium h-24"
+                                        placeholder="Descrição detalhada..."
+                                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Categoria</label>
+                                        <select
+                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+                                            onChange={(e) => setEditForm({ ...editForm, category: e.target.value as any })}
+                                        >
+                                            <option value="fotografia">Fotografia</option>
+                                            <option value="mapa">Mapa</option>
+                                            <option value="documento">Documento</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Data / Época</label>
+                                        <input
+                                            type="text"
+                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+                                            placeholder="Ex: c. 1920"
+                                            onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Tags (separadas por vírgula)</label>
+                                    <input
+                                        type="text"
+                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+                                        placeholder="Histórico, Arquitetura, Rua"
+                                        onChange={(e) => setEditForm({ ...editForm, tags: e.target.value as any })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Imagem</label>
+                                    <FileUpload
+                                        onUploadComplete={(fileData) => setEditForm({ ...editForm, imageUrl: fileData.url })}
+                                        folder="acervo"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 flex justify-end gap-3">
+                            <button onClick={() => setIsAddingNew(false)} className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600">Cancelar</button>
+                            <button
+                                onClick={() => handleAddNew(editForm)}
+                                className="px-10 py-3 bg-brand-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-dark transition-all shadow-xl shadow-brand-blue/20"
+                            >
+                                Salvar no Acervo
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {filteredItems.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {filteredItems.map((item) => (
                             <div
                                 key={item.id}
-                                className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-lg transition-all group flex flex-col h-full"
+                                className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-lg transition-all group flex flex-col h-full relative"
                             >
-                                <div className="h-32 overflow-hidden relative cursor-pointer" onClick={() => setSelectedItem(item)}>
+                                {/* Quick Management Overlay */}
+                                {isEditor && (
+                                    <div className="absolute top-2 right-2 z-30 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditForm(item);
+                                                setIsEditing(item.id);
+                                            }}
+                                            className="p-2 bg-white/90 backdrop-blur-sm text-amber-500 rounded-lg shadow-sm hover:bg-amber-500 hover:text-white transition-all"
+                                            title="Editar"
+                                        >
+                                            <Edit2 size={12} />
+                                        </button>
+                                        <label className="p-2 bg-white/90 backdrop-blur-sm text-brand-blue rounded-lg shadow-sm hover:bg-brand-blue hover:text-white transition-all cursor-pointer">
+                                            {replacingId === item.id ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) handleReplaceImage(item.id, file);
+                                                }}
+                                            />
+                                        </label>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(item.id);
+                                            }}
+                                            className="p-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-lg shadow-sm hover:bg-red-500 hover:text-white transition-all"
+                                            title="Excluir"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </div>
+                                )}
+
+                                <div className="h-40 overflow-hidden relative cursor-pointer" onClick={() => setSelectedItem(item)}>
                                     <img
                                         src={item.imageUrl}
                                         alt={item.title}
@@ -286,22 +391,56 @@ const AcervoPage: React.FC = () => {
                                 </div>
 
                                 <div className="p-4 flex flex-col flex-grow">
-                                    <h3 className="text-sm font-black text-brand-dark mb-2 line-clamp-2 leading-tight min-h-[2.5em]">
-                                        {item.title}
-                                    </h3>
-                                    <p className="text-slate-500 text-[10px] leading-relaxed mb-3 line-clamp-3 font-medium">
-                                        {item.description}
-                                    </p>
+                                    <div className="flex-grow">
+                                        {isEditing === item.id ? (
+                                            <div className="space-y-2 mb-4">
+                                                <input
+                                                    type="text"
+                                                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-[10px] font-bold"
+                                                    value={editForm.title}
+                                                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                                                />
+                                                <textarea
+                                                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-[10px] font-medium h-16"
+                                                    value={editForm.description}
+                                                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                                />
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleUpdate(item.id, editForm)}
+                                                        className="flex-1 py-1.5 bg-emerald-500 text-white rounded text-[8px] font-black uppercase"
+                                                    >
+                                                        Salvar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setIsEditing(null)}
+                                                        className="flex-1 py-1.5 bg-slate-200 text-slate-500 rounded text-[8px] font-black uppercase"
+                                                    >
+                                                        Sair
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <h3 className="text-[11px] font-black text-brand-dark mb-1.5 line-clamp-2 leading-tight min-h-[2.4em]">
+                                                    {item.title}
+                                                </h3>
+                                                <p className="text-slate-500 text-[10px] leading-relaxed mb-3 line-clamp-2 font-medium">
+                                                    {item.description}
+                                                </p>
+                                            </>
+                                        )}
+                                    </div>
 
                                     <div className="flex flex-wrap gap-1 mb-4 mt-auto">
-                                        {item.tags.slice(0, 3).map(tag => (
+                                        {item.tags?.slice(0, 3).map(tag => (
                                             <span key={tag} className="text-[8px] font-bold text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
                                                 #{tag}
                                             </span>
                                         ))}
                                     </div>
 
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 mt-auto">
                                         <button
                                             onClick={() => setSelectedItem(item)}
                                             className="flex-grow py-2 bg-slate-900 text-white rounded-lg font-black text-[9px] uppercase tracking-widest hover:bg-brand-blue transition-all flex items-center justify-center gap-1.5"
@@ -311,6 +450,8 @@ const AcervoPage: React.FC = () => {
                                         <a
                                             href={item.imageUrl}
                                             download
+                                            target="_blank"
+                                            rel="noopener noreferrer"
                                             className="p-2 bg-slate-50 text-slate-600 rounded-lg hover:bg-[#CC343A] hover:text-white transition-all border border-slate-100"
                                             title="Baixar em Alta Resolução"
                                         >

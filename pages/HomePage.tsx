@@ -49,7 +49,7 @@ const HomePage: React.FC = () => {
     { icon: History, value: "400+ Anos", label: "de História" },
     { icon: Clock, value: "08h às 18h", label: "Atendimento" },
     { icon: AlertTriangle, value: "Denuncie", label: "Irregularidades" },
-    { icon: Globe, value: "100% Online", label: "Serviços Digitais" }
+    { icon: Globe, value: "Digital", label: "Serviços" }
   ];
 
   useEffect(() => {
@@ -179,14 +179,14 @@ const HomePage: React.FC = () => {
       <section className="max-w-7xl mx-auto px-6 -mt-6 relative z-20">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           {[
-            { label: 'Bens Tombados', value: '2.451', color: 'text-brand-red' },
-            { label: 'Cidades Protegidas', value: '42', color: 'text-brand-blue' },
-            { label: 'Patrimônio Imaterial', value: '38', color: 'text-white bg-brand-dark p-3 rounded-xl' },
-            { label: 'Obras Ativas', value: '15', color: 'text-slate-900' }
+            { label: 'Bens Mapeados', value: 'Maranhão', color: 'text-brand-red' },
+            { label: 'Patrimônio Material', value: 'Acervo', color: 'text-brand-blue' },
+            { label: 'Tradições Culturais', value: 'Imaterial', color: 'text-white bg-brand-dark p-3 rounded-xl' },
+            { label: 'Projetos da SPC', value: 'Ações', color: 'text-slate-900' }
           ].map((stat, i) => (
             <div key={i} className={`bg-white p-2.5 rounded-2xl border border-slate-100 shadow-lg text-center ${stat.color.includes('bg-') ? stat.color : ''}`}>
-              <span className={`block text-base font-black mb-0.5 ${!stat.color.includes('bg-') ? stat.color : ''}`}>{stat.value}</span>
-              <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">{stat.label}</span>
+              <span className={`block text-xs font-black mb-0.5 uppercase tracking-tighter ${!stat.color.includes('bg-') ? stat.color : ''}`}>{stat.label}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{stat.value}</span>
             </div>
           ))}
         </div>
@@ -295,7 +295,7 @@ const HomePage: React.FC = () => {
                   Palavra do Superintendente
                 </span>
                 <h2 className="text-2xl md:text-3xl font-black leading-tight">
-                  Liderando a <span className="text-brand-blue">Transformação</span> Digital do Patrimônio.
+                  Transparência e <span className="text-brand-blue">Gestão</span> do Patrimônio Cultural.
                 </h2>
               </div>
               <p className="text-base text-slate-300 leading-relaxed italic font-medium">

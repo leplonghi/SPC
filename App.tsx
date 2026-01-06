@@ -122,7 +122,6 @@ const Navigation = () => {
             <div className={`hidden lg:block border-l pl-4 transition-all duration-500 ${scrolled ? 'border-slate-300' : 'border-slate-400/50'}`}>
               <span className="block font-black text-brand-dark leading-none text-sm uppercase tracking-tight group-hover:text-brand-blue transition-colors">Superintendência do</span>
               <span className="block font-black text-brand-dark leading-none text-sm uppercase mb-0.5 tracking-tight group-hover:text-brand-blue transition-colors">Patrimônio Cultural</span>
-              <span className="block text-[9px] font-bold text-brand-blue uppercase tracking-[0.3em] group-hover:text-brand-red transition-colors">Governo do Maranhão</span>
             </div>
           </Link>
 
@@ -183,7 +182,7 @@ const Navigation = () => {
             <img
               src="/imagens/logo_governo.png"
               alt="Governo do Maranhão"
-              className="h-8 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity duration-300"
+              className="h-14 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity duration-300"
             />
           </div>
 

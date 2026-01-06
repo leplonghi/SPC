@@ -15,7 +15,9 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { db } from '../../firebase';
-import { collection, doc, setDoc, deleteDoc, addDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, addDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { storage } from '../../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import {
     Settings,
@@ -56,6 +58,7 @@ import {
     Check
 } from 'lucide-react';
 import { FileUpload } from '../ui/FileUpload';
+import { FileItem } from '../ui/FileItem';
 
 import { HeritageAsset, HeritageArea } from '../../types_patrimonio';
 import { HERITAGE_SITES, INITIAL_ZONES, WAYPOINTS, CONNECTIONS } from '../../data/geoManagerData';
@@ -69,6 +72,7 @@ import { PrecisionEditor, EditorMode } from './PrecisionEditor';
 import { GlassPanel } from '../ui/GlassPanel';
 import { getDocs, query, where } from 'firebase/firestore';
 import { ADDITIONAL_SITES, EXTENDED_WAYPOINTS, EXTENDED_CONNECTIONS } from '../../data/touristData';
+import { geocodingService } from '../../services/GeocodingService';
 
 // --- Types ---
 
@@ -550,25 +554,43 @@ const DetailDrawer: React.FC<{
                             </h4>
 
                             <div className="space-y-2">
-                                {site.documentos?.map((d, idx) => (
-                                    <div key={idx} className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md transition-all group">
-                                        <div className={`p-2 rounded-lg ${d.type === 'pdf' ? 'bg-red-50 text-red-500' : d.type === 'image' ? 'bg-blue-50 text-blue-500' : 'bg-slate-100 text-slate-500'}`}>
-                                            {d.type === 'image' ? <ImageIcon size={16} /> : <FileText size={16} />}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-[11px] font-bold text-slate-700 truncate">{d.name}</p>
-                                            <p className="text-[9px] text-slate-400 font-medium">{new Date(d.uploadedAt).toLocaleDateString()}</p>
-                                        </div>
-                                        <a
-                                            href={d.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="p-2 text-slate-400 hover:text-brand-blue hover:bg-brand-blue/5 rounded-lg transition-all"
-                                        >
-                                            <Download size={16} />
-                                        </a>
-                                    </div>
-                                ))}
+                                {site.documentos?.map((d, idx) => {
+                                    const handleDelete = async () => {
+                                        try {
+                                            const assetRef = doc(db, "heritage_assets", site.id);
+                                            await updateDoc(assetRef, { documentos: arrayRemove(d) });
+                                        } catch (e) { alert("Erro ao excluir."); }
+                                    };
+                                    const handleRename = async (newName: string) => {
+                                        try {
+                                            const assetRef = doc(db, "heritage_assets", site.id);
+                                            const newDocs = site.documentos?.map(docItem => docItem.url === d.url ? { ...docItem, name: newName } : docItem);
+                                            await updateDoc(assetRef, { documentos: newDocs });
+                                        } catch (e) { alert("Erro ao renomear."); }
+                                    };
+                                    const handleReplace = async (newFile: File) => {
+                                        try {
+                                            const storageRef = ref(storage, `heritage_assets/${site.id}/docs/${Date.now()}_${newFile.name}`);
+                                            const snapshot = await uploadBytes(storageRef, newFile);
+                                            const url = await getDownloadURL(snapshot.ref);
+                                            const type = newFile.name.toLowerCase().endsWith('.pdf') ? 'pdf' : (newFile.type.startsWith('image/') ? 'image' : 'other');
+                                            const newDocs = site.documentos?.map(docItem => docItem.url === d.url ? { name: newFile.name, url, type, uploadedAt: new Date().toISOString() } : docItem);
+                                            const assetRef = doc(db, "heritage_assets", site.id);
+                                            await updateDoc(assetRef, { documentos: newDocs });
+                                        } catch (e) { alert("Erro ao substituir arquivo."); }
+                                    };
+
+                                    return (
+                                        <FileItem
+                                            key={idx}
+                                            file={d as any}
+                                            isEditor={isEditor}
+                                            onDelete={handleDelete}
+                                            onRename={handleRename}
+                                            onReplace={handleReplace}
+                                        />
+                                    );
+                                })}
 
                                 {(!site.documentos || site.documentos.length === 0) && (
                                     <p className="text-[10px] text-slate-400 italic">Nenhum documento anexado.</p>
@@ -709,25 +731,43 @@ const AreaDetailDrawer: React.FC<{
                         </h4>
 
                         <div className="space-y-2">
-                            {area.documentos?.map((d, idx) => (
-                                <div key={idx} className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md transition-all group">
-                                    <div className={`p-2 rounded-lg ${d.type === 'pdf' ? 'bg-red-50 text-red-500' : d.type === 'image' ? 'bg-blue-50 text-blue-500' : 'bg-slate-100 text-slate-500'}`}>
-                                        {d.type === 'image' ? <ImageIcon size={16} /> : <FileText size={16} />}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-[11px] font-bold text-slate-700 truncate">{d.name}</p>
-                                        <p className="text-[9px] text-slate-400 font-medium">{new Date(d.uploadedAt).toLocaleDateString()}</p>
-                                    </div>
-                                    <a
-                                        href={d.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="p-2 text-slate-400 hover:text-brand-blue hover:bg-brand-blue/5 rounded-lg transition-all"
-                                    >
-                                        <Download size={16} />
-                                    </a>
-                                </div>
-                            ))}
+                            {area.documentos?.map((d, idx) => {
+                                const handleDelete = async () => {
+                                    try {
+                                        const areaRef = doc(db, "heritage_areas", area.id);
+                                        await updateDoc(areaRef, { documentos: arrayRemove(d) });
+                                    } catch (e) { alert("Erro ao excluir."); }
+                                };
+                                const handleRename = async (newName: string) => {
+                                    try {
+                                        const areaRef = doc(db, "heritage_areas", area.id);
+                                        const newDocs = area.documentos?.map(docItem => docItem.url === d.url ? { ...docItem, name: newName } : docItem);
+                                        await updateDoc(areaRef, { documentos: newDocs });
+                                    } catch (e) { alert("Erro ao renomear."); }
+                                };
+                                const handleReplace = async (newFile: File) => {
+                                    try {
+                                        const storageRef = ref(storage, `heritage_areas/${area.id}/docs/${Date.now()}_${newFile.name}`);
+                                        const snapshot = await uploadBytes(storageRef, newFile);
+                                        const url = await getDownloadURL(snapshot.ref);
+                                        const type = newFile.name.toLowerCase().endsWith('.pdf') ? 'pdf' : (newFile.type.startsWith('image/') ? 'image' : 'other');
+                                        const newDocs = area.documentos?.map(docItem => docItem.url === d.url ? { name: newFile.name, url, type, uploadedAt: new Date().toISOString() } : docItem);
+                                        const areaRef = doc(db, "heritage_areas", area.id);
+                                        await updateDoc(areaRef, { documentos: newDocs });
+                                    } catch (e) { alert("Erro ao substituir arquivo."); }
+                                };
+
+                                return (
+                                    <FileItem
+                                        key={idx}
+                                        file={d as any}
+                                        isEditor={isEditor}
+                                        onDelete={handleDelete}
+                                        onRename={handleRename}
+                                        onReplace={handleReplace}
+                                    />
+                                );
+                            })}
 
                             {(!area.documentos || area.documentos.length === 0) && (
                                 <p className="text-[10px] text-slate-400 italic font-medium pt-2">Nenhum documento anexado.</p>
@@ -851,13 +891,7 @@ const FloatingNav: React.FC<{ mode: AppMode, setMode: (m: AppMode) => void }> = 
                 <Shield size={18} />
                 <span className="text-xs font-black uppercase tracking-widest hidden md:block">Geomapa</span>
             </button>
-            <button
-                onClick={() => setMode('tourism')}
-                className={`flex items-center gap-3 px-3 md:px-6 py-3 rounded-2xl transition-all ${mode === 'tourism' ? 'bg-brand-blue text-white shadow-xl translate-y-[-1px]' : 'text-slate-400 hover:text-slate-600 hover:bg-white'}`}
-            >
-                <Compass size={18} />
-                <span className="text-xs font-black uppercase tracking-widest hidden md:block">Roteiros</span>
-            </button>
+            {/* Tourism mode button removed as requested */}
         </GlassPanel>
     </div>
 );
@@ -895,56 +929,47 @@ const LayerControl: React.FC<{
     hasZones: boolean,
     canEdit: boolean
 }> = ({ base, setBase, showZones, setShowZones, onNewZone, onEditMode, isEditing, hasZones, canEdit }) => (
-    <div className="absolute top-24 left-4 md:top-6 md:left-6 z-[1000] flex flex-col gap-2 pointer-events-auto">
-        <GlassPanel className="p-3 w-14 hover:w-64 group transition-all duration-500 ease-in-out">
-            <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-4 overflow-hidden">
-                    <div className="min-w-[40px] flex justify-center"><Layers size={20} className="text-slate-600" /></div>
-                    <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Sistema de Camadas</span>
-                </div>
-
-                <div className="opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto overflow-hidden whitespace-nowrap">
-                    <div className="flex flex-col gap-3 ml-2 border-l-2 border-slate-100 pl-4 py-2">
-                        {/* Map Toggles */}
-                        <div className="space-y-3 mb-4">
-                            <button onClick={() => setShowZones(!showZones)} className="flex items-center justify-between w-full group/item">
-                                <span className="text-[10px] font-bold text-slate-500 group-hover/item:text-brand-blue">Polígonos de Proteção</span>
-                                <div className={`w-8 h-4 rounded-full transition-all relative ${showZones ? 'bg-brand-blue' : 'bg-slate-200'}`}>
-                                    <div className={`absolute top-1 w-2 h-2 rounded-full bg-white transition-all ${showZones ? 'left-5' : 'left-1'}`} />
-                                </div>
-                            </button>
-
-                            <button onClick={() => setBase(base === 'streets' ? 'satellite' : 'streets')} className="flex items-center justify-between w-full group/item">
-                                <span className="text-[10px] font-bold text-slate-500 group-hover/item:text-brand-blue">Visão Satélite</span>
-                                <div className={`w-8 h-4 rounded-full transition-all relative ${base === 'satellite' ? 'bg-brand-blue' : 'bg-slate-200'}`}>
-                                    <div className={`absolute top-1 w-2 h-2 rounded-full bg-white transition-all ${base === 'satellite' ? 'left-5' : 'left-1'}`} />
-                                </div>
-                            </button>
+    <div className="absolute top-6 left-6 z-[1000] pointer-events-auto">
+        <GlassPanel className="p-3 w-36 bg-white/95 shadow-xl border-white/40 rounded-2xl">
+            <div className="flex flex-col gap-2">
+                {/* Map Toggles - Ultra Compact */}
+                <div className="space-y-1.5">
+                    <button onClick={() => setShowZones(!showZones)} className="flex items-center justify-between w-full group/item">
+                        <span className="text-[8px] font-black text-slate-500 group-hover/item:text-brand-blue uppercase tracking-wider">Polígonos</span>
+                        <div className={`w-6 h-3 rounded-full transition-all relative ${showZones ? 'bg-brand-blue' : 'bg-slate-200'}`}>
+                            <div className={`absolute top-0.5 w-2 h-2 rounded-full bg-white transition-all ${showZones ? 'left-3.5' : 'left-0.5'}`} />
                         </div>
+                    </button>
 
-                        {/* Editor Shortcuts */}
-                        {canEdit && (
-                            <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
-                                <button
-                                    onClick={onNewZone}
-                                    disabled={isEditing}
-                                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-brand-red/5 text-slate-600 hover:text-brand-red transition-all disabled:opacity-30 group/btn"
-                                >
-                                    <Plus size={16} className="text-brand-red" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Nova Poligonal</span>
-                                </button>
-                                <button
-                                    onClick={onEditMode}
-                                    disabled={isEditing || !hasZones}
-                                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-brand-blue/5 text-slate-600 hover:text-brand-blue transition-all disabled:opacity-30 group/btn"
-                                >
-                                    <MousePointer2 size={16} className="text-brand-blue" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Editar Existente</span>
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                    <button onClick={() => setBase(base === 'streets' ? 'satellite' : 'streets')} className="flex items-center justify-between w-full group/item">
+                        <span className="text-[8px] font-black text-slate-500 group-hover/item:text-brand-blue uppercase tracking-wider">Satélite</span>
+                        <div className={`w-6 h-3 rounded-full transition-all relative ${base === 'satellite' ? 'bg-brand-blue' : 'bg-slate-200'}`}>
+                            <div className={`absolute top-0.5 w-2 h-2 rounded-full bg-white transition-all ${base === 'satellite' ? 'left-3.5' : 'left-0.5'}`} />
+                        </div>
+                    </button>
                 </div>
+
+                {/* Editor Shortcuts */}
+                {canEdit && (
+                    <div className="flex flex-col gap-1 pt-1.5 border-t border-slate-100">
+                        <button
+                            onClick={onNewZone}
+                            disabled={isEditing}
+                            className="flex items-center gap-2 p-1 rounded-lg hover:bg-brand-red/5 text-slate-500 hover:text-brand-red transition-all disabled:opacity-30"
+                        >
+                            <Plus size={12} className="text-brand-red" />
+                            <span className="text-[8px] font-black uppercase tracking-tight">Novo</span>
+                        </button>
+                        <button
+                            onClick={onEditMode}
+                            disabled={isEditing || !hasZones}
+                            className="flex items-center gap-2 p-1 rounded-lg hover:bg-brand-blue/5 text-slate-500 hover:text-brand-blue transition-all disabled:opacity-30"
+                        >
+                            <MousePointer2 size={12} className="text-brand-blue" />
+                            <span className="text-[8px] font-black uppercase tracking-tight">Editar</span>
+                        </button>
+                    </div>
+                )}
             </div>
         </GlassPanel>
     </div>
@@ -1015,7 +1040,7 @@ const GeoManager: React.FC<GeoManagerProps> = ({
     onReportError
 }) => {
     const { isEditor, user } = useAuth();
-    const [mode, setMode] = useState<AppMode>('tourism');
+    const [mode, setMode] = useState<AppMode>('management');
     const [showPolygons, setShowPolygons] = useState(true);
     const [baseLayer, setBaseLayer] = useState<'streets' | 'satellite'>('streets');
     const [activeRoute, setActiveRoute] = useState<[number, number][] | null>(null);
@@ -1574,7 +1599,7 @@ const GeoManager: React.FC<GeoManagerProps> = ({
                     const routeIndex = routeSequence.findIndex(s =>
                         s.id === site.id ||
                         s.titulo?.toLowerCase() === site.titulo?.toLowerCase() ||
-                        geocodingService.createSlug(s.titulo) === site.id
+                        (s.titulo && geocodingService.createSlug(s.titulo) === site.id)
                     );
                     const isInRoute = routeIndex !== -1;
                     const isFocusMode = routeSequence.length > 0 || isPlanningRoute;
@@ -1674,7 +1699,7 @@ const GeoManager: React.FC<GeoManagerProps> = ({
                 canEdit={isEditor}
             />
 
-            <SatelliteToggle base={baseLayer} setBase={setBaseLayer} />
+            {/* Satellite toggle redundancy removed */}
 
             {isEditingZones && (
                 <PrecisionEditor
@@ -1778,14 +1803,13 @@ const GeoManager: React.FC<GeoManagerProps> = ({
             )}
 
             {/* Legend / Branding Overlay */}
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[500] pointer-events-none hidden md:block">
-                <GlassPanel className="px-6 py-2 border-white/50 bg-white/30">
-                    <div className="flex items-center gap-3">
-                        <img src="/spc-logo.png" className="h-6 opacity-80" alt="SPC" />
-                        <div className="h-4 w-px bg-slate-400/30" />
-                        <span className="text-[10px] font-black text-slate-700 uppercase tracking-[0.2em] font-sans">GeoManager v36.0</span>
-                    </div>
-                </GlassPanel>
+            {/* Legend / Branding Overlay moved to avoid middle overlap */}
+            <div className="absolute bottom-6 left-6 z-[500] pointer-events-none hidden md:block">
+                <div className="flex items-center gap-3 bg-white/40 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/50">
+                    <img src="/spc-logo.png" className="h-4 opacity-60 grayscale" alt="SPC" />
+                    <div className="h-3 w-px bg-slate-400/20" />
+                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">v36.0</span>
+                </div>
             </div>
 
             <style dangerouslySetInnerHTML={{

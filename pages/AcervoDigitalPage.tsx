@@ -116,20 +116,10 @@ const AcervoDigitalPage: React.FC = () => {
                     </div>
 
                     <div className="relative z-10 lg:w-1/2 space-y-4 text-white">
-                        <h2 className="text-xl md:text-2xl font-black leading-tight">Busca Unificada <br />de Documentos</h2>
+                        <h2 className="text-xl md:text-2xl font-black leading-tight">Pesquisa no Acervo <br />e Legislação</h2>
                         <p className="text-blue-100 text-xs font-medium leading-relaxed">
-                            Encontre rapidamente qualquer documento oficial através do nosso indexador dinâmico. Digite termos chave acima ou utilize os filtros.
+                            Encontre documentos, leis e registros técnicos da SPC. Utilize palavras-chave ou os filtros disponíveis para refinar sua busca.
                         </p>
-                        <div className="flex gap-4">
-                            <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center flex-1">
-                                <span className="block text-xl font-black">+15k</span>
-                                <span className="text-[8px] font-bold uppercase tracking-widest text-blue-200">Arquivos</span>
-                            </div>
-                            <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center flex-1">
-                                <span className="block text-xl font-black">24/7</span>
-                                <span className="text-[8px] font-bold uppercase tracking-widest text-blue-200">Disponibilidade</span>
-                            </div>
-                        </div>
                     </div>
 
                     <div className="relative z-10 lg:w-1/2 w-full">

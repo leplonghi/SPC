@@ -13,7 +13,7 @@ interface AICommandChatProps {
 
 const AICommandChat: React.FC<AICommandChatProps> = ({ onCommand }) => {
     const [messages, setMessages] = useState<Message[]>([
-        { role: 'assistant', content: 'Olá! Sou o assistente do SPC. Posso ajudar você a navegar no mapa, criar rotas ou destacar áreas. O que deseja fazer?' }
+        { role: 'assistant', content: 'Olá! Sou o assistente do SPC. Posso ajudar você a navegar no mapa ou destacar áreas de proteção. O que deseja fazer?' }
     ]);
     const [input, setInput] = useState('');
     const [isMinimized, setIsMinimized] = useState(false);
@@ -139,12 +139,7 @@ const AICommandChat: React.FC<AICommandChatProps> = ({ onCommand }) => {
 
             {/* Quick Commands */}
             <div className="px-4 py-2 bg-white border-t border-slate-100 flex gap-2 overflow-x-auto no-scrollbar">
-                <button
-                    onClick={() => { setInput("Criar rota histórica"); }}
-                    className="flex-shrink-0 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-[10px] font-bold text-slate-600 flex items-center gap-1 transition-colors"
-                >
-                    <Navigation size={10} /> Rota
-                </button>
+                {/* Rota command removed */}
                 <button
                     onClick={() => { setInput("Destacar centro histórico"); }}
                     className="flex-shrink-0 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-[10px] font-bold text-slate-600 flex items-center gap-1 transition-colors"
