@@ -1,9 +1,25 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    function isSuperAdminEmail() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'leplonghi@gmail.com';
+    }
+
+    function isEditor() {
+      return isSuperAdminEmail() || (
+        request.auth != null
+        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in
+           ['SuperAdmin', 'AdminSPC', 'EditorDPE', 'EditorDPHAP', 'EditorDPI']
+      );
+    }
+
+    // Leitura pública (acervo e documentos públicos). Gravação só de administradores e editores, até 100 MB por arquivo.
     match /{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isEditor() && request.resource.size < 100 * 1024 * 1024;
     }
   }
 }

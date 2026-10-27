@@ -22,3 +22,25 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Project agents and tooling caches
+.agent/
+.openai/
+.playwright-cli/
+.wrangler/
+tmp/
+output/
+Claude outputs/
+
+# Backups and temporary dumps
+_backup_*
+backup_imagens/
+arte-cena/
+
+# Loose media files placed directly in root (production assets live in public/)
+/*.jpg
+/*.JPG
+/*.jpeg
+/*.bmp
+/*.heic
+/*.png

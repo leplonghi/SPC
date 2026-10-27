@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '../firebase';
-import { doc, setDoc } from 'firebase/firestore';
-import { UserRole } from '../types';
+import { signInWithEmailAndPassword, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth } from '../firebase';
+import { usePageTitle } from '../hooks/usePageTitle';
 import {
     ShieldCheck,
     Mail,
@@ -14,9 +13,11 @@ import {
 } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
+    usePageTitle('Área restrita');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [info, setInfo] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
@@ -40,54 +41,41 @@ const LoginPage: React.FC = () => {
         }
     };
 
-    const handleTestLogin = async (role: 'admin' | 'editor' | 'viewer') => {
-        setLoading(true);
+    const handleGoogle = async () => {
         setError('');
-
-        const credentials = {
-            admin: { email: 'admin@spc.ma.gov.br', pass: 'admin123', role: UserRole.SUPER_ADMIN, name: 'Super Admin' },
-            editor: { email: 'editor@spc.ma.gov.br', pass: 'editor123', role: UserRole.EDITOR_DPHAP, name: 'Editor DPHAP' },
-            viewer: { email: 'viewer@spc.ma.gov.br', pass: 'viewer123', role: UserRole.VIEWER, name: 'Visitante' }
-        };
-
-        const cred = credentials[role];
-        setEmail(cred.email);
-        setPassword(cred.pass);
-
+        setInfo('');
+        setLoading(true);
         try {
-            await signInWithEmailAndPassword(auth, cred.email, cred.pass);
+            await signInWithPopup(auth, new GoogleAuthProvider());
             navigate('/admin');
         } catch (err: any) {
-            console.log("Login normal falhou, tentando criar usuário de teste...", err.code);
-            if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-                try {
-                    // Create user if not exists (DEV helper)
-                    const userCred = await createUserWithEmailAndPassword(auth, cred.email, cred.pass);
-                    // Create Firestore profile
-                    await setDoc(doc(db, 'users', userCred.user.uid), {
-                        name: cred.name,
-                        role: cred.role,
-                        department: role === 'editor' ? 'DPHAP' : 'Gestão'
-                    });
-                    // Force reload to ensure AuthContext picks up the new role from Firestore
-                    window.location.reload();
-                } catch (createErr: any) {
-                    console.error("Erro ao criar usuário de teste:", createErr);
-                    setError(`Erro ao criar usuário de teste: ${createErr.message}`);
-                    setLoading(false);
-                }
-            } else if (err.code === 'auth/wrong-password') {
-                setError('Senha incorreta (usuário já existe). Corrija no Firebase Console ou use outro e-mail.');
-                setLoading(false);
-            } else if (err.code === 'auth/configuration-not-found') {
-                setError('Erro de configuração: Ative o provedor "E-mail/Senha" no Firebase Console.');
-                setLoading(false);
+            console.error(err);
+            if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+                setError('A janela do Google foi fechada antes de concluir o acesso.');
+            } else if (err.code === 'auth/popup-blocked') {
+                setError('O navegador bloqueou a janela do Google. Libere pop-ups para este site e tente de novo.');
             } else {
-                console.error("Test Login Error Detailed:", err);
-                setError(`Erro no login de teste: ${err.code}`);
-                setLoading(false);
+                setError('Não foi possível entrar com o Google. Tente de novo.');
             }
+        } finally {
+            setLoading(false);
         }
+    };
+
+    const handleReset = async () => {
+        setError('');
+        setInfo('');
+        if (!email) {
+            setError('Digite seu e-mail institucional e clique em "Esqueci a senha" de novo.');
+            return;
+        }
+        try {
+            await sendPasswordResetEmail(auth, email);
+        } catch (err) {
+            console.error(err);
+        }
+        // Mensagem neutra para não revelar se o e-mail existe
+        setInfo('Se o e-mail estiver cadastrado, você receberá as instruções de redefinição.');
     };
 
     return (
@@ -106,7 +94,7 @@ const LoginPage: React.FC = () => {
                             <img src="/spc-logo.png" alt="SPC Logo" className="h-full w-full object-cover" />
                         </div>
                         <h1 className="text-2xl font-black text-brand-dark tracking-tight">Portal de Gestão SPC</h1>
-                        <p className="text-sm text-slate-500 font-medium mt-2">Área restrita para administradores e editores</p>
+                        <p className="text-sm text-slate-500 font-medium mt-2">Área restrita a servidores autorizados da SPC</p>
                     </div>
 
                     <div className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-2xl shadow-slate-200/50 border border-slate-100 animate-in fade-in slide-in-from-bottom-6 duration-1000">
@@ -118,18 +106,25 @@ const LoginPage: React.FC = () => {
                                 </div>
                             )}
 
+                            {info && (
+                                <div role="status" className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl text-xs font-bold border border-emerald-100">
+                                    {info}
+                                </div>
+                            )}
+
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">E-mail Institucional</label>
+                                <label htmlFor="login-email" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">E-mail institucional</label>
                                 <div className="relative group">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-brand-blue transition-colors">
                                         <Mail size={18} />
                                     </div>
                                     <input
+                                        id="login-email"
                                         type="email"
                                         required
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="exemplo@spc.ma.gov.br"
+                                        placeholder="seu e-mail institucional"
                                         className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-sm text-brand-dark"
                                     />
                                 </div>
@@ -137,14 +132,15 @@ const LoginPage: React.FC = () => {
 
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center ml-1">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Senha</label>
-                                    <button type="button" className="text-[9px] font-black text-brand-blue uppercase tracking-widest hover:underline">Esqueci a senha</button>
+                                    <label htmlFor="login-password" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Senha</label>
+                                    <button type="button" onClick={handleReset} className="text-[9px] font-black text-brand-blue uppercase tracking-widest hover:underline">Esqueci a senha</button>
                                 </div>
                                 <div className="relative group">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-brand-blue transition-colors">
                                         <Lock size={18} />
                                     </div>
                                     <input
+                                        id="login-password"
                                         type="password"
                                         required
                                         value={password}
@@ -164,44 +160,33 @@ const LoginPage: React.FC = () => {
                                     <Loader2 size={20} className="animate-spin" />
                                 ) : (
                                     <>
-                                        Entrar no Ecossistema <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                        Entrar <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                     </>
                                 )}
                             </button>
                         </form>
 
+                        <div className="mt-6">
+                            <div className="flex items-center gap-3 mb-4" aria-hidden="true">
+                                <span className="h-px flex-1 bg-slate-100"></span>
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">ou</span>
+                                <span className="h-px flex-1 bg-slate-100"></span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleGoogle}
+                                disabled={loading}
+                                className="w-full py-4 bg-white text-brand-dark border-2 border-slate-200 rounded-2xl font-black uppercase tracking-[0.15em] text-[11px] flex items-center justify-center gap-3 hover:border-brand-blue hover:text-brand-blue transition-all disabled:opacity-70 disabled:pointer-events-none"
+                            >
+                                <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.5 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+                                Entrar com Google
+                            </button>
+                        </div>
+
                         <div className="mt-8 pt-8 border-t border-slate-50 text-center space-y-4">
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
                                 <ShieldCheck size={14} className="text-brand-blue" /> Ambiente Seguro & Monitorado
                             </p>
-
-                            {/* DEV ONLY BUTTONS */}
-                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Acesso Rápido - (Teste/Dev)</p>
-                                <div className="grid grid-cols-3 gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleTestLogin('admin')}
-                                        className="py-2 px-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-[10px] font-bold uppercase"
-                                    >
-                                        Admin
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleTestLogin('editor')}
-                                        className="py-2 px-1 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg text-[10px] font-bold uppercase"
-                                    >
-                                        Editor
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleTestLogin('viewer')}
-                                        className="py-2 px-1 bg-slate-200 text-slate-600 hover:bg-slate-300 rounded-lg text-[10px] font-bold uppercase"
-                                    >
-                                        Viewer
-                                    </button>
-                                </div>
-                            </div>
                         </div>
                     </div>
 

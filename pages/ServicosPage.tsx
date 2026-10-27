@@ -1,35 +1,31 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FileText,
   Search,
   ArrowRight,
-  Download,
   CheckSquare,
-  Clock,
-  HelpCircle,
   ChevronDown,
   Info,
-  ShieldCheck,
-  ClipboardList,
   History,
   Sparkles,
   Hammer,
   Building2,
   Mail,
-  Phone,
+  MapPin,
   ExternalLink,
-  MessageCircle,
-  MapPin
+  ShieldAlert,
+  Download,
+  Copy,
+  Printer,
+  CheckCircle2,
+  Send,
+  HelpCircle
 } from 'lucide-react';
 import { PageHero } from '../components/ui/PageHero';
 import { Department } from '../types';
-
-interface ServiceFAQ {
-  question: string;
-  answer: string;
-}
+import { SITE_CONTACT, DEPARTMENTS } from '../data/siteContact';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 interface Service {
   id: string;
@@ -37,33 +33,28 @@ interface Service {
   category: string;
   department_responsible: Department;
   description: string;
-  steps: string[];
-  documents: string[];
-  deadline: string;
-  form_link: string;
-  contact: {
-    email: string;
-    phone: string;
-    address: string;
-  };
-  faq: ServiceFAQ[];
+  bring: string[];
+  stages: string[];
+  deadlineHint: string;
+  references: { label: string; to?: string; href?: string }[];
 }
 
 const DEPARTAMENTOS_INFO = [
   {
     id: Department.DPHAP,
     name: 'DPHAP',
-    fullName: 'Patrimônio Material',
+    fullName: 'Proteção do Patrimônio Histórico, Artístico, Arqueológico e Paisagístico',
     icon: History,
-    color: 'text-brand-blue',
+    color: 'text-brand-blue-dark',
     bgColor: 'bg-brand-blue/10',
-    borderColor: 'border-brand-blue/20',
-    description: 'Atua na preservação física de bens. Realiza consultas sobre poligonais, autoriza obras e reformas arquitetônicas.',
-    link: '/dphap',
+    borderColor: 'border-slate-200',
+    description: 'Tombamento, fiscalização e autorização de intervenções em bens tombados e poligonais de proteção.',
+    link: '/institucional',
     resources: [
-      { label: 'Diretrizes de Intervenção', url: '/imagens/infografico_engenhos.jpg' },
-      { label: 'Análises Técnicas', url: '#' },
-      { label: 'Licenciamento Urbano', url: '#' }
+      {
+        label: 'Diretrizes para engenhos publicitários (PDF)',
+        url: '/documentos/legislacao/diretrizes-dphap-engenhos-publicitarios.pdf'
+      }
     ]
   },
   {
@@ -71,11 +62,11 @@ const DEPARTAMENTOS_INFO = [
     name: 'DPI',
     fullName: 'Patrimônio Imaterial',
     icon: Sparkles,
-    color: 'text-brand-red',
+    color: 'text-brand-terracotta',
     bgColor: 'bg-brand-red/10',
-    borderColor: 'border-brand-red/20',
-    description: 'Responsável pelo registro de saberes, celebrações e apoio às comunidades detentoras de tradições.',
-    link: '/dpi',
+    borderColor: 'border-slate-200',
+    description: 'Registro e salvaguarda de saberes, celebrações, formas de expressão e lugares de memória.',
+    link: '/institucional',
     resources: []
   },
   {
@@ -85,9 +76,9 @@ const DEPARTAMENTOS_INFO = [
     icon: Hammer,
     color: 'text-brand-dark',
     bgColor: 'bg-brand-dark/10',
-    borderColor: 'border-brand-dark/20',
-    description: 'Gerencia grandes intervenções urbanas e projetos estruturantes em áreas históricas protegidas.',
-    link: '/dpe',
+    borderColor: 'border-slate-200',
+    description: 'Projetos, obras de restauração, intervenções arquitetônicas e conservação de edifícios públicos.',
+    link: '/institucional',
     resources: []
   }
 ];
@@ -95,352 +86,714 @@ const DEPARTAMENTOS_INFO = [
 const SERVICOS_LIST: Service[] = [
   {
     id: 's1',
-    title: 'Autorização para Intervenção em Bem Tombado',
+    title: 'Autorização para Intervenção em Imóvel Tombado',
     category: 'Obras e Projetos',
     department_responsible: Department.DPHAP,
-    description: 'Solicitação necessária para realizar reformas, restauros ou qualquer alteração em imóveis protegidos ou situados em área de entorno.',
-    steps: [
-      'Abertura de processo no protocolo digital (SEI) ou presencial.',
-      'Análise técnica do projeto arquitetônico pela equipe do DPHAP.',
-      'Vistoria in loco para verificação das condições atuais.',
-      'Emissão de parecer técnico favorável ou pedido de ajustes.',
-      'Emissão da Certidão de Autorização.'
+    description:
+      'Reformas, restaurações, pinturas de fachada, alterações estruturais ou qualquer modificação em imóvel tombado ou situado em poligonal protegida precisam de análise prévia da SPC.',
+    bring: [
+      'Documento de identificação do requerente (RG/CPF ou CNPJ) e procuração, se aplicável',
+      'Comprovante de endereço e certidão de matrícula do imóvel ou título de posse',
+      'Fotografias nítidas e atualizadas da fachada e das áreas internas que receberão intervenção',
+      'Memorial descritivo da intervenção detalhando materiais, cores e técnicas a empregar',
+      'Projeto arquitetônico (planta baixa, cortes e fachadas) assinado por profissional habilitado (CAU/CREA), em caso de obra civil de médio/grande porte'
     ],
-    documents: [
-      'Requerimento preenchido',
-      'Documento de propriedade do imóvel',
-      'Projeto arquitetônico completo',
-      'Relatório fotográfico atualizado',
-      'RRT/ART do responsável técnico'
+    stages: [
+      '1. Protocolo do requerimento com formulário e documentos',
+      '2. Vistoria técnica in loco realizada pela equipe da SPC',
+      '3. Emissão de Parecer Técnico Conclusivo e Certificado de Autorização'
     ],
-    deadline: 'Até 45 dias úteis',
-    form_link: 'https://sei.ma.gov.br/protocolo-externo',
-    contact: {
-      email: 'dphap@spc.ma.gov.br',
-      phone: '(98) 3218-1234',
-      address: 'Rua do Giz, 445 - Centro Histórico, São Luís/MA'
-    },
-    faq: [
+    deadlineHint: 'Análise técnica em conformidade com os prazos de tramitação administrativa estadual.',
+    references: [
+      { label: 'Decretos de tombamento e leis estaduais', to: '/legislacao' },
       {
-        question: 'Posso pintar a fachada de outra cor?',
-        answer: 'Qualquer alteração cromática deve seguir a paleta histórica da região e requer aprovação técnica prévia do DPHAP.'
-      },
-      {
-        question: 'Preciso de autorização para reparos internos?',
-        answer: 'Sim, se o imóvel for tombado individualmente, qualquer intervenção estrutural ou estética interna deve ser comunicada.'
+        label: 'Diretrizes para engenhos publicitários (PDF)',
+        href: '/documentos/legislacao/diretrizes-dphap-engenhos-publicitarios.pdf'
       }
     ]
   },
   {
     id: 's2',
-    title: 'Registro de Patrimônio Imaterial',
-    category: 'Salvaguarda',
-    department_responsible: Department.DPI,
-    description: 'Processo de identificação e registro oficial de manifestações culturais maranhenses (festas, saberes, formas de expressão).',
-    steps: [
-      'Solicitação por grupo organizado, comunidade ou órgão público.',
-      'Elaboração de dossiê de registro pela equipe do DPI.',
-      'Consulta pública e análise pelo Conselho Estadual de Cultura.',
-      'Assinatura do decreto de registro pelo Governador.'
+    title: 'Certidão de Limites de Poligonal e Tombamento',
+    category: 'Certidões',
+    department_responsible: Department.DPHAP,
+    description:
+      'Documento oficial expedido pela SPC que atesta se determinado imóvel ou terreno está situado dentro de poligonal de tombamento, área de entorno ou se é individualmente tombado pelo Estado.',
+    bring: [
+      'Identificação do solicitante (RG/CPF ou CNPJ)',
+      'Endereço exato do imóvel (logradouro, número, lote, quadra e município)',
+      'Certidão de matrícula atualizada do Registro de Imóveis ou croqui de localização georreferenciado',
+      'Número de inscrição imobiliária (IPTU) se houver'
     ],
-    documents: [
-      'Carta de anuência da comunidade detentora',
-      'Relato histórico da manifestação',
-      'Vídeos e fotos representativas',
-      'Referências bibliográficas e documentos históricos'
+    stages: [
+      '1. Conferência cartográfica com a base de decretos e poligonais estaduais',
+      '2. Emissão da certidão oficial assinada pela autoridade competente'
     ],
-    deadline: 'De 6 a 12 meses',
-    form_link: 'https://sei.ma.gov.br/protocolo-externo',
-    contact: {
-      email: 'dpi@spc.ma.gov.br',
-      phone: '(98) 3218-5678',
-      address: 'Rua do Sol, 112 - Centro, São Luís/MA'
-    },
-    faq: [
-      {
-        question: 'Quem pode solicitar o registro?',
-        answer: 'Associações, comunidades detentoras, prefeituras ou o próprio estado podem iniciar o pedido de registro.'
-      },
-      {
-        question: 'O registro garante verba direta?',
-        answer: 'O registro habilita a manifestação a participar de editais de fomento específicos para salvaguarda do patrimônio imaterial.'
-      }
+    deadlineHint: 'Expedição habitual após validação cadastral.',
+    references: [
+      { label: 'Consultar relação de bens tombados', to: '/bens-tombados' },
+      { label: 'Biblioteca de legislação estadual', to: '/legislacao' }
     ]
   },
   {
     id: 's3',
-    title: 'Certidão de Limites de Poligonal',
-    category: 'Consulta',
+    title: 'Autorização para Instalação de Engenhos Publicitários',
+    category: 'Comunicação Visual',
     department_responsible: Department.DPHAP,
-    description: 'Certifica se um imóvel está inserido em área de tombamento ou área envoltória de proteção oficial.',
-    steps: [
-      'Preenchimento do formulário de consulta online.',
-      'Análise cartográfica baseada no endereço ou coordenadas.',
-      'Emissão da certidão digital.'
+    description:
+      'Colocação de placas indicativas, letreiros, toldos e engenhos de propaganda em imóveis localizados em centros históricos e áreas de preservação.',
+    bring: [
+      'Identificação da empresa e do responsável pelo imóvel',
+      'Croqui ou simulação fotográfica (fotomontagem) da fachada com o engenho proposto nas dimensões exatas',
+      'Especificação de materiais, cores, fixação e eventual iluminação',
+      'Conformidade com a Norma Técnica de Engenhos Publicitários da SPC'
     ],
-    documents: [
-      'Endereço completo do imóvel',
-      'Matrícula ou croqui de localização',
-      'Cópia do IPTU (opcional)'
+    stages: [
+      '1. Protocolo da proposta de comunicação visual',
+      '2. Exame de harmonia cromática e volumétrica com a arquitetura histórica',
+      '3. Expedição do alvará de autorização'
     ],
-    deadline: 'Até 10 dias úteis',
-    form_link: 'https://forms.spc.ma.gov.br/certidao-poligonal',
-    contact: {
-      email: 'cartografia@spc.ma.gov.br',
-      phone: '(98) 3218-9000',
-      address: 'Rua do Giz, 445 - Centro Histórico, São Luís/MA'
-    },
-    faq: [
+    deadlineHint: 'Sujeito à análise das diretrizes técnicas oficiais.',
+    references: [
       {
-        question: 'A certidão tem validade?',
-        answer: 'A certidão reflete o estado atual das poligonais. Caso haja alteração na legislação de proteção, uma nova consulta deve ser feita.'
-      },
-      {
-        question: 'A certidão é gratuita?',
-        answer: 'Sim, a emissão da certidão de limites de poligonal é um serviço gratuito oferecido pela SPC.'
+        label: 'Diretrizes para engenhos publicitários (PDF)',
+        href: '/documentos/legislacao/diretrizes-dphap-engenhos-publicitarios.pdf'
       }
     ]
+  },
+  {
+    id: 's4',
+    title: 'Registro de Patrimônio Cultural Imaterial',
+    category: 'Salvaguarda',
+    department_responsible: Department.DPI,
+    description:
+      'Procedimento formal para reconhecimento e registro de bens culturais imateriais maranhenses (saberes, ofícios, celebrações, formas de expressão e lugares de memória comunitária).',
+    bring: [
+      'Identificação da comunidade, grupo, detentores culturais ou associação requerente',
+      'Denominação e caracterização detalhada da manifestação cultural',
+      'Histórico de continuidade histórica da manifestação no Maranhão',
+      'Acervo comprobatório (fotografias, registros audiovisuais, depoimentos orais, pesquisas prévias)'
+    ],
+    stages: [
+      '1. Abertura do processo de instrução para registro no DPI',
+      '2. Pesquisa de campo e elaboração de dossiê técnico de registro',
+      '3. Deliberação e inscrição no Livro de Registro de Patrimônio Imaterial correspondente'
+    ],
+    deadlineHint: 'Processo participativo com instrução técnica detalhada e ampla consulta pública.',
+    references: [{ label: 'Legislação e resoluções sobre patrimônio imaterial', to: '/legislacao' }]
+  },
+  {
+    id: 's5',
+    title: 'Consulta Técnica Prévia e Orientação Arquitetônica',
+    category: 'Consultoria Técnica',
+    department_responsible: Department.DPE,
+    description:
+      'Esclarecimento técnico com arquitetos e engenheiros da SPC antes do desenvolvimento de projetos definitivos em imóveis de interesse histórico.',
+    bring: [
+      'Breve resumo da intenção do projeto ou diretrizes preliminares',
+      'Endereço do imóvel e registros fotográficos da situação física atual',
+      'Dúvidas específicas sobre materiais compatíveis ou diretrizes aplicáveis'
+    ],
+    stages: [
+      '1. Envio da dúvida ou pré-projeto',
+      '2. Orientação por equipe técnica do DPE/DPHAP sobre compatibilidade construtiva'
+    ],
+    deadlineHint: 'Atendimento via canal técnico de atendimento e reuniões agendadas.',
+    references: [{ label: 'Conheça o Departamento de Projetos Especiais (DPE)', to: '/institucional' }]
   }
 ];
 
 const ServicosPage: React.FC = () => {
+  usePageTitle('Serviços');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeService, setActiveService] = useState<string | null>(null);
 
-  const filteredServices = SERVICOS_LIST.filter(s =>
-    s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.department_responsible.toLowerCase().includes(searchTerm.toLowerCase())
+  // Estados do Assistente Interativo de Protocolo
+  const [protocolService, setProtocolService] = useState('s1');
+  const [userName, setUserName] = useState('');
+  const [userDoc, setUserDoc] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [userPhone, setUserPhone] = useState('');
+  const [userRole, setUserRole] = useState('Proprietário(a)');
+  const [propertyAddress, setPropertyAddress] = useState('');
+  const [propertyCity, setPropertyCity] = useState('São Luís');
+  const [interventionDesc, setInterventionDesc] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+
+  const normalized = searchTerm.toLowerCase();
+  const filteredServices = SERVICOS_LIST.filter(
+    (s) =>
+      s.title.toLowerCase().includes(normalized) ||
+      s.category.toLowerCase().includes(normalized) ||
+      s.department_responsible.toLowerCase().includes(normalized) ||
+      s.description.toLowerCase().includes(normalized)
   );
 
+  const selectedServiceObj = SERVICOS_LIST.find((s) => s.id === protocolService) || SERVICOS_LIST[0];
+
+  const handleGenerateSummary = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowSummary(true);
+  };
+
+  const getFormattedSummaryText = () => {
+    return `AO DEPARTAMENTO COMPETENTE DA SUPERINTENDÊNCIA DO PATRIMÔNIO CULTURAL DO MARANHÃO (SPC/SECMA)
+REQUERIMENTO FORMAL DE ATENDIMENTO / PROTOCOLO
+
+1. IDENTIFICAÇÃO DO SERVIÇO:
+- Serviço Solicitado: ${selectedServiceObj.title}
+- Categoria: ${selectedServiceObj.category}
+- Setor Responsável: ${selectedServiceObj.department_responsible}
+
+2. DADOS DO REQUERENTE:
+- Nome Completo / Razão Social: ${userName || '[Não informado]'}
+- CPF / CNPJ: ${userDoc || '[Não informado]'}
+- Qualidade: ${userRole}
+- E-mail de Contato: ${userEmail || '[Não informado]'}
+- Telefone / WhatsApp: ${userPhone || '[Não informado]'}
+
+3. LOCALIZAÇÃO DO BEM / IMÓVEL:
+- Município: ${propertyCity}
+- Endereço Completo: ${propertyAddress || '[Não informado]'}
+
+4. DESCRIÇÃO DA SOLICITAÇÃO / INTERVENÇÃO PRETENDIDA:
+${interventionDesc || '[Não informado]'}
+
+5. DOCUMENTOS DE INSTRUÇÃO:
+Conforme informado, apresento as fotos, croqui e comprovações cadastrais solicitadas para exame e manifestação técnica da SPC.
+
+Data da Solicitação: ${new Date().toLocaleDateString('pt-BR')}
+Local: ${propertyCity} - Maranhão`;
+  };
+
+  const handleCopySummary = () => {
+    navigator.clipboard.writeText(getFormattedSummaryText());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
+  };
+
+  const mailtoLink = `mailto:${SITE_CONTACT.email}?subject=${encodeURIComponent(
+    `Requerimento SPC: ${selectedServiceObj.title} - ${userName || 'Cidadão'}`
+  )}&body=${encodeURIComponent(getFormattedSummaryText())}`;
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Hero Section */}
-      <PageHero
-        align="center"
-        backgroundImage="/imagens/CH 01.jpg"
-        badge={{
-          text: 'Atendimento Cidadão',
-          variant: 'white' // using white variant which is mapped to #CC343A style
-        }}
-        title={<>Serviços <span className="text-[#CC343A]">Online</span></>}
-        description="Orientações rápidas e formulários para suas solicitações."
-        actions={
-          <div className="w-full max-w-md mx-auto relative group pt-1 text-left">
-            <Search className="absolute left-4 top-[calc(50%+2px)] -translate-y-1/2 text-slate-300 group-focus-within:text-[#CC343A] transition-colors" size={14} />
-            <input
-              type="text"
-              placeholder="Ex: Reforma, DPHAP, Certidão..."
-              className="w-full pl-10 pr-5 py-2 bg-white/10 border border-white/10 backdrop-blur-md rounded-xl text-xs font-medium text-white placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-[#CC343A]/20 focus:border-[#CC343A] transition-all shadow-sm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        }
-      />
+    <div className="min-h-screen bg-[#FAF8F5] text-slate-800">
+      {/* HERO INSTITUCIONAL */}
+      <section className="bg-brand-navy text-white py-14 border-b border-brand-sand/20 relative overflow-hidden">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-cover bg-center opacity-20 mix-blend-luminosity"
+          style={{ backgroundImage: "url('/imagens/CH 01.jpg')" }}
+        />
+        <div className="relative max-w-[1240px] mx-auto px-6">
+          <div className="max-w-3xl space-y-4">
+            <span className="px-3 py-1 rounded-full bg-white/10 text-[#E9B44C] text-xs font-bold uppercase tracking-widest inline-block border border-white/20">
+              Atendimento e Protocolo Oficial
+            </span>
+            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">
+              Carta de Serviços ao Cidadão
+            </h1>
+            <p className="text-slate-200 text-sm md:text-base leading-relaxed">
+              Consulte os serviços prestados pela Superintendência do Patrimônio Cultural, documentação exigida, prazos de análise e utilize o Assistente de Requerimento para protocolar seu pedido.
+            </p>
 
-      {/* Dept Competencies */}
-      <section className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-4xl mx-auto">
-          {DEPARTAMENTOS_INFO.map((dept) => (
-            <div key={dept.id} className={`flex flex-col p-4 bg-white rounded-2xl border ${dept.borderColor} shadow-sm hover:shadow-lg transition-all group relative`}>
-              <Link to={dept.link} className="block flex-1">
-                <div className={`w-8 h-8 ${dept.bgColor} ${dept.color} rounded-lg flex items-center justify-center mb-2 group-hover:scale-110 transition-transform`}>
-                  <dept.icon size={16} />
-                </div>
-                <h3 className="text-base font-black text-brand-dark mb-1">{dept.name}</h3>
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">{dept.fullName}</p>
-                <p className="text-[10px] text-slate-500 leading-relaxed font-medium">{dept.description}</p>
-              </Link>
-
-              {dept.resources && dept.resources.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-slate-100 space-y-1.5">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5 opacity-80">
-                    <FileText size={10} /> Acesso Rápido
-                  </p>
-                  <div className="space-y-1.5">
-                    {dept.resources.map((res, idx) => (
-                      <a
-                        key={idx}
-                        href={res.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`flex items-center gap-2 text-[10px] font-bold transition-colors group/link p-1.5 rounded-lg hover:bg-slate-50 ${res.label === 'Diretrizes de Intervenção' ? 'text-brand-blue bg-brand-blue/5' : 'text-slate-600 hover:text-brand-blue'}`}
-                      >
-                        <ArrowRight size={10} className={`${res.label === 'Diretrizes de Intervenção' ? 'text-brand-blue' : 'text-brand-blue/50 group-hover/link:text-brand-blue'} transition-colors`} />
-                        {res.label}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
+            {/* Barra de busca de serviços */}
+            <div className="pt-2 max-w-xl">
+              <div className="relative">
+                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Filtrar por reforma, autorização, certidão, engenho ou imaterial..."
+                  className="w-full pl-11 pr-4 py-3 bg-white text-slate-900 rounded-xl text-sm font-medium border border-white/20 focus:outline-none focus:ring-4 focus:ring-[#E9B44C]/30 shadow-md"
+                />
+              </div>
             </div>
-          ))}
+          </div>
         </div>
       </section>
 
-      {/* Services Listing */}
-      <section className="max-w-5xl mx-auto px-6 py-8 space-y-4">
-        <h2 className="text-lg font-black text-brand-dark uppercase tracking-widest flex items-center gap-2">
-          <Building2 size={18} className="text-[#CC343A]" /> Catálogo SPC
-        </h2>
-
-        {filteredServices.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-[2rem] border border-slate-100">
-            <Info className="mx-auto text-slate-200 mb-4" size={48} />
-            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Nenhum serviço encontrado.</p>
+      {/* ÁREA PRINCIPAL: CATÁLOGO + ASSISTENTE INTERATIVO */}
+      <div className="max-w-[1240px] mx-auto px-6 py-12 md:py-16 space-y-16">
+        {/* SEÇÃO 1: CATÁLOGO DE SERVIÇOS */}
+        <section aria-labelledby="catalogo-servicos-titulo" className="space-y-6">
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-brand-terracotta">
+              Catálogo Oficial
+            </p>
+            <h2 id="catalogo-servicos-titulo" className="text-2xl md:text-3xl font-black text-brand-navy">
+              Serviços Disponíveis
+            </h2>
+            <p className="text-slate-600 text-sm mt-1">
+              Clique em qualquer serviço para expandir a relação de documentos exigidos, etapas e setor responsável.
+            </p>
           </div>
-        ) : (
-          filteredServices.map((service) => (
-            <div
-              key={service.id}
-              className={`bg-white rounded-[2rem] border-2 border-slate-100 overflow-hidden transition-all duration-500 ${activeService === service.id ? 'border-[#5283A9]/30 ring-8 ring-[#5283A9]/5 shadow-2xl scale-[1.01]' : 'hover:border-slate-200 hover:shadow-lg'}`}
-            >
-              <div
-                onClick={() => setActiveService(activeService === service.id ? null : service.id)}
-                className="w-full p-4 text-left flex items-center justify-between group cursor-pointer"
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setActiveService(activeService === service.id ? null : service.id);
-                  }
-                }}
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-black text-brand-blue uppercase tracking-widest bg-brand-blue/10 px-2.5 py-0.5 rounded-full">
-                      {service.category}
-                    </span>
-                    <Link
-                      to={DEPARTAMENTOS_INFO.find(d => d.id === service.department_responsible)?.link || '#'}
-                      onClick={(e) => e.stopPropagation()}
-                      className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full text-white hover:opacity-80 transition-opacity ${service.department_responsible === Department.DPHAP ? 'bg-brand-blue' :
-                        service.department_responsible === Department.DPI ? 'bg-brand-red' :
-                          'bg-brand-dark'
-                        }`}>
-                      {service.department_responsible}
-                    </Link>
+
+          <div className="space-y-4">
+            {filteredServices.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-2xl border border-slate-200 p-8">
+                <Info className="mx-auto text-slate-400 mb-3" size={36} />
+                <p className="font-bold text-slate-700">Nenhum serviço encontrado com esse termo.</p>
+                <p className="text-sm text-slate-500 mt-1">
+                  Dúvidas gerais podem ser encaminhadas para{' '}
+                  <a className="font-bold text-brand-navy underline" href={`mailto:${SITE_CONTACT.email}`}>
+                    {SITE_CONTACT.email}
+                  </a>.
+                </p>
+              </div>
+            ) : (
+              filteredServices.map((service) => {
+                const isOpen = activeService === service.id;
+                return (
+                  <div
+                    key={service.id}
+                    className={`bg-white rounded-2xl border transition-all ${
+                      isOpen
+                        ? 'border-brand-navy shadow-md ring-1 ring-brand-navy/10'
+                        : 'border-slate-200 hover:border-slate-300 shadow-sm'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      aria-expanded={isOpen}
+                      aria-controls={`detalhe-${service.id}`}
+                      onClick={() => setActiveService(isOpen ? null : service.id)}
+                      className="w-full p-5 md:p-6 text-left flex items-start justify-between gap-4"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[11px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-md">
+                            {service.category}
+                          </span>
+                          <span className="text-[11px] font-black uppercase tracking-wider bg-brand-navy text-white px-2.5 py-0.5 rounded-md">
+                            Setor: {service.department_responsible}
+                          </span>
+                        </div>
+                        <h3 className="text-lg md:text-xl font-black text-brand-navy">
+                          {service.title}
+                        </h3>
+                        <p className="text-sm text-slate-600 max-w-3xl leading-relaxed">
+                          {service.description}
+                        </p>
+                      </div>
+
+                      <div
+                        className={`p-2.5 rounded-xl border flex-shrink-0 transition-transform ${
+                          isOpen ? 'rotate-180 bg-brand-navy text-white border-brand-navy' : 'bg-slate-50 text-slate-600 border-slate-200'
+                        }`}
+                      >
+                        <ChevronDown size={18} />
+                      </div>
+                    </button>
+
+                    {isOpen && (
+                      <div
+                        id={`detalhe-${service.id}`}
+                        className="px-5 pb-6 pt-2 md:px-6 md:pb-8 border-t border-slate-100 grid grid-cols-1 lg:grid-cols-12 gap-8"
+                      >
+                        {/* Coluna 1: Documentos Necessários */}
+                        <div className="lg:col-span-7 space-y-4">
+                          <h4 className="text-xs font-black uppercase tracking-wider text-brand-navy flex items-center gap-2">
+                            <CheckSquare size={16} className="text-brand-terracotta" />
+                            Documentos Obrigatórios (Tenha em Mãos)
+                          </h4>
+                          <ul className="space-y-2">
+                            {service.bring.map((item, idx) => (
+                              <li
+                                key={idx}
+                                className="text-xs md:text-sm text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex items-start gap-2.5"
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-brand-navy mt-2 flex-shrink-0" />
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+
+                          <div className="pt-2">
+                            <h4 className="text-xs font-black uppercase tracking-wider text-brand-navy flex items-center gap-2 mb-2">
+                              <History size={16} className="text-brand-terracotta" />
+                              Etapas do Processo
+                            </h4>
+                            <div className="space-y-1.5">
+                              {service.stages.map((stg, i) => (
+                                <p key={i} className="text-xs text-slate-600 bg-white p-2 rounded-lg border border-slate-100">
+                                  {stg}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Coluna 2: Ações Diretas */}
+                        <div className="lg:col-span-5 bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4 flex flex-col justify-between">
+                          <div className="space-y-3">
+                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">
+                              Normas e Referências
+                            </h4>
+                            <ul className="space-y-1.5">
+                              {service.references.map((ref, idx) => (
+                                <li key={idx}>
+                                  {ref.to ? (
+                                    <Link
+                                      to={ref.to}
+                                      className="text-xs font-bold text-brand-navy hover:text-brand-terracotta underline flex items-center gap-1"
+                                    >
+                                      <span>{ref.label}</span>
+                                      <ArrowRight size={12} />
+                                    </Link>
+                                  ) : (
+                                    <a
+                                      href={ref.href}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs font-bold text-brand-navy hover:text-brand-terracotta underline flex items-center gap-1"
+                                    >
+                                      <span>{ref.label}</span>
+                                      <ExternalLink size={12} />
+                                    </a>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+
+                            <div className="pt-2 text-xs text-slate-500">
+                              <p>
+                                <strong className="text-slate-700">Prazos:</strong> {service.deadlineHint}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="pt-4 border-t border-slate-200 space-y-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProtocolService(service.id);
+                                const el = document.getElementById('assistente-protocolo');
+                                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                              }}
+                              className="w-full py-3 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm"
+                            >
+                              <FileText size={14} />
+                              <span>Preencher neste Requerimento</span>
+                            </button>
+                            <a
+                              href={`mailto:${SITE_CONTACT.email}?subject=${encodeURIComponent(service.title)}`}
+                              className="w-full py-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                            >
+                              <Mail size={14} />
+                              <span>Tirar Dúvida por E-mail</span>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <h3 className="text-lg font-black text-[#2D2D2D] group-hover:text-[#CC343A] transition-colors">{service.title}</h3>
-                  <p className="text-slate-500 text-[11px] font-medium max-w-lg line-clamp-1">{service.description}</p>
+                );
+              })
+            )}
+          </div>
+        </section>
+
+        {/* SEÇÃO 2: ASSISTENTE INTERATIVO DE PROTOCOLO E REQUERIMENTO ONLINE */}
+        <section
+          id="assistente-protocolo"
+          aria-labelledby="assistente-titulo"
+          className="bg-white rounded-3xl border border-slate-200 p-6 md:p-10 shadow-sm space-y-8"
+        >
+          <div className="border-b border-slate-200 pb-6">
+            <span className="px-3 py-1 rounded-full bg-brand-terracotta/10 text-brand-terracotta text-xs font-bold uppercase tracking-wider inline-block mb-2">
+              Autoatendimento Funcional
+            </span>
+            <h2 id="assistente-titulo" className="text-2xl md:text-3xl font-black text-brand-navy">
+              Assistente de Solicitação e Protocolo
+            </h2>
+            <p className="text-slate-600 text-sm mt-1 max-w-3xl leading-relaxed">
+              Preencha os dados abaixo para gerar instantaneamente a minuta formal de requerimento. Você poderá copiar o texto, enviá-lo por e-mail com 1 clique para a SPC ou imprimir a folha de rosto oficial para protocolo físico na sede.
+            </p>
+          </div>
+
+          <form onSubmit={handleGenerateSummary} className="space-y-6">
+            {/* 1. Seleção do Serviço */}
+            <div>
+              <label htmlFor="select-service" className="block text-xs font-black uppercase tracking-wider text-brand-navy mb-2">
+                1. Serviço Desejado *
+              </label>
+              <select
+                id="select-service"
+                value={protocolService}
+                onChange={(e) => setProtocolService(e.target.value)}
+                className="w-full p-3.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-navy"
+                required
+              >
+                {SERVICOS_LIST.map((srv) => (
+                  <option key={srv.id} value={srv.id}>
+                    {srv.title} ({srv.category} - {srv.department_responsible})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 2. Dados do Requerente */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label htmlFor="user-name" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Nome Completo / Razão Social *
+                </label>
+                <input
+                  id="user-name"
+                  type="text"
+                  required
+                  placeholder="Ex: Maria dos Santos"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="user-doc" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  CPF ou CNPJ *
+                </label>
+                <input
+                  id="user-doc"
+                  type="text"
+                  required
+                  placeholder="000.000.000-00"
+                  value={userDoc}
+                  onChange={(e) => setUserDoc(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="user-role" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Condição do Solicitante
+                </label>
+                <select
+                  id="user-role"
+                  value={userRole}
+                  onChange={(e) => setUserRole(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy"
+                >
+                  <option value="Proprietário(a)">Proprietário(a)</option>
+                  <option value="Procurador(a) legalmente constituído(a)">Procurador(a) / Representante</option>
+                  <option value="Responsável Técnico (Arquiteto / Engenheiro)">Responsável Técnico (Arquiteto / Engenheiro)</option>
+                  <option value="Locatário(a) / Inquilino(a)">Locatário(a) / Inquilino(a)</option>
+                  <option value="Detentor(a) Cultural / Sociedade Civil">Detentor(a) Cultural / Coletivo</option>
+                </select>
+              </div>
+            </div>
+
+            {/* 3. Contatos */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="user-email" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  E-mail para Retorno *
+                </label>
+                <input
+                  id="user-email"
+                  type="email"
+                  required
+                  placeholder="exemplo@email.com"
+                  value={userEmail}
+                  onChange={(e) => setUserEmail(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="user-phone" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Telefone / WhatsApp *
+                </label>
+                <input
+                  id="user-phone"
+                  type="tel"
+                  required
+                  placeholder="(98) 90000-0000"
+                  value={userPhone}
+                  onChange={(e) => setUserPhone(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy"
+                />
+              </div>
+            </div>
+
+            {/* 4. Dados do Imóvel ou Bem */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label htmlFor="property-city" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Município do Imóvel / Bem *
+                </label>
+                <input
+                  id="property-city"
+                  type="text"
+                  required
+                  placeholder="Ex: São Luís"
+                  value={propertyCity}
+                  onChange={(e) => setPropertyCity(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="property-address" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Endereço Completo do Imóvel (Rua, Número, Bairro e Ponto de Referência) *
+                </label>
+                <input
+                  id="property-address"
+                  type="text"
+                  required
+                  placeholder="Ex: Rua Portugal, nº 185, Centro Histórico"
+                  value={propertyAddress}
+                  onChange={(e) => setPropertyAddress(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy"
+                />
+              </div>
+            </div>
+
+            {/* 5. Descrição da Intervenção */}
+            <div>
+              <label htmlFor="intervention-desc" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                Descrição Detalhada do que Pretende Realizar *
+              </label>
+              <textarea
+                id="intervention-desc"
+                rows={4}
+                required
+                placeholder="Descreva claramente a intervenção (Ex: substituição das telhas de barro mantendo o madeiramento original, pintura da fachada nas cores originais com cal, colocação de placa indicativa de 1,20m x 0,60m em madeira, etc.)."
+                value={interventionDesc}
+                onChange={(e) => setInterventionDesc(e.target.value)}
+                className="w-full p-3.5 bg-slate-50 border border-slate-300 rounded-xl text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-navy"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="px-8 py-3.5 bg-brand-terracotta hover:bg-brand-terracotta/90 text-white rounded-xl font-black text-xs uppercase tracking-wider transition-all shadow-md flex items-center gap-2"
+            >
+              <CheckCircle2 size={16} />
+              <span>Gerar Espelho do Requerimento</span>
+            </button>
+          </form>
+
+          {/* ESPELHO FORMAL GERADO */}
+          {showSummary && (
+            <div className="mt-8 pt-8 border-t border-slate-200 space-y-6 animate-fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-100 p-4 rounded-2xl">
+                <div>
+                  <h3 className="font-black text-sm text-brand-navy uppercase tracking-wider">
+                    Espelho de Requerimento Administrativo
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Documento preparado para envio imediato à SPC/SECMA.
+                  </p>
                 </div>
-                <div className={`p-3 rounded-xl bg-slate-50 text-slate-400 transition-all ${activeService === service.id ? 'rotate-180 bg-[#CC343A] text-white' : 'group-hover:bg-slate-100'}`}>
-                  <ChevronDown size={20} />
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCopySummary}
+                    className="px-4 py-2 bg-white text-brand-navy border border-slate-300 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-50 transition-colors flex items-center gap-1.5"
+                  >
+                    <Copy size={14} />
+                    <span>{copied ? 'Copiado!' : 'Copiar Texto'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="px-4 py-2 bg-white text-brand-navy border border-slate-300 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-50 transition-colors flex items-center gap-1.5"
+                  >
+                    <Printer size={14} />
+                    <span>Imprimir</span>
+                  </button>
+
+                  <a
+                    href={mailtoLink}
+                    className="px-5 py-2 bg-brand-navy text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-brand-navy/90 transition-colors flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Send size={14} />
+                    <span>Enviar por E-mail</span>
+                  </a>
                 </div>
               </div>
 
-              {activeService === service.id && (
-                <div className="px-5 pb-6 space-y-6 animate-in slide-in-from-top-4 duration-500 border-t border-slate-50 pt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Left Column: Flow and FAQ */}
-                    <div className="space-y-8">
-                      <div className="space-y-4">
-                        <h4 className="text-[10px] font-black text-brand-dark uppercase tracking-widest flex items-center gap-2"><ArrowRight size={14} className="text-brand-red" /> Fluxo do Processo</h4>
-                        <div className="space-y-4">
-                          {service.steps.map((step, idx) => (
-                            <div key={idx} className="flex gap-4 items-start">
-                              <span className="w-6 h-6 rounded-lg bg-brand-dark text-white text-[10px] font-black flex items-center justify-center flex-shrink-0 shadow-lg">{idx + 1}</span>
-                              <p className="text-slate-600 text-xs font-medium leading-relaxed">{step}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+              {/* Bloco de Visualização Formatada */}
+              <div className="p-6 bg-[#FAF8F5] rounded-2xl border border-slate-300 font-mono text-xs text-slate-800 whitespace-pre-wrap leading-relaxed shadow-inner">
+                {getFormattedSummaryText()}
+              </div>
 
-                      <div className="space-y-4">
-                        <h4 className="text-[10px] font-black text-brand-dark uppercase tracking-widest flex items-center gap-2"><MessageCircle size={14} className="text-brand-blue" /> Perguntas Frequentes</h4>
-                        <div className="space-y-3">
-                          {service.faq.map((q, idx) => (
-                            <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                              <p className="text-xs font-black text-brand-dark mb-1">{q.question}</p>
-                              <p className="text-[10px] text-slate-500 font-medium leading-relaxed">{q.answer}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right Column: Requisites and Contact */}
-                    <div className="space-y-8">
-                      <div className="space-y-4">
-                        <h4 className="text-[10px] font-black text-brand-dark uppercase tracking-widest flex items-center gap-2"><CheckSquare size={14} className="text-brand-blue" /> Requisitos</h4>
-                        <div className="space-y-2">
-                          {service.documents.map((doc, idx) => (
-                            <div key={idx} className="flex items-center gap-3 text-xs font-bold text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100 hover:border-brand-blue/30 transition-colors cursor-default">
-                              <Download size={14} className="text-brand-blue" /> {doc}
-                            </div>
-                          ))}
-                        </div>
-                        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-                          <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest"><Clock size={12} /> Prazo Médio: {service.deadline}</span>
-                          <a
-                            href={service.form_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full sm:w-auto px-6 py-3 bg-brand-red text-white rounded-xl font-black uppercase tracking-widest hover:bg-brand-red/90 hover:shadow-xl transition-all flex items-center justify-center gap-2 active:scale-95 shadow-lg shadow-brand-red/20 text-[10px]"
-                          >
-                            Solicitar Agora <ExternalLink size={14} />
-                          </a>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4 p-6 bg-brand-dark text-white rounded-[2rem] shadow-xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-white opacity-5 -translate-y-1/2 translate-x-1/2 rounded-full"></div>
-                        <h4 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2"><HelpCircle size={14} className="text-brand-blue" /> Contato do Departamento</h4>
-                        <div className="space-y-3 text-slate-300">
-                          <div className="flex items-center gap-3">
-                            <Mail size={14} className="text-brand-red" />
-                            <span className="text-xs font-bold">{service.contact.email}</span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <Phone size={14} className="text-brand-blue" />
-                            <span className="text-xs font-bold">{service.contact.phone}</span>
-                          </div>
-                          <div className="flex items-start gap-3">
-                            <MapPin size={14} className="text-red-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-[10px] font-medium leading-relaxed">{service.contact.address}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+              {/* Instruções de Protocolo Oficial */}
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-amber-900 text-xs md:text-sm space-y-2">
+                <div className="flex items-center gap-2 font-bold text-amber-950">
+                  <Info size={18} />
+                  <span>Como dar entrada no seu processo oficialmente:</span>
                 </div>
-              )}
+                <p>
+                  <strong>1. Por E-mail Oficial:</strong> Clique no botão <em>"Enviar por E-mail"</em> acima e anexe as fotos do imóvel, documento pessoal e comprovante de endereço. O e-mail é recebido diretamente pela triagem da SPC.
+                </p>
+                <p>
+                  <strong>2. Protocolo Eletrônico (SEI Maranhão):</strong> Se você for usuário do SEI-MA, copie o texto formatado e anexe ao processo administrativo endereçado à SECMA/SPC.
+                </p>
+                <p>
+                  <strong>3. Presencialmente na Sede:</strong> Imprima este requerimento assinado e entregue na sede da SPC: {SITE_CONTACT.buildingName}, {SITE_CONTACT.addressLine}, {SITE_CONTACT.city} - MA.
+                </p>
+              </div>
             </div>
-          ))
-        )}
-      </section>
+          )}
+        </section>
 
-      {/* Footer Banner */}
-      <section className="bg-brand-dark py-12">
-        <div className="max-w-5xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-          <div className="space-y-4">
-            <h2 className="text-lg font-black text-white leading-tight">Suporte Técnico</h2>
-            <p className="text-slate-400 text-xs font-medium">
-              Dúvidas sobre legislação ou como proceder com sua solicitação? Nossa central de atendimento está disponível para orientação.
+        {/* SEÇÃO 3: SETORES TÉCNICOS RESPONSÁVEIS */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-xl md:text-2xl font-black text-brand-navy">
+              Departamentos Técnicos da SPC
+            </h2>
+            <p className="text-slate-600 text-sm">
+              Conheça as atribuições técnicas de cada departamento na tramitação do seu processo.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button className="px-5 py-2.5 bg-brand-red text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-red/90 transition-all flex items-center justify-center gap-2 active:scale-95">
-                <HelpCircle size={14} /> Canal Dúvidas
-              </button>
-              <button className="px-5 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all flex items-center justify-center gap-2 active:scale-95">
-                <ShieldCheck size={14} /> Ouvidoria MA
-              </button>
-            </div>
           </div>
-          <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-6 rounded-[1.5rem] space-y-2.5">
-            <div className="w-8 h-8 bg-brand-blue rounded-lg flex items-center justify-center text-white shadow-xl"><FileText size={16} /></div>
-            <h3 className="text-base font-black text-white uppercase tracking-tighter">Protocolo Digital</h3>
-            <p className="text-slate-400 text-xs font-medium leading-relaxed">
-              Inicie seu processo de forma 100% digital através do Sistema Eletrônico de Informações do Maranhão.
-            </p>
-            <a href="https://sei.ma.gov.br" target="_blank" className="inline-flex items-center gap-2 text-brand-blue font-black uppercase tracking-widest text-[9px] hover:gap-3 transition-all">
-              Ir para o SEI <ArrowRight size={14} />
-            </a>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {DEPARTAMENTOS_INFO.map((dept) => (
+              <div
+                key={dept.id}
+                className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between"
+              >
+                <div className="space-y-3">
+                  <div className={`w-10 h-10 ${dept.bgColor} ${dept.color} rounded-xl flex items-center justify-center`}>
+                    <dept.icon size={20} />
+                  </div>
+                  <h3 className="text-lg font-black text-brand-navy">{dept.name}</h3>
+                  <p className="text-xs font-bold text-slate-500">{dept.fullName}</p>
+                  <p className="text-xs text-slate-600 leading-relaxed">{dept.description}</p>
+                </div>
+
+                {dept.resources.length > 0 && (
+                  <div className="pt-4 mt-4 border-t border-slate-100">
+                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Documentos de Apoio
+                    </p>
+                    {dept.resources.map((res) => (
+                      <a
+                        key={res.url}
+                        href={res.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold text-brand-navy hover:text-brand-terracotta underline flex items-center gap-1"
+                      >
+                        <Download size={12} />
+                        <span>{res.label}</span>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 };

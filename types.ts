@@ -77,6 +77,7 @@ export enum UserRole {
   EDITOR_DPE = 'EditorDPE',
   EDITOR_DPHAP = 'EditorDPHAP',
   EDITOR_DPI = 'EditorDPI',
+  COLABORADOR = 'Colaborador',
   VIEWER = 'Viewer'
 }
 
@@ -86,3 +87,118 @@ export interface User {
   role: UserRole;
   department?: Department;
 }
+
+export enum IngestionStatus {
+  DRAFT = 'draft',
+  SUBMITTED = 'submitted',
+  IN_REVIEW = 'in_review',
+  NEEDS_CORRECTION = 'needs_correction',
+  APPROVED = 'approved',
+  PUBLISHED = 'published',
+  REJECTED = 'rejected',
+  ARCHIVED = 'archived'
+}
+
+export enum IngestionContentType {
+  LEGISLACAO = 'legislação',
+  REPOSITORIO_TECNICO = 'repositório técnico',
+  ACERVO_DIGITAL = 'acervo digital',
+  BEM_CULTURAL = 'bem cultural',
+  POLIGONAL_MAPA = 'poligonal/mapa',
+  SERVICO = 'serviço',
+  DEPARTAMENTO = 'departamento',
+  PROJETO = 'projeto'
+}
+
+export interface IngestionItem {
+  id: string;
+  title: string;
+  description: string;
+  uploadedBy: string;
+  uploadedByName: string;
+  uploadedAt: string; // ISO String
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileExtension: string;
+  fileSize: number;
+  suggestedModule: string;
+  suggestedCategory?: string;
+  department: Department;
+  municipality?: string;
+  relatedAssetId?: string;
+  relatedAreaId?: string;
+  declaredSource: string;
+  author?: string;
+  rights?: string;
+  tags: string[];
+  status: IngestionStatus;
+  reviewNotes?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  publishedCollection?: string;
+  publishedItemId?: string;
+  metadata?: {
+    geoValid?: boolean;
+    geoError?: string;
+    coordinatesSystem?: string;
+    geometryType?: string;
+    width?: number;
+    height?: number;
+    [key: string]: any;
+  };
+  auditTrail: {
+    action: string;
+    userId: string;
+    userName: string;
+    timestamp: string;
+    notes?: string;
+  }[];
+}
+
+export interface UploadBatch {
+  id: string;
+  batchName: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  totalFiles: number;
+  processedFiles: number;
+  failedFiles: number;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  notes?: string;
+}
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  userId: string;
+  userName: string;
+  timestamp: string;
+  previousData?: any;
+  newData?: any;
+  notes?: string;
+}
+
+export interface RepositorioItem {
+  id: string;
+  title: string;
+  description: string;
+  category: 'dossie' | 'publicacao' | 'livro' | 'artigo' | 'dissertacao_tese' | 'revista' | 'edital' | 'ata' | 'afins';
+  subcategory: string;
+  department: 'DPHAP' | 'DPI' | 'DPE' | 'Geral';
+  date: string; // YYYY-MM-DD
+  format: 'PDF' | 'DOCX' | 'ZIP' | 'LINK';
+  size: string;
+  tags: string[];
+  downloadUrl: string;
+
+  // Informações extraídas
+  executiveSummary: string;
+  highlights: string[];
+  pageCount: number;
+  language: string;
+  year: number;
+}
+

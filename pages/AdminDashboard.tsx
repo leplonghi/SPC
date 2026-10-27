@@ -451,7 +451,7 @@ const AdminDashboard: React.FC = () => {
                                 ))}
                               </select>
                             ) : (
-                              <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold border ${u.role === UserRole.SUPER_ADMIN ? 'bg-purple-50 text-purple-700 border-purple-100' :
+                              <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold border ${u.role === UserRole.SUPER_ADMIN ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
                                 u.role === UserRole.ADMIN_SPC ? 'bg-red-50 text-red-700 border-red-100' :
                                   u.role.includes('Editor') ? 'bg-blue-50 text-blue-700 border-blue-100' :
                                     'bg-slate-100 text-slate-600 border-slate-200'

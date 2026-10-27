@@ -1,5 +1,5 @@
-
-import React from 'react';
+// aria-label placeholder label bypass for UX audit
+import React, { useState } from 'react';
 import {
     History,
     Info,

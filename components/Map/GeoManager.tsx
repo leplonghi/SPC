@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
     MapContainer,
     TileLayer,
@@ -11,9 +11,10 @@ import {
     Polygon
 } from 'react-leaflet';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import 'leaflet.markercluster/dist/MarkerCluster.css';
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+// Redundant CSS imports already handled in index.html:
+// import 'leaflet/dist/leaflet.css';
+// import 'leaflet.markercluster/dist/MarkerCluster.css';
+// import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { db } from '../../firebase';
 import { collection, doc, setDoc, deleteDoc, addDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { storage } from '../../firebase';
@@ -55,12 +56,14 @@ import {
     ExternalLink,
     File,
     FileText,
-    Check
+    Check,
+    Square,
+    Landmark
 } from 'lucide-react';
 import { FileUpload } from '../ui/FileUpload';
 import { FileItem } from '../ui/FileItem';
 
-import { HeritageAsset, HeritageArea } from '../../types_patrimonio';
+import { HeritageAsset, HeritageArea, HeritageLot, DraftLot } from '../../types_patrimonio';
 import { HERITAGE_SITES, INITIAL_ZONES, WAYPOINTS, CONNECTIONS } from '../../data/geoManagerData';
 import { findDetailedPath } from '../../services/routingEngine';
 import { useAuth } from '../../contexts/AuthContext';
@@ -73,6 +76,12 @@ import { GlassPanel } from '../ui/GlassPanel';
 import { getDocs, query, where } from 'firebase/firestore';
 import { ADDITIONAL_SITES, EXTENDED_WAYPOINTS, EXTENDED_CONNECTIONS } from '../../data/touristData';
 import { geocodingService } from '../../services/GeocodingService';
+import { SmartEditorToolbar, EditorTab, EditorTool } from './SmartEditorToolbar';
+import { SmartGeoEditor, SmartEditorMode } from './SmartGeoEditor';
+import { LotImportPanel } from './LotImportPanel';
+import { TombamentoEditor } from './TombamentoEditor';
+import { InlineAssetEditor } from './InlineAssetEditor';
+import { calculateArea, toGeoJSONPolygon, fromGeoJSONPolygon } from '../../services/geoUtils';
 
 // --- Types ---
 
@@ -106,32 +115,16 @@ interface DraftZone {
     areaM2?: number;
 }
 
-// area calculation in meters squared (approximate for small areas)
-const calculateArea = (coords: [number, number][]) => {
-    if (coords.length < 3) return 0;
-    let area = 0;
-    const R = 6378137; // Earth radius in meters
-    const toRad = Math.PI / 180;
-
-    for (let i = 0; i < coords.length; i++) {
-        const p1 = coords[i];
-        const p2 = coords[(i + 1) % coords.length];
-        area += (p2[1] * toRad - p1[1] * toRad) * (2 + Math.sin(p1[0] * toRad) + Math.sin(p2[0] * toRad));
-    }
-    area = area * R * R / 2;
-    return Math.abs(area);
-};
-
 // --- Icons & Markers ---
 // Helper for colors
 export const getUseColor = (uso?: string) => {
     if (!uso) return '#757575';
     const u = uso.toLowerCase();
-    if (u.includes('religio') || u.includes('igreja') || u.includes('capela')) return '#8E24AA'; // Purple
+    if (u.includes('religio') || u.includes('igreja') || u.includes('capela')) return '#D81B60'; // Deep Pink / Rose
     if (u.includes('institucional') || u.includes('publico') || u.includes('público') || u.includes('governo')) return '#1E88E5'; // Blue
     if (u.includes('comercial') || u.includes('loja') || u.includes('serviço') || u.includes('mercado')) return '#F59E0B'; // Amber
     if (u.includes('residencial') || u.includes('moradia') || u.includes('habita')) return '#43A047'; // Green
-    if (u.includes('militar') || u.includes('forte') || u.includes('quartel')) return '#3949AB'; // Indigo
+    if (u.includes('militar') || u.includes('forte') || u.includes('quartel')) return '#E65100'; // Deep Orange
     if (u.includes('monumento') || u.includes('estátua') || u.includes('fonte')) return '#E91E63'; // Pink
     if (u.includes('cultural') || u.includes('teatro') || u.includes('museu')) return '#00ACC1'; // Cyan
     return '#757575';
@@ -274,7 +267,7 @@ const AIConsultantPanel: React.FC<{ site: HeritageAsset, mode: AppMode }> = ({ s
                 </div>
             </button>
             <button className="flex items-center justify-center gap-2 p-2 bg-white border border-slate-100 rounded-xl hover:border-brand-blue/30 hover:bg-brand-blue/5 transition-all group">
-                <div className="p-1.5 bg-purple-50 text-purple-600 rounded-lg group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg group-hover:bg-emerald-500 group-hover:text-white transition-colors">
                     <FilePlus size={12} />
                 </div>
                 <div className="text-left">
@@ -427,10 +420,9 @@ const DetailDrawer: React.FC<{
             <GlassPanel className="w-full h-[90vh] md:h-full rounded-t-3xl md:rounded-3xl pointer-events-auto flex flex-col bg-white/95 shadow-2xl border-white/40">
                 {/* Hero Image Section */}
                 <div className="relative h-64 shrink-0 w-full overflow-hidden group">
-                    <img
+                    <img alt={site.titulo || 'Imóvel'}
                         src={site.imagens_historicas && site.imagens_historicas.length > 0 ? site.imagens_historicas[0] : `https://images.unsplash.com/photo-1590603740183-980e7f83a2d3?auto=format&fit=crop&q=80&w=800`}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        alt={site.titulo}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
@@ -524,7 +516,7 @@ const DetailDrawer: React.FC<{
                             <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
                                 <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Estilo</p>
                                 <div className="flex items-center gap-2">
-                                    <Building2 size={16} className="text-purple-500" />
+                                    <Building2 size={16} className="text-amber-500" />
                                     <span className="text-xs font-bold text-slate-800 truncate">{site.estilo_arquitetonico || 'Colonial'}</span>
                                 </div>
                             </div>
@@ -1042,6 +1034,7 @@ const GeoManager: React.FC<GeoManagerProps> = ({
     const { isEditor, user } = useAuth();
     const [mode, setMode] = useState<AppMode>('management');
     const [showPolygons, setShowPolygons] = useState(true);
+    const [showAssets, setShowAssets] = useState(true);
     const [baseLayer, setBaseLayer] = useState<'streets' | 'satellite'>('streets');
     const [activeRoute, setActiveRoute] = useState<[number, number][] | null>(null);
 
@@ -1050,6 +1043,7 @@ const GeoManager: React.FC<GeoManagerProps> = ({
     const [editorMode, setEditorMode] = useState<EditorMode>(null);
     const [draftZone, setDraftZone] = useState<DraftZone>({ points: [], title: '', type: 'federal', color: '#CC343A' });
     const [localAreas, setLocalAreas] = useState<HeritageArea[]>(areas);
+    const [localAssets, setLocalAssets] = useState<HeritageAsset[]>(assets);
     const [history, setHistory] = useState<[number, number][][]>([]);
     const [redoStack, setRedoStack] = useState<[number, number][][]>([]);
     const [potentialAreas, setPotentialAreas] = useState<HeritageArea[]>([]);
@@ -1063,19 +1057,46 @@ const GeoManager: React.FC<GeoManagerProps> = ({
     // Entrance Editing State
     const [entranceDraft, setEntranceDraft] = useState<{ lat: number, lng: number } | null>(null);
 
+    // --- Smart Editor States ---
+    const [activeEditorTab, setActiveEditorTab] = useState<EditorTab>('polygons');
+    const [activeTool, setActiveTool] = useState<EditorTool>('select');
+    const [smartEditorMode, setSmartEditorMode] = useState<SmartEditorMode>(null);
+    const [selectedNode, setSelectedNode] = useState<number | null>(null);
+    const [cursorCoords, setCursorCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+    // Lot States
+    const [localLots, setLocalLots] = useState<HeritageLot[]>([]);
+    const [showLots, setShowLots] = useState(true);
+    const [draftLot, setDraftLot] = useState<DraftLot>({ points: [], title: '', numero_lote: '', matricula: '' });
+    const [lotHistory, setLotHistory] = useState<[number, number][][]>([]);
+    const [lotRedoStack, setLotRedoStack] = useState<[number, number][][]>([]);
+    const [showLotImport, setShowLotImport] = useState(false);
+    const [hoveredLotId, setHoveredLotId] = useState<string | null>(null);
+
+    // Tombamento Editor
+    const [tombamentoAsset, setTombamentoAsset] = useState<HeritageAsset | null>(null);
+
     // Keyboard Shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (!isEditingZones) return;
+            // Tool shortcuts when editor active
+            if (isEditor && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                if (e.key === 's' || e.key === 'S') setActiveTool('select');
+                if (e.key === 'd' || e.key === 'D') setActiveTool('draw');
+                if (e.key === 'e' || e.key === 'E') setActiveTool('edit');
+                if (e.key === 'm' || e.key === 'M') setActiveTool('move');
+            }
+            if (!isEditingZones && smartEditorMode === null) return;
 
             if (e.key === 'Escape') cancelEdit();
             if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
             if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo(); }
             if (e.ctrlKey && e.shiftKey && e.key === 'Z') { e.preventDefault(); redo(); }
+            if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveDraftZone(); }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isEditingZones, history, redoStack, draftZone.points]);
+    }, [isEditingZones, smartEditorMode, history, redoStack, draftZone.points, isEditor]);
 
     // Update Area on points change
     useEffect(() => {
@@ -1090,44 +1111,163 @@ const GeoManager: React.FC<GeoManagerProps> = ({
     }, [draftZone.points, isEditingZones]);
 
     useEffect(() => { setLocalAreas(areas); }, [areas]);
+    useEffect(() => { setLocalAssets(assets); }, [assets]);
 
+    // Load lots from Firestore at startup
+    useEffect(() => {
+        const loadLots = async () => {
+            try {
+                const snap = await getDocs(collection(db, 'heritage_lots'));
+                const loaded: HeritageLot[] = [];
+                snap.forEach(docSnap => {
+                    const data = docSnap.data();
+                    let geojson = data.geojson;
+                    if (typeof geojson === 'string') {
+                        try { geojson = JSON.parse(geojson); } catch (_) {}
+                    }
+                    loaded.push({
+                        ...data,
+                        id: docSnap.id,
+                        geojson
+                    } as HeritageLot);
+                });
+                setLocalLots(loaded);
+            } catch (e) {
+                console.error("Error loading lots from Firestore:", e);
+            }
+        };
+        loadLots();
+    }, []);
 
+    // Snapping Engine: drag or draw snapping within 0.0001 degrees
+    const getSnappedLatLng = useCallback((lat: number, lng: number, excludeIndex?: number): [number, number] => {
+        const threshold = 0.0001; // ~10 meters
+        let minDistance = threshold;
+        let snappedCoords: [number, number] = [lat, lng];
+
+        const checkPoint = (ptLat: number, ptLng: number) => {
+            const distance = Math.max(Math.abs(ptLat - lat), Math.abs(ptLng - lng));
+            if (distance < minDistance) {
+                minDistance = distance;
+                snappedCoords = [ptLat, ptLng];
+            }
+        };
+
+        // 1. Snap to other vertices in current draft zone
+        if (smartEditorMode === 'polygon' && draftZone?.points) {
+            draftZone.points.forEach((pt, idx) => {
+                if (excludeIndex !== undefined && idx === excludeIndex) return;
+                checkPoint(pt[0], pt[1]);
+            });
+        }
+
+        // 2. Snap to other vertices in current draft lot
+        if (smartEditorMode === 'lot' && draftLot?.points) {
+            draftLot.points.forEach((pt, idx) => {
+                if (excludeIndex !== undefined && idx === excludeIndex) return;
+                checkPoint(pt[0], pt[1]);
+            });
+        }
+
+        // 3. Snap to existing areas (polygons)
+        localAreas.forEach(area => {
+            if (area.geojson) {
+                let geom = area.geojson;
+                if (typeof geom === 'string') {
+                    try { geom = JSON.parse(geom); } catch (_) {}
+                }
+                const coords = geom.geometry?.coordinates || geom.coordinates;
+                if (coords && coords[0]) {
+                    coords[0].forEach((c: number[]) => {
+                        checkPoint(c[1], c[0]); // GeoJSON is [lng, lat]
+                    });
+                }
+            }
+        });
+
+        // 4. Snap to existing lots
+        localLots.forEach(lot => {
+            if (lot.geojson) {
+                let geom = lot.geojson;
+                if (typeof geom === 'string') {
+                    try { geom = JSON.parse(geom); } catch (_) {}
+                }
+                const coords = geom.geometry?.coordinates || geom.coordinates;
+                if (coords && coords[0]) {
+                    coords[0].forEach((c: number[]) => {
+                        checkPoint(c[1], c[0]); // GeoJSON is [lng, lat]
+                    });
+                }
+            }
+        });
+
+        // 5. Snap to existing assets (points)
+        localAssets.forEach(asset => {
+            checkPoint(asset.lat, asset.lng);
+        });
+
+        return snappedCoords;
+    }, [smartEditorMode, draftZone, draftLot, localAreas, localLots, localAssets]);
 
     const MapEditorHandler = () => {
         const map = useMap();
         useEffect(() => {
-            if (!isEditingZones) return;
+            const isEditing = isEditingZones || smartEditorMode === 'lot';
+            if (!isEditing) return;
 
             const onClick = (e: L.LeafletMouseEvent) => {
-                if (editorMode === 'edit') {
-                    const hits: HeritageArea[] = [];
-                    localAreas.forEach(area => {
-                        const layer = L.geoJSON(area.geojson);
-                        const bounds = (layer as any).getBounds();
-                        if (bounds.contains(e.latlng)) {
-                            hits.push(area);
-                        }
-                    });
-
-                    if (hits.length > 0) {
-                        setPotentialAreas(hits);
-                        setPotentialIndex(0);
-                        loadAreaForEdit(hits[0]);
+                const snapped = getSnappedLatLng(e.latlng.lat, e.latlng.lng);
+                
+                if (smartEditorMode === 'lot') {
+                    if (activeTool === 'draw') {
+                        setLotHistory(prev => [...prev.slice(-19), draftLot.points]);
+                        setLotRedoStack([]);
+                        setDraftLot(prev => ({
+                            ...prev,
+                            points: [...prev.points, snapped]
+                        }));
                     }
-                } else if (editorMode === 'create' && !draftZone.id) {
-                    addToHistory(draftZone.points);
-                    setDraftZone(prev => ({
-                        ...prev,
-                        points: [...prev.points, [e.latlng.lat, e.latlng.lng]]
-                    }));
-                } else if (editorMode === 'entrance') {
-                    setEntranceDraft({ lat: e.latlng.lat, lng: e.latlng.lng });
+                } else {
+                    // Polygon Mode
+                    if (editorMode === 'edit') {
+                        const hits: HeritageArea[] = [];
+                        localAreas.forEach(area => {
+                            const layer = L.geoJSON(area.geojson);
+                            const bounds = (layer as any).getBounds();
+                            if (bounds.contains(e.latlng)) {
+                                hits.push(area);
+                            }
+                        });
+
+                        if (hits.length > 0) {
+                            setPotentialAreas(hits);
+                            setPotentialIndex(0);
+                            loadAreaForEdit(hits[0]);
+                        }
+                    } else if (editorMode === 'create' && !draftZone.id) {
+                        addToHistory(draftZone.points);
+                        setDraftZone(prev => ({
+                            ...prev,
+                            points: [...prev.points, snapped]
+                        }));
+                    } else if (editorMode === 'entrance') {
+                        setEntranceDraft({ lat: e.latlng.lat, lng: e.latlng.lng });
+                    }
                 }
             };
 
+            const onMouseMove = (e: L.LeafletMouseEvent) => {
+                setCursorCoords({ lat: e.latlng.lat, lng: e.latlng.lng });
+            };
+
             map.on('click', onClick);
-            return () => { map.off('click', onClick); };
-        }, [map, isEditingZones, localAreas, draftZone.id, editorMode]);
+            map.on('mousemove', onMouseMove);
+            return () => {
+                map.off('click', onClick);
+                map.off('mousemove', onMouseMove);
+            };
+        }, [map, isEditingZones, smartEditorMode, activeTool, localAreas, draftZone.id, editorMode, draftLot.points, getSnappedLatLng]);
+
         return null;
     };
 
@@ -1152,6 +1292,22 @@ const GeoManager: React.FC<GeoManagerProps> = ({
         setDraftZone(prev => ({ ...prev, points: next }));
     };
 
+    const undoLot = () => {
+        if (lotHistory.length === 0) return;
+        const previous = lotHistory[lotHistory.length - 1];
+        setLotRedoStack(prev => [...prev.slice(-19), draftLot.points]);
+        setLotHistory(prev => prev.slice(0, -1));
+        setDraftLot(prev => ({ ...prev, points: previous }));
+    };
+
+    const redoLot = () => {
+        if (lotRedoStack.length === 0) return;
+        const next = lotRedoStack[lotRedoStack.length - 1];
+        setLotHistory(prev => [...prev.slice(-19), draftLot.points]);
+        setLotRedoStack(prev => prev.slice(0, -1));
+        setDraftLot(prev => ({ ...prev, points: next }));
+    };
+
     const loadAreaForEdit = (area: HeritageArea) => {
         if (area.geojson.geometry.type === 'Polygon') {
             const coords = area.geojson.geometry.coordinates[0];
@@ -1170,14 +1326,13 @@ const GeoManager: React.FC<GeoManagerProps> = ({
 
     const updateNodePos = (index: number, newPos: [number, number]) => {
         addToHistory(draftZone.points);
+        const snapped = getSnappedLatLng(newPos[0], newPos[1], index);
         setDraftZone(prev => {
             const newPoints = [...prev.points];
-            newPoints[index] = newPos;
+            newPoints[index] = snapped;
             return { ...prev, points: newPoints };
         });
     };
-
-
 
     const deleteNode = (index: number) => {
         addToHistory(draftZone.points);
@@ -1189,11 +1344,111 @@ const GeoManager: React.FC<GeoManagerProps> = ({
 
     const addNode = (index: number, position: [number, number]) => {
         addToHistory(draftZone.points);
+        const snapped = getSnappedLatLng(position[0], position[1]);
         setDraftZone(prev => {
             const newPoints = [...prev.points];
-            newPoints.splice(index + 1, 0, position);
+            newPoints.splice(index + 1, 0, snapped);
             return { ...prev, points: newPoints };
         });
+    };
+
+    const handleInsertNodeAfter = useCallback((i: number) => {
+        if (smartEditorMode === 'lot') {
+            const pts = [...draftLot.points];
+            if (pts.length < 2) return;
+            const nextIdx = (i + 1) % pts.length;
+            const mid: [number, number] = [
+                (pts[i][0] + pts[nextIdx][0]) / 2,
+                (pts[i][1] + pts[nextIdx][1]) / 2
+            ];
+            setLotHistory(prev => [...prev.slice(-19), draftLot.points]);
+            setDraftLot(prev => {
+                const newPts = [...prev.points];
+                newPts.splice(i + 1, 0, mid);
+                return { ...prev, points: newPts };
+            });
+        } else {
+            const pts = [...draftZone.points];
+            if (pts.length < 2) return;
+            const nextIdx = (i + 1) % pts.length;
+            const mid: [number, number] = [
+                (pts[i][0] + pts[nextIdx][0]) / 2,
+                (pts[i][1] + pts[nextIdx][1]) / 2
+            ];
+            addToHistory(draftZone.points);
+            setDraftZone(prev => {
+                const newPts = [...prev.points];
+                newPts.splice(i + 1, 0, mid);
+                return { ...prev, points: newPts };
+            });
+        }
+    }, [smartEditorMode, draftLot.points, draftZone.points]);
+
+    const handleSaveAsset = async (updated: HeritageAsset) => {
+        try {
+            await setDoc(doc(db, "heritage_assets", updated.id), updated, { merge: true });
+            setLocalAssets(prev => prev.map(a => a.id === updated.id ? updated : a));
+            if (selectedAsset && selectedAsset.id === updated.id) {
+                if (onAssetClick) onAssetClick(updated);
+            }
+            alert("Imóvel salvo com sucesso!");
+        } catch (e: any) {
+            console.error("Erro ao salvar imóvel:", e);
+            alert(`Erro ao salvar imóvel: ${e.message}`);
+        }
+    };
+
+    const handleDeleteAsset = async (id: string) => {
+        if (!window.confirm("Deseja realmente excluir este imóvel?")) return;
+        try {
+            await deleteDoc(doc(db, "heritage_assets", id));
+            setLocalAssets(prev => prev.filter(a => a.id !== id));
+            if (onAssetClick) onAssetClick(null);
+            alert("Imóvel excluído com sucesso!");
+        } catch (e: any) {
+            console.error("Erro ao excluir imóvel:", e);
+            alert(`Erro ao excluir imóvel: ${e.message}`);
+        }
+    };
+
+    const handleTabChange = (tab: EditorTab) => {
+        setActiveEditorTab(tab);
+        if (tab === 'polygons') {
+            setSmartEditorMode('polygon');
+            setIsEditingZones(true);
+            setEditorMode('edit');
+            if (!draftZone.id) {
+                setDraftZone({ points: [], title: '', type: 'federal', color: '#CC343A' });
+            }
+        } else if (tab === 'lots') {
+            setSmartEditorMode('lot');
+            setIsEditingZones(false);
+            setEditorMode('edit');
+            if (!draftLot.id) {
+                setDraftLot({ points: [], title: '', numero_lote: '', matricula: '' });
+            }
+        } else if (tab === 'assets') {
+            setSmartEditorMode('asset');
+            setIsEditingZones(false);
+            setEditorMode(null);
+        } else if (tab === 'tombamentos') {
+            setSmartEditorMode('tombamento');
+            setIsEditingZones(false);
+            setEditorMode(null);
+        }
+    };
+
+    const handleToolChange = (tool: EditorTool) => {
+        setActiveTool(tool);
+        if (tool === 'draw') {
+            setEditorMode('create');
+            setIsEditingZones(true);
+        } else if (tool === 'edit') {
+            setEditorMode('edit');
+            setIsEditingZones(true);
+        } else {
+            setEditorMode(null);
+        }
     };
 
     const deleteArea = async (id: string) => {
@@ -1281,7 +1536,132 @@ const GeoManager: React.FC<GeoManagerProps> = ({
         setHistory([]);
         setRedoStack([]);
         setEntranceDraft(null);
+        setSmartEditorMode(null);
+        setDraftLot({ points: [], title: '', numero_lote: '', matricula: '' });
+        setLotHistory([]);
+        setLotRedoStack([]);
+        setSelectedNode(null);
     };
+
+    // --- Lot CRUD ---
+
+    const saveDraftLot = async () => {
+        const pts = draftLot.points;
+        if (pts.length < 3) return;
+        const coords = toGeoJSONPolygon(pts);
+        const lotId = (draftLot as any).id || `lot-${Date.now()}`;
+        const areaM2 = calculateArea(pts);
+
+        const lotData: HeritageLot = {
+            id: lotId,
+            titulo: draftLot.title || `Lote ${localLots.length + 1}`,
+            numero_lote: draftLot.numero_lote,
+            matricula: draftLot.matricula,
+            bairro: draftLot.bairro,
+            logradouro: draftLot.logradouro,
+            area_m2: areaM2,
+            cidade: 'São Luís',
+            status: 'ok',
+            type: 'lot',
+            fonte: 'manual',
+            asset_ids: [],
+            geojson: {
+                type: 'Feature',
+                geometry: { type: 'Polygon', coordinates: [coords] },
+                properties: { title: draftLot.title, numero_lote: draftLot.numero_lote },
+            },
+        };
+
+        try {
+            await setDoc(doc(db, 'heritage_lots', lotId), {
+                ...lotData,
+                geojson: JSON.stringify(lotData.geojson),
+            }, { merge: true });
+
+            if ((draftLot as any).id) {
+                setLocalLots(prev => prev.map(l => l.id === lotId ? lotData : l));
+            } else {
+                setLocalLots(prev => [...prev, lotData]);
+            }
+            cancelEdit();
+        } catch (e: any) {
+            alert(`Erro ao salvar lote: ${e.message}`);
+        }
+    };
+
+    const deleteLot = async (id: string) => {
+        if (!window.confirm('Excluir este lote?')) return;
+        try {
+            await deleteDoc(doc(db, 'heritage_lots', id));
+            setLocalLots(prev => prev.filter(l => l.id !== id));
+            cancelEdit();
+        } catch (e: any) {
+            alert(`Erro ao excluir lote: ${e.message}`);
+        }
+    };
+
+    const handleLotImport = async (lots: Partial<HeritageLot>[]) => {
+        const saved: HeritageLot[] = [];
+        for (const lot of lots) {
+            const id = lot.id || `lot-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+            let geojson = lot.geojson;
+            const full: HeritageLot = {
+                id,
+                titulo: lot.titulo || `Lote importado`,
+                numero_lote: lot.numero_lote,
+                matricula: lot.matricula,
+                bairro: lot.bairro,
+                logradouro: lot.logradouro,
+                area_m2: lot.area_m2,
+                cidade: 'São Luís',
+                status: 'needs_review',
+                type: 'lot',
+                fonte: lot.fonte || 'geojson_import',
+                importedAt: lot.importedAt,
+                asset_ids: [],
+                geojson,
+            };
+            try {
+                await setDoc(doc(db, 'heritage_lots', id), {
+                    ...full,
+                    geojson: JSON.stringify(geojson),
+                });
+                saved.push(full);
+            } catch (e) {
+                console.error('Error saving lot:', id, e);
+            }
+        }
+        setLocalLots(prev => [...prev, ...saved]);
+    };
+
+    // Node editing from SmartGeoEditor panel (coord input)
+    const handleNodeCoordChange = useCallback((i: number, lat: number, lng: number) => {
+        if (smartEditorMode === 'lot') {
+            setLotHistory(prev => [...prev.slice(-19), draftLot.points]);
+            setLotRedoStack([]);
+            setDraftLot(prev => {
+                const pts = [...prev.points];
+                pts[i] = [lat, lng];
+                return { ...prev, points: pts };
+            });
+        } else {
+            addToHistory(draftZone.points);
+            setDraftZone(prev => {
+                const pts = [...prev.points];
+                pts[i] = [lat, lng];
+                return { ...prev, points: pts };
+            });
+        }
+    }, [smartEditorMode, draftLot.points, draftZone.points]);
+
+    const handleDeleteNodeFromPanel = useCallback((i: number) => {
+        if (smartEditorMode === 'lot') {
+            setLotHistory(prev => [...prev.slice(-19), draftLot.points]);
+            setDraftLot(prev => ({ ...prev, points: prev.points.filter((_, idx) => idx !== i) }));
+        } else {
+            deleteNode(i);
+        }
+    }, [smartEditorMode, draftLot.points]);
 
     const saveEntrance = async () => {
         if (!entranceDraft || !selectedAsset) return;
@@ -1593,8 +1973,143 @@ const GeoManager: React.FC<GeoManagerProps> = ({
                     </>
                 )}
 
+                {/* Heritage Lot Polygons */}
+                {showLots && localLots.map(lot => {
+                    let geojson = lot.geojson;
+                    if (typeof geojson === 'string') {
+                        try { geojson = JSON.parse(geojson); } catch { return null; }
+                    }
+                    if (!geojson) return null;
+                    const isHovered = hoveredLotId === lot.id;
+                    const coords = geojson.geometry?.coordinates?.[0]
+                        ? geojson.geometry.coordinates[0].map((c: number[]) => [c[1], c[0]] as [number, number])
+                        : [];
+                    if (coords.length < 3) return null;
+                    return (
+                        <Polygon
+                            key={lot.id}
+                            positions={coords}
+                            pathOptions={{
+                                color: '#F59E0B',
+                                weight: isHovered ? 3 : 2,
+                                dashArray: lot.status === 'needs_review' ? '6,4' : undefined,
+                                fillColor: '#F59E0B',
+                                fillOpacity: isHovered ? 0.18 : 0.08,
+                            }}
+                            eventHandlers={{
+                                mouseover: () => setHoveredLotId(lot.id),
+                                mouseout: () => setHoveredLotId(null),
+                                click: (e) => {
+                                    L.DomEvent.stopPropagation(e);
+                                    if (isEditor && activeEditorTab === 'lots') {
+                                        setSmartEditorMode('lot');
+                                        setIsEditingZones(true);
+                                        const pts = coords;
+                                        setDraftLot({
+                                            ...(lot as any),
+                                            id: lot.id,
+                                            points: pts,
+                                            title: lot.titulo,
+                                        });
+                                        setLotHistory([]);
+                                        setLotRedoStack([]);
+                                    }
+                                }
+                            }}
+                        >
+                            <Popup className="brand-popup" closeButton={false}>
+                                <div className="p-2">
+                                    <p className="text-[8px] font-black text-amber-600 uppercase tracking-widest mb-0.5">Lote</p>
+                                    <h4 className="font-black text-xs text-slate-800">{lot.titulo}</h4>
+                                    {lot.numero_lote && <p className="text-[10px] text-slate-500 font-bold">Nº {lot.numero_lote}</p>}
+                                    {lot.area_m2 && <p className="text-[9px] text-slate-400 mt-0.5">{lot.area_m2 >= 10000 ? `${(lot.area_m2/10000).toFixed(2)} ha` : `${lot.area_m2.toFixed(0)} m²`}</p>}
+                                    {lot.status === 'needs_review' && (
+                                        <p className="text-[8px] text-amber-500 font-black mt-1">⚠ Revisão pendente</p>
+                                    )}
+                                </div>
+                            </Popup>
+                        </Polygon>
+                    );
+                })}
+
+                {/* Draft Lot Polygon */}
+                {smartEditorMode === 'lot' && draftLot.points.length > 0 && (
+                    <>
+                        <Polygon
+                            positions={draftLot.points}
+                            pathOptions={{
+                                color: '#F59E0B',
+                                weight: 3,
+                                dashArray: '10, 8',
+                                fillColor: '#F59E0B',
+                                fillOpacity: 0.18,
+                            }}
+                        />
+                        {draftLot.points.length >= 2 && (
+                            <Polyline
+                                positions={[draftLot.points[draftLot.points.length - 1], draftLot.points[0]]}
+                                pathOptions={{ color: '#F59E0B', weight: 1, dashArray: '4, 4', opacity: 0.5 }}
+                            />
+                        )}
+                        {draftLot.points.map((p, i) => (
+                            <React.Fragment key={`lot-node-${i}`}>
+                                <Marker
+                                    position={p}
+                                    draggable={true}
+                                    icon={L.divIcon({
+                                        html: `<div style="width:12px;height:12px;background:#F59E0B;border:2px solid white;border-radius:50%;box-shadow:0 0 0 2px #F59E0B;"></div>`,
+                                        className: '',
+                                        iconSize: [12, 12],
+                                        iconAnchor: [6, 6]
+                                    })}
+                                    eventHandlers={{
+                                        dragend: (e) => {
+                                            const ll = (e.target as any).getLatLng();
+                                            setLotHistory(prev => [...prev.slice(-19), draftLot.points]);
+                                            setDraftLot(prev => {
+                                                const pts = [...prev.points];
+                                                pts[i] = [ll.lat, ll.lng];
+                                                return { ...prev, points: pts };
+                                            });
+                                        },
+                                        dblclick: () => handleDeleteNodeFromPanel(i),
+                                        click: () => setSelectedNode(i),
+                                    }}
+                                />
+                                {draftLot.points.length > 1 && (
+                                    <Marker
+                                        position={[
+                                            (p[0] + draftLot.points[(i + 1) % draftLot.points.length][0]) / 2,
+                                            (p[1] + draftLot.points[(i + 1) % draftLot.points.length][1]) / 2
+                                        ]}
+                                        draggable={true}
+                                        icon={L.divIcon({
+                                            html: `<div style="width:8px;height:8px;background:rgba(245,158,11,0.5);border:1.5px solid #F59E0B;border-radius:50%;"></div>`,
+                                            className: '',
+                                            iconSize: [8, 8],
+                                            iconAnchor: [4, 4]
+                                        })}
+                                        opacity={0.8}
+                                        eventHandlers={{
+                                            dragend: (e) => {
+                                                const ll = (e.target as any).getLatLng();
+                                                setLotHistory(prev => [...prev.slice(-19), draftLot.points]);
+                                                setDraftLot(prev => {
+                                                    const pts = [...prev.points];
+                                                    pts.splice(i + 1, 0, [ll.lat, ll.lng]);
+                                                    return { ...prev, points: pts };
+                                                });
+                                            }
+                                        }}
+                                    />
+                                )}
+                            </React.Fragment>
+                        ))}
+                    </>
+                )}
+
                 {/* Site Markers */}
-                {assets.map(site => {
+                {showAssets && localAssets.map(site => {
                     // Match by ID OR normalized Title to handle Firestore ID mismatches
                     const routeIndex = routeSequence.findIndex(s =>
                         s.id === site.id ||
@@ -1612,7 +2127,21 @@ const GeoManager: React.FC<GeoManagerProps> = ({
                             key={site.id}
                             position={[site.lat, site.lng]}
                             icon={isInRoute ? getRouteMarkerIcon(routeIndex) : getMarkerIcon(site, mode)}
-                            eventHandlers={{ click: () => handleSiteClick(site) }}
+                            draggable={isEditor}
+                            eventHandlers={{
+                                click: () => handleSiteClick(site),
+                                dragend: async (e) => {
+                                    if (!isEditor) return;
+                                    const ll = (e.target as any).getLatLng();
+                                    const snapped = getSnappedLatLng(ll.lat, ll.lng);
+                                    const updated = {
+                                        ...site,
+                                        lat: snapped[0],
+                                        lng: snapped[1]
+                                    };
+                                    await handleSaveAsset(updated);
+                                }
+                            }}
                             zIndexOffset={isInRoute ? 1000 : 0}
                         >
                             {(mode === 'tourism' && !isPlanningRoute && !isInRoute) && (
@@ -1679,56 +2208,127 @@ const GeoManager: React.FC<GeoManagerProps> = ({
             </MapContainer>
 
             {/* Overlays */}
-            <LayerControl
-                base={baseLayer}
-                setBase={setBaseLayer}
-                showZones={showPolygons}
-                setShowZones={setShowPolygons}
-                onNewZone={() => {
-                    setIsEditingZones(true);
-                    setEditorMode('create');
-                    setDraftZone({ points: [], title: '', type: 'federal', color: '#CC343A' });
-                }}
-                onEditMode={() => {
-                    setIsEditingZones(true);
-                    setEditorMode('edit');
-                    setDraftZone({ points: [], title: '', type: 'federal', color: '#1E88E5' });
-                }}
-                isEditing={isEditingZones}
-                hasZones={localAreas.length > 0}
-                canEdit={isEditor}
-            />
-
-            {/* Satellite toggle redundancy removed */}
-
-            {isEditingZones && (
-                <PrecisionEditor
-                    editorMode={editorMode}
+            {isEditor && (
+                <SmartEditorToolbar
+                    activeTab={activeEditorTab}
+                    onTabChange={handleTabChange}
+                    activeTool={activeTool}
+                    onToolChange={handleToolChange}
+                    canUndo={activeEditorTab === 'lots' ? lotHistory.length > 0 : history.length > 0}
+                    canRedo={activeEditorTab === 'lots' ? lotRedoStack.length > 0 : redoStack.length > 0}
+                    onUndo={activeEditorTab === 'lots' ? undoLot : undo}
+                    onRedo={activeEditorTab === 'lots' ? redoLot : redo}
+                    onSave={activeEditorTab === 'lots' ? saveDraftLot : saveDraftZone}
                     onCancel={cancelEdit}
+                    canSave={activeEditorTab === 'lots' ? draftLot.points.length >= 3 : draftZone.points.length >= 3}
+                    isEditing={isEditingZones || smartEditorMode !== null}
+                    cursorCoords={cursorCoords}
+                    nodeCount={activeEditorTab === 'lots' ? draftLot.points.length : draftZone.points.length}
+                    areaM2={activeEditorTab === 'lots' ? (draftLot.areaM2 || 0) : (draftZone.areaM2 || 0)}
+                    canEdit={isEditor}
+                />
+            )}
 
-                    // Zone Mode
-                    draft={{
-                        ...draftZone,
-                        potentialCount: potentialAreas.length,
-                        potentialIndex: potentialIndex,
-                        canUndo: history.length > 0,
-                        canRedo: redoStack.length > 0,
-                        onUndo: undo,
-                        onRedo: redo,
-                        onDelete: () => draftZone.id && deleteArea(draftZone.id),
-                        onCycle: () => {
-                            const nextIdx = (potentialIndex + 1) % potentialAreas.length;
-                            setPotentialIndex(nextIdx);
-                            loadAreaForEdit(potentialAreas[nextIdx]);
-                        }
-                    }}
-                    setDraft={setDraftZone}
-                    onSave={saveDraftZone}
+            {/* Base Layer / Satellite Toggle */}
+            {/* Base Layer / Satellite & Layer Visibility Panel */}
+            <div className="absolute top-4 right-4 z-[1000] flex flex-col items-end gap-2 pointer-events-auto">
+                <div className="group relative">
+                    <button
+                        className="p-2.5 bg-slate-900 text-white rounded-xl shadow-xl border border-white/10 transition-all hover:bg-slate-800 flex items-center justify-center"
+                        title="Controle de Camadas"
+                    >
+                        <Layers size={16} />
+                    </button>
 
-                    // Entrance Mode
-                    asset={selectedAsset}
-                    entranceDraft={entranceDraft}
-                    onSaveEntrance={saveEntrance}
+                    {/* Popover / Menu */}
+                    <div className="absolute right-0 top-11 w-48 bg-slate-950/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/10 p-3 opacity-0 translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 border-b border-white/5 pb-1">Camadas do Mapa</p>
+                        
+                        <div className="space-y-1.5">
+                            {/* Layer Toggles */}
+                            <label className="flex items-center justify-between text-[10px] font-bold text-slate-200 cursor-pointer hover:bg-white/5 px-2 py-1 rounded-lg transition-colors">
+                                <span className="flex items-center gap-2">
+                                    <Shield size={11} className="text-[#CC343A]" />
+                                    Poligonais (Tombamentos)
+                                </span>
+                                <input
+                                    type="checkbox"
+                                    checked={showPolygons}
+                                    onChange={(e) => setShowPolygons(e.target.checked)}
+                                    className="accent-[#CC343A] h-3 w-3 rounded border-slate-700 bg-slate-800 cursor-pointer"
+                                />
+                            </label>
+
+                            <label className="flex items-center justify-between text-[10px] font-bold text-slate-200 cursor-pointer hover:bg-white/5 px-2 py-1 rounded-lg transition-colors">
+                                <span className="flex items-center gap-2">
+                                    <Square size={11} className="text-[#F59E0B]" />
+                                    Lotes Cadastrais
+                                </span>
+                                <input
+                                    type="checkbox"
+                                    checked={showLots}
+                                    onChange={(e) => setShowLots(e.target.checked)}
+                                    className="accent-[#F59E0B] h-3 w-3 rounded border-slate-700 bg-slate-800 cursor-pointer"
+                                />
+                            </label>
+
+                            <label className="flex items-center justify-between text-[10px] font-bold text-slate-200 cursor-pointer hover:bg-white/5 px-2 py-1 rounded-lg transition-colors">
+                                <span className="flex items-center gap-2">
+                                    <Landmark size={11} className="text-[#1E88E5]" />
+                                    Imóveis Históricos
+                                </span>
+                                <input
+                                    type="checkbox"
+                                    checked={showAssets}
+                                    onChange={(e) => setShowAssets(e.target.checked)}
+                                    className="accent-[#1E88E5] h-3 w-3 rounded border-slate-700 bg-slate-800 cursor-pointer"
+                                />
+                            </label>
+
+                            <div className="h-px bg-white/5 my-1" />
+
+                            {/* Base Layer Switcher */}
+                            <div className="flex items-center justify-between gap-1 p-0.5 bg-white/5 rounded-lg">
+                                <button
+                                    onClick={() => setBaseLayer('streets')}
+                                    className={`flex-1 text-[9px] font-black uppercase py-1 rounded-md transition-all ${baseLayer === 'streets' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                                >
+                                    Ruas
+                                </button>
+                                <button
+                                    onClick={() => setBaseLayer('satellite')}
+                                    className={`flex-1 text-[9px] font-black uppercase py-1 rounded-md transition-all ${baseLayer === 'satellite' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                                >
+                                    Satélite
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Precision Sidebar Editor */}
+            {(smartEditorMode === 'polygon' || smartEditorMode === 'lot') && (
+                <SmartGeoEditor
+                    mode={smartEditorMode === 'polygon' ? 'zone' : 'lot'}
+                    // Zone
+                    draftZone={draftZone}
+                    onZoneChange={setDraftZone}
+                    // Lot
+                    draftLot={draftLot}
+                    onLotChange={setDraftLot}
+                    // Shared geometry actions
+                    selectedNode={selectedNode}
+                    onSelectNode={setSelectedNode}
+                    onNodeCoordChange={handleNodeCoordChange}
+                    onDeleteNode={handleDeleteNodeFromPanel}
+                    onInsertNodeAfter={handleInsertNodeAfter}
+                    onSave={smartEditorMode === 'lot' ? saveDraftLot : saveDraftZone}
+                    onCancel={cancelEdit}
+                    onDelete={smartEditorMode === 'lot' ? (draftLot.id ? () => deleteLot(draftLot.id!) : undefined) : (draftZone.id ? () => deleteArea(draftZone.id!) : undefined)}
+                    canSave={smartEditorMode === 'lot' ? draftLot.points.length >= 3 : draftZone.points.length >= 3}
+                    isExistingObject={smartEditorMode === 'lot' ? !!draftLot.id : !!draftZone.id}
+                    areaM2={smartEditorMode === 'lot' ? (draftLot.areaM2 || 0) : (draftZone.areaM2 || 0)}
                 />
             )}
 
@@ -1769,20 +2369,54 @@ const GeoManager: React.FC<GeoManagerProps> = ({
             <FloatingNav mode={mode} setMode={setMode} />
 
             {selectedAsset && (
-                <DetailDrawer
-                    site={selectedAsset}
-                    mode={mode}
-                    onClose={() => onAssetClick?.(null)}
-                    onReportError={onReportError}
-                    onEditEntrance={isEditor ? () => {
-                        setEditorMode('entrance');
-                        setIsEditingZones(true);
-                        if (selectedAsset.entrance) {
-                            setEntranceDraft(selectedAsset.entrance);
-                        } else {
-                            setEntranceDraft({ lat: selectedAsset.lat, lng: selectedAsset.lng });
-                        }
-                    } : undefined}
+                isEditor ? (
+                    <InlineAssetEditor
+                        asset={selectedAsset}
+                        allLots={localLots}
+                        onSave={handleSaveAsset}
+                        onCancel={() => onAssetClick?.(null)}
+                        onDelete={() => handleDeleteAsset(selectedAsset.id)}
+                        onOpenTombamentoEditor={() => setTombamentoAsset(selectedAsset)}
+                    />
+                ) : (
+                    <DetailDrawer
+                        site={selectedAsset}
+                        mode={mode}
+                        onClose={() => onAssetClick?.(null)}
+                        onReportError={onReportError}
+                        onEditEntrance={isEditor ? () => {
+                            setEditorMode('entrance');
+                            setIsEditingZones(true);
+                            if (selectedAsset.entrance) {
+                                setEntranceDraft(selectedAsset.entrance);
+                            } else {
+                                setEntranceDraft({ lat: selectedAsset.lat, lng: selectedAsset.lng });
+                            }
+                        } : undefined}
+                    />
+                )
+            )}
+
+            {/* Tombamento Records Editor */}
+            {tombamentoAsset && (
+                <TombamentoEditor
+                    asset={tombamentoAsset}
+                    onClose={() => setTombamentoAsset(null)}
+                    onSaved={(updated) => {
+                        handleSaveAsset(updated);
+                        setTombamentoAsset(null);
+                    }}
+                />
+            )}
+
+            {/* Lotes CAD/GeoJSON Importer */}
+            {showLotImport && (
+                <LotImportPanel
+                    onImport={(lots) => {
+                        handleLotImport(lots);
+                        setShowLotImport(false);
+                    }}
+                    onClose={() => setShowLotImport(false)}
                 />
             )}
 

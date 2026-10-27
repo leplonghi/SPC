@@ -2,7 +2,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMap, Polyline, Polygon } from 'react-leaflet';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+// Redundant CSS import already handled in index.html:
+// import 'leaflet/dist/leaflet.css';
 import { HeritageAsset, HeritageArea } from '../../types_patrimonio';
 import { Layers, X, MapPin, Navigation } from 'lucide-react';
 
@@ -15,7 +16,7 @@ const getIcon = (category: string = 'other', status: string) => {
     case 'civil': color = '#1E88E5'; break; // Blue
     case 'military': color = '#2E7D32'; break; // Green
     case 'ruin': color = '#FF6F00'; break; // Amber/Orange
-    case 'monument': color = '#8E24AA'; break; // Purple
+    case 'monument': color = '#D81B60'; break; // Deep Pink / Rose
     case 'area': color = '#CC343A'; break; // Red
     case 'ai_pin': color = '#2563eb'; break; // Brand Blue for AI
   }
@@ -268,7 +269,7 @@ const HeritageMap: React.FC<HeritageMapProps> = ({
             <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#1E88E5]"></span> Civil (Solar/Casa)</div>
             <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#2E7D32]"></span> Militar/Forte</div>
             <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#FF6F00]"></span> Ruínas</div>
-            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#8E24AA]"></span> Monumento/Fonte</div>
+            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#D81B60]"></span> Monumento/Fonte</div>
             <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#546E7A]"></span> Outros</div>
             <div className="flex items-center gap-2 border-t pt-2 mt-2 font-bold text-brand-blue"><span className="w-3 h-3 rounded-full bg-[#2563eb]"></span> Sugestão AI</div>
             <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full border-2 border-[#FFD54F] bg-transparent"></span> Com alerta (Revisar)</div>

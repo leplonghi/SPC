@@ -32,7 +32,7 @@ import { useAuth } from '../contexts/AuthContext';
 const getUseColor = (uso?: string) => {
   if (!uso) return '#757575';
   const u = uso.toLowerCase();
-  if (u.includes('religio') || u.includes('igreja') || u.includes('capela')) return '#8E24AA'; // Purple
+  if (u.includes('religio') || u.includes('igreja') || u.includes('capela')) return '#8E24AA'; // Roxo
   if (u.includes('institucional') || u.includes('publico') || u.includes('público') || u.includes('governo')) return '#1E88E5'; // Blue
   if (u.includes('comercial') || u.includes('loja') || u.includes('serviço') || u.includes('mercado')) return '#F59E0B'; // Amber
   if (u.includes('residencial') || u.includes('moradia') || u.includes('habita')) return '#43A047'; // Green

@@ -1,4 +1,16 @@
 
+export interface TombamentoRecord {
+    id: string;
+    nivel: 'federal' | 'estadual' | 'municipal';
+    decreto: string;
+    data_tombamento: string;
+    livro_tombo: string;
+    inscricao: string;
+    orgao: string; // IPHAN, IPHAN-MA, FCC, Prefeitura, etc.
+    observacoes?: string;
+}
+
+/** @deprecated Use tombamentos: TombamentoRecord[] instead */
 export interface HeritageSiteInventory {
     decreto: string;
     data_tombamento: string;
@@ -30,10 +42,15 @@ export interface HeritageAsset {
     imagens_historicas?: string[];
     // GeoManager / Routing
     graphNode?: string;
+    /** @deprecated Use tombamentos instead */
     inventory?: HeritageSiteInventory;
+    /** Multiple tombamento records (federal, estadual, municipal) */
+    tombamentos?: TombamentoRecord[];
     conservation_status?: "Regular" | "Em Obras" | "Alerta";
     tipologia?: string;
     entrance?: { lat: number; lng: number };
+    /** IDs of HeritageLot polygons associated with this asset */
+    lote_ids?: string[];
     documentos?: {
         name: string;
         url: string;
@@ -60,6 +77,34 @@ export interface HeritageArea {
     }[];
 }
 
+/** A cadastral lot polygon — the physical land parcel of one or more heritage assets */
+export interface HeritageLot {
+    id: string;
+    titulo: string;
+    /** Número do lote / matrícula */
+    numero_lote?: string;
+    /** Matrícula do registro de imóveis */
+    matricula?: string;
+    cidade: string;
+    bairro?: string;
+    logradouro?: string;
+    /** Area in m² (auto-calculated) */
+    area_m2?: number;
+    geojson: any; // GeoJSON Feature (Polygon)
+    status: "ok" | "needs_review";
+    type: "lot";
+    /** IDs of HeritageAsset objects within this lot */
+    asset_ids?: string[];
+    /** Source of the geometry */
+    fonte: 'manual' | 'dxf_import' | 'geojson_import' | 'shapefile_import' | 'osm';
+    importedAt?: string;
+    documentos?: {
+        name: string;
+        url: string;
+        type: 'pdf' | 'image' | 'doc' | 'other';
+        uploadedAt: string;
+    }[];
+}
 
 export interface InfractionRule {
     tipo: string;
@@ -75,7 +120,6 @@ export interface Waypoint {
 
 export interface Connection {
     from: string;
-
     to: string;
 }
 
@@ -85,5 +129,17 @@ export interface DraftZone {
     title: string;
     type: 'federal' | 'estadual' | 'municipal';
     color: string;
+    areaM2?: number;
+}
+
+/** Draft for a lot being drawn or edited */
+export interface DraftLot {
+    id?: string;
+    points: [number, number][];
+    title: string;
+    numero_lote?: string;
+    matricula?: string;
+    bairro?: string;
+    logradouro?: string;
     areaM2?: number;
 }

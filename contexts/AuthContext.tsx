@@ -6,13 +6,16 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-import { User, UserRole } from '../types';
+import { User, UserRole, Department } from '../types';
+import { SUPER_ADMIN_EMAIL } from '../data/adminConfig';
 
 interface AuthContextType {
     user: User | null;
     loading: boolean;
     isAdmin: boolean;
     isEditor: boolean;
+    isColaborador: boolean;
+    canReviewDepartment: (dept: Department) => boolean;
     logout: () => Promise<void>;
 }
 
@@ -26,6 +29,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             setLoading(true);
             if (firebaseUser) {
+                // Administrador total: e-mail verificado pelo Google. As regras do Firebase conferem de novo no servidor.
+                if (firebaseUser.emailVerified && firebaseUser.email?.toLowerCase() === SUPER_ADMIN_EMAIL) {
+                    setUser({
+                        id: firebaseUser.uid,
+                        name: firebaseUser.displayName || firebaseUser.email || 'Administrador',
+                        role: UserRole.SUPER_ADMIN
+                    });
+                    setLoading(false);
+                    return;
+                }
                 try {
                     // Fetch user record for role from Firestore
                     const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
@@ -70,8 +83,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         UserRole.EDITOR_DPI
     ].includes(user.role));
 
+    const isColaborador = isEditor || user?.role === UserRole.COLABORADOR;
+
+    const canReviewDepartment = (dept: Department): boolean => {
+        if (isAdmin) return true;
+        if (!user) return false;
+        
+        if (user.role === UserRole.EDITOR_DPHAP && dept === Department.DPHAP) return true;
+        if (user.role === UserRole.EDITOR_DPI && dept === Department.DPI) return true;
+        if (user.role === UserRole.EDITOR_DPE && dept === Department.DPE) return true;
+        
+        return false;
+    };
+
     return (
-        <AuthContext.Provider value={{ user, loading, isAdmin, isEditor, logout }}>
+        <AuthContext.Provider value={{ user, loading, isAdmin, isEditor, isColaborador, canReviewDepartment, logout }}>
             {children}
         </AuthContext.Provider>
     );

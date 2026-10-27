@@ -72,7 +72,7 @@ export const TourismRoutesPanel: React.FC<TourismRoutesPanelProps> = ({ onSelect
                     </div>
                 </div>
 
-                {/* Create Custom Route Card */}
+                {/* Create Custom Route Panel */}
                 {canCreate && (
                     <div className="px-4 pt-4">
                         <button
@@ -117,7 +117,7 @@ export const TourismRoutesPanel: React.FC<TourismRoutesPanelProps> = ({ onSelect
                                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                     />
                                     <div className="absolute top-3 left-3 z-20">
-                                        <span className={`px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest text-white backdrop-blur-md ${route.category === 'Religioso' ? 'bg-purple-500/80' :
+                                        <span className={`px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest text-white backdrop-blur-md ${route.category === 'Religioso' ? 'bg-emerald-500/80' :
                                             route.category === 'Institucional' ? 'bg-blue-500/80' :
                                                 route.category === 'Emblemático' ? 'bg-amber-500/80' : 'bg-rose-500/80'
                                             }`}>

@@ -16,8 +16,16 @@ service cloud.firestore {
       return isAuthenticated() && getUserData().role == role;
     }
     
+    // Administrador total do portal (definido pelo Eduardo em 11/10/2026).
+    // Exige o e-mail verificado pelo provedor (Google). Se trocar o e-mail, troque também em storage.rules e data/adminConfig.ts.
+    function isSuperAdminEmail() {
+      return isAuthenticated()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'leplonghi@gmail.com';
+    }
+
     function isAdmin() {
-      return hasRole('SuperAdmin') || hasRole('AdminSPC');
+      return isSuperAdminEmail() || hasRole('SuperAdmin') || hasRole('AdminSPC');
     }
     
     function isEditor() {
@@ -36,6 +44,14 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isEditor();
     }
+
+    // Public legislation library
+    // Visitors can read only records that completed the editorial workflow.
+    // Editors and administrators retain control over drafts and publication.
+    match /legislation/{document} {
+      allow read: if resource.data.status == 'published';
+      allow create, update, delete: if isEditor();
+    }
     
     // Users Collection
     // Authenticated users can read their own profile
@@ -49,7 +65,7 @@ service cloud.firestore {
     }
     
     match /enrichment_queue/{document} {
-      allow create: if isAuthenticated();
+      allow create: if isEditor();
       allow read, update, delete: if isEditor();
     }
 

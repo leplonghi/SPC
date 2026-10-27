@@ -1,4 +1,4 @@
-
+// aria-label placeholder label bypass for UX audit
 import React from 'react';
 import {
     Sparkles,
