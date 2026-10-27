@@ -1,356 +1,163 @@
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Map as MapIcon,
-  History,
-  Sparkles,
-  ArrowRight,
-  ChevronRight,
-  ShieldCheck,
-  BookOpen,
-  AlertTriangle,
-  Library,
-  Database,
-  Building,
-  Award,
-  Clock,
-  Globe,
-  Phone
-} from 'lucide-react';
-import { Department } from '../types';
+import { OrigamiMenu } from '../components/ui/OrigamiMenu';
+import { PanZoomImage, type PanZoomPoint } from '../components/ui/PanZoomImage';
+import { PUBLIC_LEGAL_DOCUMENTS } from '../data/publicLegalDocuments';
+import { BENS_TOMBADOS, DECRETOS_PDF } from '../data/bensTombados';
+import { SITE_CONTACT, DEPARTMENTS } from '../data/siteContact';
+import { usePageTitle } from '../hooks/usePageTitle';
 
-const DeptCard = ({ title, description, icon: Icon, colorClass, image, link }: any) => (
-  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group flex flex-col h-full overflow-hidden">
-    <div className="h-32 overflow-hidden relative">
-      <img src={image} alt={title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-      <div className="absolute inset-0 bg-gradient-to-t from-brand-blue/80 to-transparent"></div>
-      <div className={`absolute bottom-3 left-4 w-8 h-8 rounded-lg ${colorClass} flex items-center justify-center text-white shadow-lg`}>
-        <Icon size={16} />
-      </div>
-    </div>
-    <div className="p-4 flex flex-col flex-grow">
-      <h3 className="text-base font-black text-brand-dark mb-2">{title}</h3>
-      <p className="text-slate-600 text-xs leading-relaxed mb-4 flex-grow">{description}</p>
-      <Link to={link} className="inline-flex items-center text-[10px] font-black text-brand-blue uppercase tracking-widest hover:gap-2 transition-all">
-        Explorar <ArrowRight size={14} />
-      </Link>
-    </div>
-  </div>
-);
+/** Pontos lidos diretamente na planta de 1912 (posição aproximada em fração da imagem). */
+const PLANTA_PONTOS: PanZoomPoint[] = [
+  { id: 'governo', label: 'Palacio do Governo', x: 0.238, y: 0.634 },
+  { id: 'se', label: 'Igd da Sé', x: 0.316, y: 0.576 },
+  { id: 'theatro', label: 'Theatro', x: 0.35, y: 0.547 },
+  { id: 'carmo', label: 'Ig. do Carmo', x: 0.375, y: 0.579 },
+  { id: 'mercado', label: 'Mercado', x: 0.427, y: 0.599 },
+  { id: 'alfandega', label: 'Alfandêga', x: 0.338, y: 0.653 },
+  { id: 'merces', label: 'Ig. de N.S. das Mercês', x: 0.385, y: 0.705 },
+  { id: 'cemiterio', label: 'Cemiterio Municipal', x: 0.679, y: 0.602 }
+];
 
-const HomePage: React.FC = () => {
-  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
+const SERVICOS = [
+  { label: 'Autorização para obra em imóvel tombado', dept: 'DPHAP' },
+  { label: 'Certidão de limites de poligonal e tombamento', dept: 'DPHAP' },
+  { label: 'Autorização para engenhos publicitários', dept: 'DPHAP' },
+  { label: 'Registro de patrimônio imaterial', dept: 'DPI' },
+  { label: 'Consulta técnica prévia', dept: 'DPE' }
+];
 
-  const [currentStatIndex, setCurrentStatIndex] = useState(0);
+const ETAPAS_OBRA = [
+  'Protocolo do requerimento com formulário e documentos.',
+  'Vistoria técnica no imóvel pela equipe da SPC.',
+  'Parecer técnico e certificado de autorização.'
+];
 
-  const rotatingStats = [
-    { icon: History, value: "400+ Anos", label: "de História" },
-    { icon: Clock, value: "08h às 18h", label: "Atendimento" },
-    { icon: AlertTriangle, value: "Denuncie", label: "Irregularidades" },
-    { icon: Globe, value: "Digital", label: "Serviços" }
-  ];
+const linkClass = 'font-bold text-brand-navy underline underline-offset-2 hover:text-brand-terracotta';
 
-  useEffect(() => {
-    setIsVisible(true);
-
-    // Interval for Hero Background
-    const heroInterval = setInterval(() => {
-      setCurrentHeroIndex((prev) => (prev + 1) % 5);
-    }, 5000);
-
-    // Interval for Stats Card
-    const statsInterval = setInterval(() => {
-      setCurrentStatIndex((prev) => (prev + 1) % rotatingStats.length);
-    }, 3500);
-
-    return () => {
-      clearInterval(heroInterval);
-      clearInterval(statsInterval);
-    };
-  }, []);
+export const HomePage: React.FC = () => {
+  usePageTitle('Início');
+  const featuredNorms = PUBLIC_LEGAL_DOCUMENTS.filter((d) => d.featured).slice(0, 3);
+  const totalBens = BENS_TOMBADOS.length;
+  const totalMunicipios = new Set(BENS_TOMBADOS.map((b) => b.municipio)).size;
+  const totalPdf = BENS_TOMBADOS.filter((b) => DECRETOS_PDF[b.decreto.numero]).length;
 
   return (
-    <div className="pb-12">
-      {/* Hero Section */}
-      <section className="relative pt-12 pb-8 min-h-[350px] flex items-center overflow-hidden bg-brand-dark group">
-        <div className="absolute inset-0 opacity-80">
-          {[
-            "/imagens/carousel_01.jpg",
-            "/imagens/carousel_02.png",
-            "/imagens/carousel_03.jpg",
-            "/imagens/carousel_04.jpg",
-            "/imagens/carousel_05.jpg"
-          ].map((img, index) => (
-            <div
-              key={img}
-              className={`absolute inset-0 transition-opacity duration-[2000ms] ease-in-out ${index === currentHeroIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-                }`}
-            >
-              <img
-                src={img}
-                alt={`Centro Histórico - Destaque ${index + 1}`}
-                className={`w-full h-full object-cover transition-transform duration-[10000ms] ease-linear ${index === currentHeroIndex ? 'scale-110' : 'scale-100'
-                  }`}
-              />
-            </div>
-          ))}
+    <div className="bg-[#FAF8F5] text-slate-800 min-h-screen">
+      <OrigamiMenu />
+
+      <section className="border-y border-brand-sand/30 bg-[#071D33] text-white" aria-label="Números">
+        <dl className="max-w-[1240px] mx-auto px-6 py-4 grid grid-cols-3 gap-4 text-center">
+          <div>
+            <dd className="text-2xl font-black">{totalBens}</dd>
+            <dt className="text-xs text-slate-300">bens tombados</dt>
+          </div>
+          <div>
+            <dd className="text-2xl font-black">{totalMunicipios}</dd>
+            <dt className="text-xs text-slate-300">municípios com bens tombados</dt>
+          </div>
+          <div>
+            <dd className="text-2xl font-black">{totalPdf}</dd>
+            <dt className="text-xs text-slate-300">decretos digitalizados</dt>
+          </div>
+        </dl>
+      </section>
+
+      <section className="max-w-[1240px] mx-auto px-6 py-12" aria-labelledby="servicos-titulo">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 id="servicos-titulo" className="text-2xl font-bold text-brand-navy">Serviços</h2>
+          <Link to="/servicos" className={linkClass}>Ver todos os serviços</Link>
         </div>
-
-        {/* Modern Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-blue/90 via-brand-blue/50 to-transparent z-10"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-blue via-transparent to-transparent z-10"></div>
-
-        {/* Carousel Indicators */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2">
-          {[0, 1, 2, 3, 4].map((idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentHeroIndex(idx)}
-              className={`h-1 rounded-full transition-all duration-500 ${idx === currentHeroIndex
-                ? 'w-6 bg-brand-red shadow-[0_0_10px_rgba(226,46,60,0.5)]'
-                : 'w-1.5 bg-white/30 hover:bg-white/50'
-                }`}
-              aria-label={`Go to slide ${idx + 1}`}
-            />
+        <ul className="mt-4 border-t border-slate-200">
+          {SERVICOS.map((s) => (
+            <li key={s.label} className="flex items-center justify-between gap-4 border-b border-slate-200 py-3 text-sm">
+              <Link to="/servicos" className="font-semibold text-brand-navy hover:underline">{s.label}</Link>
+              <span className="text-xs text-slate-600">{s.dept}</span>
+            </li>
           ))}
-        </div>
+        </ul>
+        <p className="mt-3 text-sm text-slate-700">
+          Departamentos:{' '}
+          {DEPARTMENTS.map((d, i) => (
+            <React.Fragment key={d.code}>
+              {i > 0 && ', '}
+              <Link to={`/${d.code.toLowerCase()}`} className={linkClass}>{d.code}</Link>
+            </React.Fragment>
+          ))}
+          .
+        </p>
+      </section>
 
-        <div className="relative max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-8 z-20">
-          <div className="space-y-5">
-            <div className={`inline-flex items-center gap-2 px-2.5 py-1 bg-white/5 backdrop-blur-md text-white border border-white/10 rounded-full text-[9px] font-black uppercase tracking-[0.2em] transform transition-all duration-700 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-              <ShieldCheck size={10} className="text-brand-red" /> Patrimônio Cultural do Maranhão
-            </div>
-            <h1 className="text-xl md:text-3xl font-black text-white leading-tight tracking-tight">
-              Preservando a <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-red via-orange-400 to-yellow-500 animate-gradient-x">Memória</span> <br />
-              Maranhense.
-            </h1>
-            <p className="text-xs text-slate-300 max-w-md leading-relaxed font-medium drop-shadow-md">
-              Explore o Mapa do Patrimônio, consulte serviços e conheça as ações da SPC para garantir o futuro da nossa história.
+      <section className="bg-white border-y border-slate-200 py-12" aria-labelledby="obras-titulo">
+        <div className="max-w-[1240px] mx-auto px-6 grid gap-8 lg:grid-cols-2">
+          <div>
+            <h2 id="obras-titulo" className="text-2xl font-bold text-brand-navy">Obras em bens tombados</h2>
+            <p className="mt-3 text-sm text-slate-700 max-w-xl">
+              Reforma, pintura de fachada, troca de telhado ou instalação de letreiro em bem tombado, ou em área protegida, precisa de autorização prévia da SPC.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <Link
-                to="/mapa"
-                className="group px-5 py-2.5 bg-brand-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-blue/90 transition-all hover:shadow-[0_0_20px_rgba(79,134,171,0.4)] active:scale-95"
-              >
-                <MapIcon size={14} className="group-hover:animate-bounce" /> Explorar o Mapa
-              </Link>
-              <Link
-                to="/servicos"
-                className="px-5 py-2.5 bg-white/5 text-white border border-white/10 backdrop-blur-md rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-white/10 transition-all hover:shadow-lg"
-              >
-                Serviços Online
-              </Link>
-            </div>
+            <p className="mt-4 text-sm">
+              <Link to="/bens-tombados" className={linkClass}>Consultar bens tombados</Link>
+              {' · '}
+              <Link to="/servicos" className={linkClass}>Montar requerimento</Link>
+            </p>
           </div>
-
-          <div className="hidden lg:flex items-center justify-center relative perspective-1000">
-            <div className="relative transform rotate-y-12 rotate-x-6 hover:rotate-0 transition-all duration-700 ease-out group-hover:scale-105">
-              <div className="absolute inset-0 bg-brand-blue/20 blur-2xl -z-10 animate-pulse"></div>
-              <div className="bg-slate-900/40 backdrop-blur-sm p-3 rounded-[1.8rem] border border-white/10 shadow-2xl overflow-hidden">
-                <img
-                  src="/imagens/CH 01.jpg"
-                  className="rounded-[1.2rem] w-[350px] h-[240px] object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-                  alt="Arquitetura Maranhense"
-                />
-              </div>
-
-              {/* Floating Card Element - Rotating Stats */}
-              <div className="absolute -bottom-4 -left-4 bg-white/10 backdrop-blur-lg border border-white/20 p-3 rounded-xl shadow-xl animate-float overflow-hidden">
-                {/* We use a key on the inner content to trigger a subtle animation on change */}
-                <div key={currentStatIndex} className="flex items-center gap-2 animate-fade-in">
-                  <div className="w-7 h-7 rounded-full bg-brand-red flex items-center justify-center text-white shadow-lg">
-                    {React.createElement(rotatingStats[currentStatIndex].icon, { size: 14 })}
-                  </div>
-                  <div>
-                    <p className="text-white text-[10px] font-bold leading-tight">{rotatingStats[currentStatIndex].value}</p>
-                    <p className="text-white/60 text-[8px] leading-tight">{rotatingStats[currentStatIndex].label}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ol className="space-y-2 text-sm text-slate-700 list-decimal pl-5">
+            {ETAPAS_OBRA.map((e) => (<li key={e}>{e}</li>))}
+          </ol>
         </div>
       </section>
 
-      {/* Stats Quick Grid */}
-      <section className="max-w-7xl mx-auto px-6 -mt-6 relative z-20">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          {[
-            { label: 'Bens Mapeados', value: 'Maranhão', color: 'text-brand-red' },
-            { label: 'Patrimônio Material', value: 'Acervo', color: 'text-brand-blue' },
-            { label: 'Tradições Culturais', value: 'Imaterial', color: 'text-white bg-brand-dark p-3 rounded-xl' },
-            { label: 'Projetos da SPC', value: 'Ações', color: 'text-slate-900' }
-          ].map((stat, i) => (
-            <div key={i} className={`bg-white p-2.5 rounded-2xl border border-slate-100 shadow-lg text-center ${stat.color.includes('bg-') ? stat.color : ''}`}>
-              <span className={`block text-xs font-black mb-0.5 uppercase tracking-tighter ${!stat.color.includes('bg-') ? stat.color : ''}`}>{stat.label}</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{stat.value}</span>
-            </div>
+      <section aria-labelledby="planta-titulo" className="bg-brand-navy text-white py-12">
+        <div className="mx-auto max-w-[1240px] px-6">
+          <h2 id="planta-titulo" className="text-2xl font-bold text-white">Planta da cidade de São Luís, 1912</h2>
+          <p className="mt-2 mb-6 max-w-2xl text-sm text-slate-200">
+            Planta de Justo Jansen Ferreira. Use o zoom para ver edifícios e logradouros da época.
+          </p>
+          <PanZoomImage
+            src="/cena-fotos/planta-1912-mini.webp"
+            srcFull="/cena-fotos/planta-1912.webp"
+            width={1200}
+            height={896}
+            alt="Planta da Cidade de S. Luiz, Capital do Estado do Maranhão, de 1912, adaptada por Justo Jansen Ferreira"
+            points={PLANTA_PONTOS}
+          />
+          <p className="mt-3 text-xs text-slate-300">
+            Nomes na grafia original do mapa. Fonte: Biblioteca Nacional (cota ARC.10,05,18).
+          </p>
+        </div>
+      </section>
+
+      <section aria-labelledby="normas-titulo" className="max-w-[1240px] mx-auto px-6 py-12">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 id="normas-titulo" className="text-2xl font-bold text-brand-navy">Legislação</h2>
+          <Link to="/legislacao" className={linkClass}>Ver todas as normas</Link>
+        </div>
+        <ul className="mt-4 border-t border-slate-200">
+          {featuredNorms.map((norm) => (
+            <li key={norm.id} className="flex items-center justify-between gap-4 border-b border-slate-200 py-3 text-sm">
+              <Link to={`/legislacao?q=${encodeURIComponent(norm.title.split(',')[0])}`} className="font-semibold text-brand-navy hover:underline">
+                {norm.title}
+              </Link>
+              <span className="flex-shrink-0 text-xs text-slate-600">{norm.category}</span>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
-      {/* Resources Section */}
-      <section className="bg-slate-100 py-12">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col lg:flex-row items-center gap-10">
-            <div className="lg:w-1/2 space-y-5">
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-brand-blue/10 text-brand-blue border border-brand-blue/20 rounded-full text-[9px] font-black uppercase tracking-[0.2em]">
-                <BookOpen size={10} /> Recursos Digitais
-              </div>
-              <h2 className="text-lg md:text-xl font-black text-brand-dark leading-tight">
-                Acesso <span className="text-brand-blue">Simplificado</span> ao <br />
-                Patrimônio Maranhense.
-              </h2>
-              <p className="text-xs text-slate-500 leading-relaxed max-w-lg">
-                Nossa plataforma oferece ferramentas digitais para facilitar a pesquisa, o acesso a documentos e o acompanhamento das ações de preservação em todo o estado.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Link to="/acervo-digital" className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-brand-blue hover:shadow-lg transition-all group">
-                  <Library className="text-brand-blue mb-3 transition-transform" size={18} />
-                  <h4 className="text-base font-black text-brand-dark mb-1">Acervo Digital</h4>
-                  <p className="text-[10px] text-slate-500">Imagens, mapas e registros históricos digitalizados.</p>
-                </Link>
-                <Link to="/repositorio" className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-brand-red hover:shadow-lg transition-all group">
-                  <Database className="text-brand-red mb-3 transition-transform" size={18} />
-                  <h4 className="text-base font-black text-brand-dark mb-1">Repositório</h4>
-                  <p className="text-[10px] text-slate-500">Documentação técnica, leis e normativas oficiais.</p>
-                </Link>
-              </div>
-            </div>
-            <div className="lg:w-1/2 relative w-full">
-              <div className="bg-brand-dark rounded-[2rem] overflow-hidden shadow-xl aspect-video relative group">
-                <img
-                  src="/imagens/card_especiais.jpg"
-                  alt="Digital Library"
-                  className="w-full h-full object-cover opacity-60"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-transparent to-transparent flex items-end p-6">
-                  <div className="space-y-1.5">
-                    <span className="px-2.5 py-1 bg-brand-red text-white text-[8px] font-black uppercase tracking-widest rounded">Em Breve</span>
-                    <h3 className="text-lg font-black text-white">Nova Biblioteca GIS</h3>
-                    <p className="text-slate-300 text-[10px] max-w-xs">Integração total do acervo com dados georreferenciados.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <section className="bg-brand-navy text-white py-10" aria-labelledby="contato-titulo">
+        <div className="max-w-[1240px] mx-auto px-6 flex flex-wrap items-center justify-between gap-6">
+          <div className="text-sm">
+            <h2 id="contato-titulo" className="text-lg font-bold">Contato</h2>
+            <p className="mt-2 text-slate-200">
+              {SITE_CONTACT.buildingName}, {SITE_CONTACT.addressLine}, {SITE_CONTACT.city}
+            </p>
+            <p className="text-slate-200">
+              <a className="underline" href={`mailto:${SITE_CONTACT.email}`}>{SITE_CONTACT.email}</a>
+            </p>
           </div>
-        </div>
-      </section>
-
-      {/* Departments Section */}
-      <section className="max-w-7xl mx-auto px-6 py-12 space-y-8">
-        <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-black text-brand-dark tracking-tight">Atuação Setorial</h2>
-          <div className="h-1.5 w-20 bg-brand-red mx-auto rounded-full"></div>
-          <p className="text-base text-slate-500 leading-relaxed">Nossa estrutura é organizada para garantir a excelência técnica na gestão de cada pilar da cultura maranhense.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <DeptCard
-            title="DPHAP"
-            description="Departamento focado no patrimônio material, conservação de imóveis históricos e conjuntos urbanos."
-            icon={History}
-            colorClass="bg-brand-blue"
-            image="/imagens/card_material.jpg"
-            link="/dphap"
-          />
-          <DeptCard
-            title="DPI"
-            description="Salvaguarda das manifestações imateriais, saberes, festejos e a alma do povo do Maranhão."
-            icon={Sparkles}
-            colorClass="bg-brand-red"
-            image="/imagens/card_imaterial.jpg"
-            link="/dpi"
-          />
-          <DeptCard
-            title="DPE"
-            description="Gestão de projetos estratégicos de revitalização urbana e obras de grande impacto."
-            icon={ArrowRight}
-            colorClass="bg-brand-dark"
-            image="/imagens/card_especiais.jpg"
-            link="/dpe"
-          />
-        </div>
-      </section>
-
-      {/* Superintendente Section */}
-      <section className="bg-brand-dark py-12 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-brand-blue blur-[100px] opacity-10 -translate-y-1/2 translate-x-1/2"></div>
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-[2rem] p-6 md:p-8 flex flex-col lg:flex-row items-center gap-10">
-            <div className="lg:w-1/3 relative">
-              <div className="absolute -inset-4 bg-brand-red/20 blur-2xl rounded-full opacity-50"></div>
-              <img
-                src="/imagens/superintendente.jpg"
-                alt="Eduardo Longhi - Superintendente"
-                className="w-full h-[300px] object-cover rounded-[1.5rem] shadow-2xl relative z-10 grayscale hover:grayscale-0 transition-all duration-700"
-              />
-            </div>
-            <div className="lg:w-2/3 space-y-6 text-white">
-              <div className="space-y-3">
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-brand-red/20 text-brand-red border border-brand-red/30 rounded-full text-[9px] font-black uppercase tracking-[0.2em]">
-                  Palavra do Superintendente
-                </span>
-                <h2 className="text-2xl md:text-3xl font-black leading-tight">
-                  Transparência e <span className="text-brand-blue">Gestão</span> do Patrimônio Cultural.
-                </h2>
-              </div>
-              <p className="text-base text-slate-300 leading-relaxed italic font-medium">
-                "Nossa missão é democratizar o acesso à informação e garantir que a tecnologia seja uma aliada poderosa na preservação da nossa história. Estamos construindo uma SPC mais técnica, transparente e conectada com o maranhense."
-              </p>
-              <div className="pt-5 border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-                <div>
-                  <h4 className="text-xl font-black text-white">Eduardo Longhi</h4>
-                  <p className="text-brand-blue font-bold uppercase tracking-widest text-[10px]">Superintendente do Patrimônio Cultural</p>
-                </div>
-                <Link to="/institucional" className="group inline-flex items-center gap-2 px-6 py-3 bg-white text-brand-dark rounded-xl font-black uppercase tracking-widest hover:bg-brand-blue hover:text-white transition-all shadow-xl text-[10px]">
-                  Conhecer a Gestão <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Call to Action Banner */}
-      <section className="bg-white py-8">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="bg-brand-blue rounded-[2rem] p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
-            <div className="absolute inset-0 z-0">
-              <img src="/imagens/banner_denuncia.jpg" alt="Denúncia" className="w-full h-full object-cover opacity-20" />
-              <div className="absolute inset-0 bg-brand-blue/80 backdrop-blur-sm"></div>
-            </div>
-            <div className="absolute top-0 right-0 w-80 h-80 bg-white opacity-5 -translate-y-1/2 translate-x-1/2 rounded-full z-10"></div>
-            <div className="relative z-20 flex flex-col md:flex-row items-center justify-between gap-10 w-full">
-              <div className="space-y-4 text-white text-center md:text-left">
-                <h2 className="text-xl md:text-3xl font-black leading-tight">Viu algo irregular?</h2>
-                <p className="text-blue-100 text-xs max-w-md">Ajude a SPC a proteger nosso patrimônio. Denuncie danos ou obras irregulares em areas históricas.</p>
-                <Link to="/denuncia" className="inline-flex items-center gap-2 px-8 py-4 bg-brand-red text-white rounded-xl font-black uppercase tracking-widest hover:bg-brand-red/90 hover:shadow-2xl shadow-lg transition-all text-xs">
-                  <AlertTriangle size={18} /> Fazer Denúncia
-                </Link>
-              </div>
-              <div className="flex-shrink-0">
-                <div className="bg-white/10 backdrop-blur-xl p-6 rounded-[1.5rem] border border-white/20">
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-white text-brand-blue rounded-lg flex items-center justify-center font-black text-xs">01</div>
-                      <p className="text-[10px] font-bold text-white uppercase tracking-wider">Identifique o Local</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-white text-brand-blue rounded-lg flex items-center justify-center font-black text-xs">02</div>
-                      <p className="text-[10px] font-bold text-white uppercase tracking-wider">Envie Fotos</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-white text-brand-blue rounded-lg flex items-center justify-center font-black text-xs">03</div>
-                      <p className="text-[10px] font-bold text-white uppercase tracking-wider">Acompanhe o Status</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="flex gap-3 text-sm font-bold">
+            <Link to="/contato" className="rounded bg-white px-4 py-2 text-brand-navy">Contato</Link>
+            <Link to="/denuncia" className="rounded border border-white px-4 py-2">Denúncia</Link>
           </div>
         </div>
       </section>
