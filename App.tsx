@@ -199,12 +199,18 @@ const Navigation = () => {
       {/* Barra de acessibilidade: faixa fina, rola junto com a página */}
       <div className="bg-brand-navy text-white font-sans px-6 py-0.5 hidden md:block">
         <div className="max-w-[1440px] mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-5 text-[11px] leading-none uppercase font-bold tracking-wider text-slate-200">
+          <div className="flex items-center space-x-4 text-[11px] leading-none uppercase font-bold tracking-wider text-slate-200">
             <L to="/transparencia" className="hover:text-white transition-colors">Acesso à Informação</L>
             <span className="text-white/20" aria-hidden="true">|</span>
             <a href="https://cultura.ma.gov.br" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">SECMA<span className="sr-only"> (abre em nova aba)</span></a>
             <span className="text-white/20" aria-hidden="true">|</span>
-            <L to="/denuncia" className="hover:text-white transition-colors">Denúncias</L>
+            <L
+              to="/denuncia"
+              className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-brand-red text-white text-[10px] font-black uppercase tracking-wider hover:bg-brand-red-dark transition-all shadow-xs"
+            >
+              <ShieldAlert size={12} aria-hidden="true" />
+              <span>Denúncias</span>
+            </L>
           </div>
 
           <div className="flex items-center space-x-5">
@@ -272,6 +278,16 @@ const Navigation = () => {
                 )}
               </div>
 
+              {/* Botão de Denúncias em destaque no Desktop */}
+              <L
+                to="/denuncia"
+                aria-current={location.pathname === '/denuncia' ? 'page' : undefined}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-brand-red text-white text-[11px] font-black uppercase tracking-wider hover:bg-[#B94734] transition-all shadow-sm"
+              >
+                <ShieldAlert size={14} aria-hidden="true" />
+                <span>Denunciar</span>
+              </L>
+
               <div className="h-6 w-px bg-slate-200 mx-1.5"></div>
 
               {user && (
@@ -337,8 +353,17 @@ const Navigation = () => {
                 <L to="/transparencia" className="flex items-center p-4 rounded-2xl font-bold text-slate-600 hover:bg-slate-50" onClick={() => setIsOpen(false)}>
                   <span className="text-sm">Acesso à Informação</span>
                 </L>
-                <L to="/denuncia" className="flex items-center p-4 rounded-2xl font-bold text-slate-600 hover:bg-slate-50" onClick={() => setIsOpen(false)}>
-                  <span className="text-sm">Denúncias</span>
+                {/* Denúncias em destaque no menu mobile */}
+                <L
+                  to="/denuncia"
+                  className="flex items-center gap-3 p-4 rounded-2xl font-black text-white bg-brand-red hover:bg-[#B94734] transition-all shadow-sm"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <ShieldAlert size={18} aria-hidden="true" className="flex-shrink-0" />
+                  <div>
+                    <span className="text-sm block">Denunciar Obra Irregular</span>
+                    <span className="text-[11px] font-normal opacity-80">Canal oficial de fiscalização</span>
+                  </div>
                 </L>
                 <button
                   type="button"

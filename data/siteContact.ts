@@ -1,16 +1,15 @@
 /**
  * Dados de contato oficiais da SPC.
- * Fonte: informado pela própria SPC em 10/10/2026.
+ * Fonte: informado pela própria SPC.
  * A SPC não possui telefone; não adicionar número aqui.
- * Canais informados pela SPC em 10/10/2026:
- *  - email: atendimento geral da SPC.
- *  - denunciaEmail: recebimento de denúncias (DPHAP).
+ * Canais informados pela SPC:
+ *  - email: atendimento e protocolo geral da SPC/DPHAP.
+ *  - denunciaEmail: recebimento de denúncias de patrimônio (DPHAP).
  *  - ouvidoriaEmail: Ouvidoria da SECMA (a Ouvidoria não é da SPC).
- * Se a SPC passar a ter e-mail institucional (.gov.br), troque aqui e vale para o site todo.
  */
 export const SITE_CONTACT = {
-  email: 'sup.maranhao@gmail.com',
-  denunciaEmail: 'atendimento.dphap@gmail.com',
+  email: 'dphapspc@gmail.com',
+  denunciaEmail: 'dphapspc@gmail.com',
   ouvidoriaEmail: 'ouvidoria@secma.ma.gov.br',
   addressLine: 'Rua da Estrela, 562, Centro',
   city: 'São Luís, MA',

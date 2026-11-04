@@ -10,7 +10,8 @@ import {
     ArrowRight,
     CheckSquare,
     Music,
-    Building
+    Building,
+    Clock
 } from 'lucide-react';
 import { PageHero } from '../components/ui/PageHero';
 import { Link } from 'react-router-dom';
@@ -31,9 +32,9 @@ const DpiPage: React.FC = () => {
                 description="O Departamento de Patrimônio Imaterial é responsável pelo registro, salvaguarda e promoção das manifestações culturais, saberes, celebrações e formas de expressão que constituem a identidade do Maranhão."
                 actions={
                     <>
-                        <Link to="/servicos" className="px-5 py-2.5 bg-brand-red text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-red/90 hover:shadow-lg hover:shadow-brand-red/20 transition-all flex items-center gap-2 active:scale-95">
-                            Solicitar Registro <ArrowRight size={12} />
-                        </Link>
+                        <a href="#registro-imaterial" className="px-5 py-2.5 bg-brand-red text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-red/90 hover:shadow-lg hover:shadow-brand-red/20 transition-all flex items-center gap-2 active:scale-95">
+                            <Clock size={12} /> Registro Imaterial (Em breve)
+                        </a>
                         <a href="#contato" className="px-5 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/20 transition-all active:scale-95">
                             Fale Conosco
                         </a>
@@ -46,6 +47,41 @@ const DpiPage: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Content Column */}
                     <div className="lg:col-span-2 space-y-8">
+
+                        {/* Registro de Patrimônio Cultural Imaterial (Em breve) */}
+                        <div id="registro-imaterial" className="bg-white rounded-[2rem] border-2 border-brand-sand p-6 shadow-sm space-y-4">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-terracotta/10 text-brand-terracotta border border-brand-terracotta/20 text-xs font-black uppercase tracking-wider">
+                                    <Clock size={12} /> Em breve
+                                </span>
+                                <span className="text-xs font-bold text-slate-400">Processo Formal de Salvaguarda</span>
+                            </div>
+
+                            <div>
+                                <h3 className="text-lg font-black text-brand-navy">
+                                    Registro de Patrimônio Cultural Imaterial
+                                </h3>
+                                <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+                                    Procedimento formal para reconhecimento e registro de bens culturais imateriais maranhenses (saberes, ofícios, celebrações, formas de expressão e lugares de memória comunitária).
+                                </p>
+                            </div>
+
+                            <div className="rounded-xl bg-slate-50 p-4 border border-slate-200/80 text-xs text-slate-600 space-y-2">
+                                <p className="font-bold text-brand-navy">Etapas da Instrução Técnica em estruturação:</p>
+                                <ul className="list-disc pl-4 space-y-1 text-[11px] text-slate-500">
+                                    <li>1. Abertura do processo de instrução para registro no DPI</li>
+                                    <li>2. Pesquisa de campo e elaboração de dossiê técnico de registro</li>
+                                    <li>3. Deliberação e inscrição no Livro de Registro de Patrimônio Imaterial correspondente</li>
+                                </ul>
+                            </div>
+
+                            <div className="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs border-t border-slate-100">
+                                <span className="text-slate-500 font-medium">Interessado em orientações prévias de salvaguarda?</span>
+                                <a href="mailto:dpi@spc.ma.gov.br?subject=Consulta%20sobre%20Registro%20de%20Patrim%C3%B4nio%20Imaterial" className="font-bold text-brand-terracotta hover:underline">
+                                    Fale diretamente com o DPI (dpi@spc.ma.gov.br) →
+                                </a>
+                            </div>
+                        </div>
 
                         {/* Atribuições */}
                         <div className="space-y-4">
@@ -77,8 +113,17 @@ const DpiPage: React.FC = () => {
                             </h2>
                             <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden">
                                 <div className="p-1">
+                                    <a
+                                        href="#registro-imaterial"
+                                        className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors group cursor-pointer"
+                                    >
+                                        <span className="text-xs font-bold text-slate-700 group-hover:text-brand-red transition-colors pl-2 flex items-center gap-2">
+                                            Registro de Patrimônio Cultural Imaterial
+                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-terracotta/10 text-brand-terracotta">Em breve</span>
+                                        </span>
+                                        <ArrowRight size={14} className="text-slate-300 group-hover:text-brand-red transition-colors" />
+                                    </a>
                                     {[
-                                        "Solicitação de Registro de Bem Imaterial",
                                         "Apoio a Eventos Tradicionais",
                                         "Consulta ao Livro de Registro",
                                         "Emissão de Certificado de Detentor"

@@ -160,48 +160,10 @@ const SERVICOS_LIST: Service[] = [
         href: '/documentos/legislacao/diretrizes-dphap-engenhos-publicitarios.pdf'
       }
     ]
-  },
-  {
-    id: 's4',
-    title: 'Registro de Patrimônio Cultural Imaterial',
-    category: 'Salvaguarda',
-    department_responsible: Department.DPI,
-    description:
-      'Procedimento formal para reconhecimento e registro de bens culturais imateriais maranhenses (saberes, ofícios, celebrações, formas de expressão e lugares de memória comunitária).',
-    bring: [
-      'Identificação da comunidade, grupo, detentores culturais ou associação requerente',
-      'Denominação e caracterização detalhada da manifestação cultural',
-      'Histórico de continuidade histórica da manifestação no Maranhão',
-      'Acervo comprobatório (fotografias, registros audiovisuais, depoimentos orais, pesquisas prévias)'
-    ],
-    stages: [
-      '1. Abertura do processo de instrução para registro no DPI',
-      '2. Pesquisa de campo e elaboração de dossiê técnico de registro',
-      '3. Deliberação e inscrição no Livro de Registro de Patrimônio Imaterial correspondente'
-    ],
-    deadlineHint: 'Processo participativo com instrução técnica detalhada e ampla consulta pública.',
-    references: [{ label: 'Legislação e resoluções sobre patrimônio imaterial', to: '/legislacao' }]
-  },
-  {
-    id: 's5',
-    title: 'Consulta Técnica Prévia e Orientação Arquitetônica',
-    category: 'Consultoria Técnica',
-    department_responsible: Department.DPE,
-    description:
-      'Esclarecimento técnico com arquitetos e engenheiros da SPC antes do desenvolvimento de projetos definitivos em imóveis de interesse histórico.',
-    bring: [
-      'Breve resumo da intenção do projeto ou diretrizes preliminares',
-      'Endereço do imóvel e registros fotográficos da situação física atual',
-      'Dúvidas específicas sobre materiais compatíveis ou diretrizes aplicáveis'
-    ],
-    stages: [
-      '1. Envio da dúvida ou pré-projeto',
-      '2. Orientação por equipe técnica do DPE/DPHAP sobre compatibilidade construtiva'
-    ],
-    deadlineHint: 'Atendimento via canal técnico de atendimento e reuniões agendadas.',
-    references: [{ label: 'Conheça o Departamento de Projetos Especiais (DPE)', to: '/institucional' }]
   }
 ];
+
+const DPHAP_EMAIL = 'dphapspc@gmail.com';
 
 const ServicosPage: React.FC = () => {
   usePageTitle('Serviços');
@@ -220,6 +182,7 @@ const ServicosPage: React.FC = () => {
   const [interventionDesc, setInterventionDesc] = useState('');
   const [copied, setCopied] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const normalized = searchTerm.toLowerCase();
   const filteredServices = SERVICOS_LIST.filter(
@@ -273,9 +236,14 @@ Local: ${propertyCity} - Maranhão`;
     setTimeout(() => setCopied(false), 3000);
   };
 
-  const mailtoLink = `mailto:${SITE_CONTACT.email}?subject=${encodeURIComponent(
+  const mailtoLink = `mailto:${DPHAP_EMAIL}?subject=${encodeURIComponent(
     `Requerimento SPC: ${selectedServiceObj.title} - ${userName || 'Cidadão'}`
   )}&body=${encodeURIComponent(getFormattedSummaryText())}`;
+
+  const handleSendEmail = () => {
+    window.location.href = mailtoLink;
+    setShowConfirmModal(true);
+  };
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-slate-800">
@@ -338,8 +306,8 @@ Local: ${propertyCity} - Maranhão`;
                 <p className="font-bold text-slate-700">Nenhum serviço encontrado com esse termo.</p>
                 <p className="text-sm text-slate-500 mt-1">
                   Dúvidas gerais podem ser encaminhadas para{' '}
-                  <a className="font-bold text-brand-navy underline" href={`mailto:${SITE_CONTACT.email}`}>
-                    {SITE_CONTACT.email}
+                  <a className="font-bold text-brand-navy underline" href={`mailto:${DPHAP_EMAIL}`}>
+                    {DPHAP_EMAIL}
                   </a>.
                 </p>
               </div>
@@ -479,7 +447,7 @@ Local: ${propertyCity} - Maranhão`;
                               <span>Preencher neste Requerimento</span>
                             </button>
                             <a
-                              href={`mailto:${SITE_CONTACT.email}?subject=${encodeURIComponent(service.title)}`}
+                              href={`mailto:${DPHAP_EMAIL}?subject=${encodeURIComponent(service.title)}`}
                               className="w-full py-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
                             >
                               <Mail size={14} />
@@ -495,6 +463,30 @@ Local: ${propertyCity} - Maranhão`;
             )}
           </div>
         </section>
+
+        {/* BANNER URGENTE: Canal de Denúncias - visível antes do assistente */}
+        <div className="rounded-2xl border-2 border-red-300 bg-red-50 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-red-600 text-white flex items-center justify-center flex-shrink-0">
+              <ShieldAlert size={22} />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-black text-red-900 text-sm sm:text-base">
+                Presenciou obra irregular ou demolição em bem tombado?
+              </h3>
+              <p className="text-xs text-red-800 leading-relaxed max-w-2xl">
+                <strong>Não utilize o requerimento abaixo.</strong> Se há uma intervenção não autorizada, dano a fachada, demolição em curso ou abandono de imóvel protegido, acesse imediatamente o canal oficial de denúncias à fiscalização do DPHAP.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/denuncia"
+            className="whitespace-nowrap inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-red-700 hover:bg-red-800 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md self-end sm:self-center"
+          >
+            <ShieldAlert size={15} />
+            <span>Fazer Denúncia →</span>
+          </Link>
+        </div>
 
         {/* SEÇÃO 2: ASSISTENTE INTERATIVO DE PROTOCOLO E REQUERIMENTO ONLINE */}
         <section
@@ -709,13 +701,14 @@ Local: ${propertyCity} - Maranhão`;
                     <span>Imprimir</span>
                   </button>
 
-                  <a
-                    href={mailtoLink}
+                  <button
+                    type="button"
+                    onClick={handleSendEmail}
                     className="px-5 py-2 bg-brand-navy text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-brand-navy/90 transition-colors flex items-center gap-1.5 shadow-sm"
                   >
                     <Send size={14} />
-                    <span>Enviar por E-mail</span>
-                  </a>
+                    <span>Enviar para dphapspc@gmail.com</span>
+                  </button>
                 </div>
               </div>
 
@@ -731,7 +724,7 @@ Local: ${propertyCity} - Maranhão`;
                   <span>Como dar entrada no seu processo oficialmente:</span>
                 </div>
                 <p>
-                  <strong>1. Por E-mail Oficial:</strong> Clique no botão <em>"Enviar por E-mail"</em> acima e anexe as fotos do imóvel, documento pessoal e comprovante de endereço. O e-mail é recebido diretamente pela triagem da SPC.
+                  <strong>1. Por E-mail Oficial:</strong> Clique no botão <em>"Enviar para dphapspc@gmail.com"</em> acima e anexe as fotos do imóvel, documento pessoal e comprovante de endereço. O e-mail é recebido diretamente pela equipe técnica de triagem do DPHAP/SPC.
                 </p>
                 <p>
                   <strong>2. Protocolo Eletrônico (SEI Maranhão):</strong> Se você for usuário do SEI-MA, copie o texto formatado e anexe ao processo administrativo endereçado à SECMA/SPC.
@@ -740,6 +733,60 @@ Local: ${propertyCity} - Maranhão`;
                   <strong>3. Presencialmente na Sede:</strong> Imprima este requerimento assinado e entregue na sede da SPC: {SITE_CONTACT.buildingName}, {SITE_CONTACT.addressLine}, {SITE_CONTACT.city} - MA.
                 </p>
               </div>
+
+              {/* Modal de Confirmação de Envio */}
+              {showConfirmModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+                  <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle2 size={26} />
+                      </div>
+                      <div>
+                        <h3 id="confirm-modal-title" className="text-lg font-black text-brand-navy">
+                          Requerimento Preparado com Sucesso!
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          O seu cliente de e-mail padrão foi acionado com o requerimento completo formatado.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-slate-50 p-4 border border-slate-200 text-xs space-y-2 text-slate-700">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Destino Oficial</span>
+                        <span className="font-mono font-bold text-brand-navy bg-white px-2 py-0.5 rounded border border-slate-200">
+                          {DPHAP_EMAIL}
+                        </span>
+                      </div>
+                      <p><strong>Serviço:</strong> {selectedServiceObj.title}</p>
+                      <p><strong>Requerente:</strong> {userName || 'Cidadão'} {userDoc ? `(${userDoc})` : ''}</p>
+                      <p><strong>Local do Imóvel:</strong> {propertyAddress || 'Conforme declaração'}, {propertyCity}</p>
+                      <div className="pt-2 border-t border-slate-200 text-[11px] text-amber-900 bg-amber-50/80 p-2.5 rounded-xl">
+                        📎 <strong>Atenção aos Anexos:</strong> Não se esqueça de anexar fotos, croquis ou documentos comprobatórios diretamente na janela de e-mail que se abriu antes de clicar em enviar.
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 justify-end pt-1">
+                      <button
+                        type="button"
+                        onClick={handleCopySummary}
+                        className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-brand-navy text-xs font-bold hover:bg-slate-50 flex items-center gap-1.5 transition-colors"
+                      >
+                        <Copy size={14} />
+                        <span>{copied ? 'Copiado!' : 'Copiar Texto Novamente'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmModal(false)}
+                        className="px-5 py-2.5 rounded-xl bg-brand-navy text-white text-xs font-bold hover:bg-brand-blue transition-colors"
+                      >
+                        Concluir e Fechar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </section>

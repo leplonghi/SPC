@@ -9,7 +9,8 @@ import {
   MapPin,
   Camera,
   Mail,
-  Copy
+  Copy,
+  Check
 } from 'lucide-react';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { SITE_CONTACT } from '../data/siteContact';
@@ -24,11 +25,9 @@ const DenunciaPage: React.FC = () => {
   const [reporterName, setReporterName] = useState('');
   const [reporterContact, setReporterContact] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const reportBody = `RELATÓRIO DE COMUNICAÇÃO DE DANO / IRREGULARIDADE PATRIMONIAL
+  const getReportBody = () => `RELATÓRIO DE COMUNICAÇÃO DE DANO / IRREGULARIDADE PATRIMONIAL
 PARA: DEPARTAMENTO DE PROTEÇÃO DO PATRIMÔNIO (DPHAP / SPC MARANHÃO)
 
 1. TIPO DE IRREGULARIDADE:
@@ -50,11 +49,20 @@ ${
 
 Data da Comunicação: ${new Date().toLocaleDateString('pt-BR')}`;
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
     window.location.href = `mailto:${SITE_CONTACT.denunciaEmail}?subject=${encodeURIComponent(
       `[DENÚNCIA PATRIMÔNIO] ${damageType} - ${city}`
-    )}&body=${encodeURIComponent(reportBody)}`;
+    )}&body=${encodeURIComponent(getReportBody())}`;
 
     setSubmitted(true);
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(getReportBody());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
   };
 
   return (
@@ -98,19 +106,33 @@ Data da Comunicação: ${new Date().toLocaleDateString('pt-BR')}`;
             </div>
 
             {submitted ? (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center space-y-3">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center space-y-4">
                 <CheckCircle2 size={40} className="mx-auto text-emerald-600" />
-                <h3 className="font-bold text-emerald-900 text-lg">Denúncia Estruturada!</h3>
+                <h3 className="font-bold text-emerald-900 text-lg">Denúncia Estruturada com Sucesso!</h3>
                 <p className="text-sm text-emerald-800 leading-relaxed max-w-md mx-auto">
-                  Os dados foram formatados e direcionados ao e-mail oficial do setor de fiscalização: <strong>{SITE_CONTACT.denunciaEmail}</strong>. Lembre-se de anexar fotos ou vídeos comprobatórios no seu e-mail caso possua.
+                  Os dados foram formatados e direcionados ao e-mail oficial do setor de fiscalização:{' '}
+                  <strong>{SITE_CONTACT.denunciaEmail}</strong>. Lembre-se de <strong>anexar fotos ou vídeos</strong> comprobatórios na janela de e-mail antes de enviar.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setSubmitted(false)}
-                  className="px-5 py-2 bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-emerald-800"
-                >
-                  Registrar Nova Comunicação
-                </button>
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 text-left">
+                  <strong>📎 Próximo passo:</strong> Confirme que a janela do seu e-mail se abriu e clique em <em>Enviar</em> para concluir. Anexe fotos do local para agilizar a fiscalização.
+                </div>
+                <div className="flex flex-wrap gap-2 justify-center pt-1">
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-emerald-300 bg-white text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-colors"
+                  >
+                    {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                    <span>{copied ? 'Texto Copiado!' : 'Copiar Texto da Denúncia'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSubmitted(false)}
+                    className="px-5 py-2 bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-emerald-800"
+                  >
+                    Registrar Nova Comunicação
+                  </button>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">

@@ -11,7 +11,9 @@ import {
   ShieldAlert,
   Building2,
   ExternalLink,
-  HelpCircle
+  HelpCircle,
+  Copy,
+  Check
 } from 'lucide-react';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { SITE_CONTACT, DEPARTMENTS } from '../data/siteContact';
@@ -25,26 +27,23 @@ const ContatoPage: React.FC = () => {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sent, setSent] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const getMailBody = () =>
+    `DEPARTAMENTO: ${department}\nSOLICITANTE: ${name}\nE-MAIL: ${email}\nTELEFONE: ${phone || 'Não informado'}\nASSUNTO: ${subject}\n\nMENSAGEM:\n${message}\n\nData: ${new Date().toLocaleDateString('pt-BR')}`;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Monta o link mailto com o conteúdo preenchido
-    const mailBody = `DEPARTAMENTO: ${department}
-SOLICITANTE: ${name}
-E-MAIL: ${email}
-TELEFONE: ${phone || 'Não informado'}
-ASSUNTO: ${subject}
-
-MENSAGEM:
-${message}
-
-Data: ${new Date().toLocaleDateString('pt-BR')}`;
-
     window.location.href = `mailto:${SITE_CONTACT.email}?subject=${encodeURIComponent(
       `[Contato SPC - ${department}] ${subject}`
-    )}&body=${encodeURIComponent(mailBody)}`;
-
+    )}&body=${encodeURIComponent(getMailBody())}`;
     setSent(true);
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(getMailBody());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
   };
 
   return (
@@ -72,6 +71,26 @@ Data: ${new Date().toLocaleDateString('pt-BR')}`;
       </section>
 
       <div className="max-w-[1240px] mx-auto px-6 py-12 md:py-16">
+        {/* Banner de Denúncias - visível antes do formulário */}
+        <div className="mb-8 rounded-2xl border-2 border-red-300 bg-red-50 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <ShieldAlert size={22} className="text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <h3 className="font-black text-red-900 text-sm">Presenciou obra irregular ou demolição em bem tombado?</h3>
+              <p className="text-xs text-red-800 leading-relaxed">
+                Para denúncias de dano ao patrimônio, use o canal específico de fiscalização do DPHAP — não o formulário de contato geral.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/denuncia"
+            className="whitespace-nowrap inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-700 hover:bg-red-800 text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm self-end sm:self-center"
+          >
+            <ShieldAlert size={14} />
+            <span>Canal de Denúncias →</span>
+          </Link>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* COLUNA ESQUERDA: FORMULÁRIO DE CONTATO (7 COLUNAS) */}
           <div className="lg:col-span-7 bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
@@ -88,20 +107,37 @@ Data: ${new Date().toLocaleDateString('pt-BR')}`;
             </div>
 
             {sent ? (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center space-y-3">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center space-y-4">
                 <CheckCircle2 size={40} className="mx-auto text-emerald-600" />
                 <h3 className="font-bold text-emerald-900 text-lg">Mensagem Encaminhada!</h3>
                 <p className="text-sm text-emerald-800 leading-relaxed max-w-md mx-auto">
-                  Sua mensagem foi estruturada e aberta no seu gerenciador de e-mail institucional. Caso não tenha aberto automaticamente, escreva diretamente para{' '}
-                  <strong className="underline">{SITE_CONTACT.email}</strong>.
+                  Sua mensagem foi estruturada e aberta no seu gerenciador de e-mail institucional para envio a{' '}
+                  <strong className="underline">{SITE_CONTACT.email}</strong>. Caso não tenha aberto automaticamente, escreva diretamente para este endereço.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setSent(false)}
-                  className="px-5 py-2 bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-emerald-800"
-                >
-                  Enviar Outra Mensagem
-                </button>
+                <div className="flex flex-wrap gap-2 justify-center pt-1">
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-emerald-300 bg-white text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-colors"
+                  >
+                    {copied ? <Check size={13} /> : <Check size={13} />}
+                    <span>{copied ? 'Copiado!' : 'Copiar Texto da Mensagem'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSent(false)}
+                    className="px-5 py-2 bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-emerald-800"
+                  >
+                    Enviar Outra Mensagem
+                  </button>
+                </div>
+                {/* Link de denúncias no estado de confirmação */}
+                <div className="mt-2 p-3 bg-red-50 rounded-xl border border-red-200">
+                  <p className="text-xs text-red-800">
+                    <strong>Se sua demanda é uma denúncia de obra irregular,</strong>{' '}
+                    <Link to="/denuncia" className="font-black underline text-red-700">acesse o canal oficial de denúncias →</Link>
+                  </p>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
