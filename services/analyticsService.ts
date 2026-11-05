@@ -180,8 +180,8 @@ async function resolveAnonymousLocation(): Promise<GeoInfo> {
   const fallback: GeoInfo = tz.includes('Fortaleza') || tz.includes('Belem') || tz.includes('Recife')
     ? { city: 'Região Nordeste (fuso local)', region: 'MA/NE', country: 'Brasil' }
     : tz.includes('America/')
-    ? { city: `Brasil (${tz.split('/')[1] || 'Local'})`, region: 'BR', country: 'Brasil' }
-    : { city: 'Origem protegida por navegador', region: '—', country: 'Brasil' };
+      ? { city: `Brasil (${tz.split('/')[1] || 'Local'})`, region: 'BR', country: 'Brasil' }
+      : { city: 'Origem protegida por navegador', region: '—', country: 'Brasil' };
 
   try {
     sessionStorage.setItem(GEO_CACHE_KEY, JSON.stringify(fallback));
@@ -655,3 +655,4 @@ export async function checkAndTriggerScheduledReport(
 
   return null;
 }
+

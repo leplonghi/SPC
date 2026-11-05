@@ -42,6 +42,7 @@ import {
   anoDoDecreto
 } from '../data/bensTombados';
 import { SITE_CONTACT } from '../data/siteContact';
+import { MAPAS_HISTORICOS, getMapasTombamentoPorMunicipio } from '../data/mapasHistoricos';
 
 const norm = (s: string) =>
   s
@@ -269,13 +270,13 @@ const BensTombadosPage: React.FC = () => {
               <p className="mt-3 max-w-xl text-base text-slate-200">
                 Bens tombados pelo Estado do Maranhão, com decreto e dados do Livro do Tombo. Os gráficos funcionam como filtro.
               </p>
-              <div className="mt-4">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                   to="/mapa"
                   className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/25 px-4 py-1.5 text-xs font-bold text-[#E9B44C] hover:bg-white/20 transition-colors"
                 >
                   <Compass size={14} aria-hidden="true" />
-                  <span>Explorar Plantas Históricas de São Luís (1698–1912)</span>
+                  <span>Explorar Plantas Históricas (1698–1912) e Mapas de Tombamento ({MAPAS_HISTORICOS.length} pranchas)</span>
                 </Link>
               </div>
               <div className="mt-5 max-w-xl">
@@ -512,6 +513,83 @@ const BensTombadosPage: React.FC = () => {
           )}
         </div>
 
+        {/* Painel de Mapas de Tombamento por Município (São Luís, Alcântara, Viana, Caxias e Carolina) */}
+        {(() => {
+          const mapasMunicipio = municipio
+            ? getMapasTombamentoPorMunicipio(municipio)
+            : MAPAS_HISTORICOS.filter((m) => m.categoria === 'Mapa de Tombamento');
+          if (mapasMunicipio.length === 0) return null;
+          return (
+            <div className="mb-6 rounded-2xl border border-brand-terracotta/30 bg-white p-4 sm:p-5 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                <div>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-brand-terracotta">
+                    <Compass size={13} aria-hidden="true" />
+                    {municipio
+                      ? `Mapas Oficiais de Tombamento — ${municipio}`
+                      : 'Mapas e Poligonais de Tombamento por Município (SPC/DPHAP)'}
+                  </span>
+                  <h3 className="text-sm sm:text-base font-bold text-brand-navy mt-0.5">
+                    {municipio
+                      ? `Baixe ou interaja com as pranchas de delimitação do tombamento de ${municipio}`
+                      : 'Disponíveis para download e consulta interativa: São Luís, Alcântara, Viana, Caxias e Carolina'}
+                  </h3>
+                </div>
+                <Link
+                  to="/mapa?categoria=tombamento"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-blue-dark hover:text-brand-navy underline shrink-0"
+                >
+                  <span>Abrir visor cartográfico completo</span>
+                </Link>
+              </div>
+
+              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                {mapasMunicipio.map((mapa) => (
+                  <div
+                    key={mapa.id}
+                    className="flex flex-col justify-between gap-2.5 rounded-xl border border-slate-200 bg-[#FAF8F5] p-3 text-xs"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setMunicipio(mapa.municipio)}
+                          className="font-black text-brand-navy hover:text-brand-terracotta underline-offset-2 hover:underline text-left"
+                        >
+                          {mapa.municipio}
+                        </button>
+                        <span className="rounded bg-brand-navy/10 px-2 py-0.5 text-[10px] font-bold text-brand-navy">
+                          {mapa.ano}
+                        </span>
+                      </div>
+                      <p className="mt-1 font-semibold text-slate-800 leading-snug line-clamp-2">{mapa.titulo}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200/70">
+                      <a
+                        href={mapa.downloadUrl}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-lg bg-brand-navy px-2.5 py-1 text-[11px] font-bold text-white hover:bg-brand-blue transition-colors"
+                      >
+                        <Download size={11} aria-hidden="true" />
+                        <span>Baixar Mapa ({mapa.downloadUrl.endsWith('.pdf') ? 'PDF' : 'PNG'})</span>
+                      </a>
+                      <Link
+                        to={`/mapa?mapa=${encodeURIComponent(mapa.id)}`}
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-bold text-brand-navy hover:bg-slate-100 transition-colors"
+                      >
+                        <Compass size={11} aria-hidden="true" />
+                        <span>Interagir</span>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Barra de Controles Sticky: Contagem, Ordenação e Modo de Visualização */}
         <div className="sticky top-[62px] z-20 mb-6 rounded-2xl border border-brand-sand bg-white/95 px-4 py-3 shadow-sm backdrop-blur">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -667,6 +745,7 @@ const BensTombadosPage: React.FC = () => {
               const tipoBem = TIPO_POR_INSCRICAO[bem.id] ?? 'Patrimônio Edificado';
               const isExpanded = Boolean(expandidos[bem.id]);
               const pBadge = periodoBadge(bem);
+              const mapasTombamentoMun = getMapasTombamentoPorMunicipio(bem.municipio);
 
               return (
                 <article
@@ -692,7 +771,35 @@ const BensTombadosPage: React.FC = () => {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {mapasTombamentoMun.map((mapaMun) => (
+                          <a
+                            key={mapaMun.id}
+                            href={mapaMun.downloadUrl}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-lg border border-brand-terracotta/40 bg-brand-terracotta/10 px-2.5 py-1 text-xs font-bold text-brand-terracotta hover:bg-brand-terracotta hover:text-white transition-colors"
+                            title={`Baixar ${mapaMun.titulo} (${mapaMun.formatoDownload})`}
+                          >
+                            <Download size={12} />
+                            <span>
+                              {mapasTombamentoMun.length > 1
+                                ? `Mapa: ${mapaMun.ano}`
+                                : `Mapa de Tombamento (${bem.municipio})`}
+                            </span>
+                          </a>
+                        ))}
+                        {mapasTombamentoMun.length > 0 && (
+                          <Link
+                            to={`/mapa?mapa=${encodeURIComponent(mapasTombamentoMun[0].id)}`}
+                            className="inline-flex items-center gap-1 rounded-lg border border-brand-blue/30 bg-brand-blue/10 px-2.5 py-1 text-xs font-bold text-brand-blue-dark hover:bg-brand-blue hover:text-white transition-colors"
+                            title={`Abrir mapa interativo de ${bem.municipio}`}
+                          >
+                            <Compass size={12} />
+                            <span>Ver no Mapa</span>
+                          </Link>
+                        )}
                         {pdf ? (
                           <a
                             href={pdf.url}
@@ -866,6 +973,7 @@ const BensTombadosPage: React.FC = () => {
                     const dataDecreto = fmtData(bem.decreto.data);
                     const pdf = DECRETOS_PDF[bem.decreto.numero];
                     const tipoBem = TIPO_POR_INSCRICAO[bem.id] ?? 'Patrimônio';
+                    const mapasTombamentoRow = getMapasTombamentoPorMunicipio(bem.municipio);
 
                     return (
                       <tr key={bem.id} className="hover:bg-slate-50 transition-colors">
@@ -907,6 +1015,19 @@ const BensTombadosPage: React.FC = () => {
                             >
                               {copiadoId === bem.id ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
                             </button>
+                            {mapasTombamentoRow.map((mRow) => (
+                              <a
+                                key={mRow.id}
+                                href={mRow.downloadUrl}
+                                download
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 rounded bg-brand-terracotta px-2 py-1 text-[11px] font-bold text-white hover:bg-brand-navy transition-colors"
+                                title={`Baixar ${mRow.titulo}`}
+                              >
+                                <Download size={11} /> Mapa
+                              </a>
+                            ))}
                             {pdf ? (
                               <a
                                 href={pdf.url}

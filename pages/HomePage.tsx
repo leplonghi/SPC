@@ -121,10 +121,10 @@ export const HomePage: React.FC = () => {
             <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
               <div>
                 <h3 className="text-lg font-bold text-brand-navy group-hover:text-brand-terracotta transition-colors">
-                  Cartografia Histórica Interativa
+                  Cartografia Histórica & Poligonais
                 </h3>
                 <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
-                  Explore a gravura de 1698 (Pe. Andrea da Silva) e a Planta de 1912 (Ribeiro do Amaral) com zoom e marcos clicáveis vinculados ao Livro do Tombo.
+                  Explore e baixe cartas históricas (1698, 1819, 1858 e 1912) e os mapas de tombamento de São Luís, Alcântara, Viana, Caxias e Carolina.
                 </p>
               </div>
               <span className="text-xs font-bold text-brand-navy underline">

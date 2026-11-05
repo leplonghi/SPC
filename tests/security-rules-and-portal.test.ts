@@ -7,6 +7,7 @@ import { BENS_TOMBADOS, DECRETOS_PDF } from '../data/bensTombados.ts';
 import { PUBLIC_LEGAL_DOCUMENTS } from '../data/publicLegalDocuments.ts';
 import { SEDE_MUNICIPIO } from '../data/municipios.ts';
 import { SUPER_ADMIN_EMAIL } from '../data/adminConfig.ts';
+import { MAPAS_HISTORICOS, getMapasTombamentoPorMunicipio } from '../data/mapasHistoricos.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -355,5 +356,21 @@ test('Etapa C e E - Integridade do acervo, legislação, mapas e configuração 
       const localPath = path.join(ROOT_DIR, 'public', doc.sourceUrl);
       assert.ok(fs.existsSync(localPath), `Arquivo de legislação ausente: ${localPath}`);
     }
+  }
+
+  // 5. Verifica integridade dos 12 mapas históricos e de tombamento em public/cena-fotos/
+  assert.equal(MAPAS_HISTORICOS.length, 12);
+  for (const mapa of MAPAS_HISTORICOS) {
+    const srcPath = path.join(ROOT_DIR, 'public', mapa.src);
+    const dlPath = path.join(ROOT_DIR, 'public', mapa.downloadUrl);
+    assert.ok(fs.existsSync(srcPath), `Imagem interativa do mapa ${mapa.id} ausente em ${srcPath}`);
+    assert.ok(fs.existsSync(dlPath), `Arquivo para download do mapa ${mapa.id} ausente em ${dlPath}`);
+    assert.ok(mapa.points.length > 0, `Mapa ${mapa.id} deve conter pontos interativos`);
+  }
+
+  // Verifica que os municípios citados possuem mapas de tombamento vinculados
+  for (const mun of ['São Luís', 'Alcântara', 'Viana', 'Caxias', 'Carolina']) {
+    const mapasMun = getMapasTombamentoPorMunicipio(mun);
+    assert.ok(mapasMun.length >= 1, `Município ${mun} deve ter ao menos 1 mapa de tombamento vinculado`);
   }
 });

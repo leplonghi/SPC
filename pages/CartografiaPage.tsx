@@ -1,23 +1,69 @@
-import React, { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Compass, FileText, Landmark, MapPin, ArrowUpRight, Layers, BookOpen } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  Compass,
+  FileText,
+  Landmark,
+  MapPin,
+  ArrowUpRight,
+  Layers,
+  BookOpen,
+  Download,
+  Image as ImageIcon,
+  ShieldCheck
+} from 'lucide-react';
 import { PanZoomImage } from '../components/ui/PanZoomImage';
-import { MAPAS_HISTORICOS, type MapaHistorico, type PontoMapaHistorico } from '../data/mapasHistoricos';
+import {
+  MAPAS_HISTORICOS,
+  type CategoriaMapa,
+  type MapaHistorico,
+  type PontoMapaHistorico
+} from '../data/mapasHistoricos';
 import { BENS_TOMBADOS, DECRETOS_PDF, type BemTombado } from '../data/bensTombados';
 import { MunicipiosMap, SEDE_MUNICIPIO, type MapPoint } from '../components/dataviz/MunicipiosMap';
 import { usePageTitle } from '../hooks/usePageTitle';
 
 export const CartografiaPage: React.FC = () => {
-  usePageTitle('Cartografia histórica e mapas');
+  usePageTitle('Cartografia histórica e mapas de tombamento');
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [selectedMapId, setSelectedMapId] = useState<string>(MAPAS_HISTORICOS[0].id);
-  const [selectedPointId, setSelectedPointId] = useState<string | null>(MAPAS_HISTORICOS[0].points[0]?.id ?? null);
+  const mapaParam = searchParams.get('mapa');
+  const categoriaParam = searchParams.get('categoria');
+
+  const initialMap = useMemo(() => {
+    if (mapaParam) {
+      const found = MAPAS_HISTORICOS.find((m) => m.id === mapaParam);
+      if (found) return found;
+    }
+    return MAPAS_HISTORICOS[0];
+  }, [mapaParam]);
+
+  const [filtroCategoria, setFiltroCategoria] = useState<'todas' | CategoriaMapa>(
+    categoriaParam === 'tombamento' ? 'Mapa de Tombamento' : 'todas'
+  );
+  const [selectedMapId, setSelectedMapId] = useState<string>(initialMap.id);
+  const [selectedPointId, setSelectedPointId] = useState<string | null>(initialMap.points[0]?.id ?? null);
   const [selectedMunicipio, setSelectedMunicipio] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (mapaParam) {
+      const found = MAPAS_HISTORICOS.find((m) => m.id === mapaParam);
+      if (found) {
+        setSelectedMapId(found.id);
+        setSelectedPointId(found.points[0]?.id ?? null);
+      }
+    }
+  }, [mapaParam]);
+
+  const mapasFiltrados = useMemo(() => {
+    if (filtroCategoria === 'todas') return MAPAS_HISTORICOS;
+    return MAPAS_HISTORICOS.filter((m) => m.categoria === filtroCategoria);
+  }, [filtroCategoria]);
+
   const activeMap: MapaHistorico = useMemo(
-    () => MAPAS_HISTORICOS.find((m) => m.id === selectedMapId) || MAPAS_HISTORICOS[0],
-    [selectedMapId]
+    () => MAPAS_HISTORICOS.find((m) => m.id === selectedMapId) || mapasFiltrados[0] || MAPAS_HISTORICOS[0],
+    [selectedMapId, mapasFiltrados]
   );
 
   const activePoint: PontoMapaHistorico | null = useMemo(() => {
@@ -44,9 +90,29 @@ export const CartografiaPage: React.FC = () => {
     }));
   }, []);
 
+  const totalHistoricos = useMemo(
+    () => MAPAS_HISTORICOS.filter((m) => m.categoria === 'Planta e Carta Histórica').length,
+    []
+  );
+  const totalTombamento = useMemo(
+    () => MAPAS_HISTORICOS.filter((m) => m.categoria === 'Mapa de Tombamento').length,
+    []
+  );
+
   const handleSelectMap = (map: MapaHistorico) => {
     setSelectedMapId(map.id);
     setSelectedPointId(map.points[0]?.id ?? null);
+    setSearchParams({ mapa: map.id }, { replace: true });
+    document.getElementById('palco-cartografico')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleSelectCategoria = (cat: 'todas' | CategoriaMapa) => {
+    setFiltroCategoria(cat);
+    const list = cat === 'todas' ? MAPAS_HISTORICOS : MAPAS_HISTORICOS.filter((m) => m.categoria === cat);
+    if (list.length > 0 && !list.some((m) => m.id === activeMap.id)) {
+      setSelectedMapId(list[0].id);
+      setSelectedPointId(list[0].points[0]?.id ?? null);
+    }
   };
 
   return (
@@ -56,71 +122,103 @@ export const CartografiaPage: React.FC = () => {
         <div className="max-w-[1240px] mx-auto px-6">
           <div className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-[#E9B44C]">
             <Compass size={15} aria-hidden="true" />
-            <span>Cartografia Histórica & Território</span>
+            <span>Cartografia Histórica & Poligonais de Tombamento</span>
           </div>
           <h1 className="mt-2 text-3xl sm:text-4xl font-black tracking-tight text-white">
-            Mapas e Plantas Históricas do Maranhão
+            Mapas Históricos e Poligonais de Tombamento do Maranhão
           </h1>
           <p className="mt-3 max-w-3xl text-sm sm:text-base text-slate-200 leading-relaxed">
-            Explore a evolução urbana de São Luís por meio de gravuras e plantas históricas digitalizadas.
-            Selecione um período abaixo e clique nos marcos assinalados na planta para consultar as fichas de
-            tombamento estadual e os respectivos decretos na relação oficial da SPC.
+            Explore interativamente e faça o download de{' '}
+            <strong className="text-white">{MAPAS_HISTORICOS.length} pranchas e mapas oficiais</strong> do acervo da
+            SPC/SECMA: cartas históricas do Maranhão e de São Luís (1698, 1819, 1858 e 1912) e mapas de tombamento e
+            delimitação de poligonais de <strong>São Luís, Alcântara, Viana, Caxias e Carolina</strong>.
           </p>
         </div>
       </header>
 
-      {/* Seção 1: Linha do Tempo de Mapas Históricos */}
+      {/* Seção 1: Seletor de Categoria + Pranchas Interativas */}
       <section aria-labelledby="linha-tempo-mapas" className="max-w-[1240px] mx-auto px-6 py-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-6">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-brand-terracotta">
-              Linha do Tempo Cartográfica ({MAPAS_HISTORICOS.length} pranchas disponíveis)
+              Acervo Cartográfico Digital ({MAPAS_HISTORICOS.length} pranchas interativas e para download)
             </span>
             <h2 id="linha-tempo-mapas" className="text-2xl font-black text-brand-navy mt-1">
-              Selecione a época ou prancha histórica
+              Selecione a prancha histórica ou mapa de tombamento
             </h2>
           </div>
-          <Link
-            to="/bens-tombados"
-            className="inline-flex items-center gap-2 text-xs font-bold text-brand-navy underline underline-offset-4 hover:text-brand-terracotta"
-          >
-            <Landmark size={15} aria-hidden="true" />
-            Ver catálogo completo dos {BENS_TOMBADOS.length} bens tombados
-          </Link>
+
+          {/* Filtro Rápido de Categoria */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleSelectCategoria('todas')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                filtroCategoria === 'todas'
+                  ? 'bg-brand-navy text-white shadow-sm'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:border-brand-navy/40'
+              }`}
+            >
+              Todas as pranchas ({MAPAS_HISTORICOS.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectCategoria('Planta e Carta Histórica')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                filtroCategoria === 'Planta e Carta Histórica'
+                  ? 'bg-brand-blue text-white shadow-sm'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:border-brand-blue'
+              }`}
+            >
+              Plantas e Cartas Históricas ({totalHistoricos})
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSelectCategoria('Mapa de Tombamento')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                filtroCategoria === 'Mapa de Tombamento'
+                  ? 'bg-brand-terracotta text-white shadow-sm'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:border-brand-terracotta'
+              }`}
+            >
+              Mapas de Tombamento ({totalTombamento})
+            </button>
+          </div>
         </div>
 
         {/* Abas / Cartões Seletores de Mapa */}
         <div
           role="tablist"
-          aria-label="Plantas históricas disponíveis"
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
+          aria-label="Plantas históricas e mapas de tombamento disponíveis"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8"
         >
-          {MAPAS_HISTORICOS.map((mapa) => {
+          {mapasFiltrados.map((mapa) => {
             const isSelected = mapa.id === activeMap.id;
+            const isTombamento = mapa.categoria === 'Mapa de Tombamento';
             return (
-              <button
+              <div
                 key={mapa.id}
-                type="button"
-                role="tab"
-                aria-selected={isSelected}
-                onClick={() => handleSelectMap(mapa)}
-                className={`text-left rounded-2xl p-5 border-2 transition-all flex flex-col justify-between gap-3 ${
+                className={`rounded-2xl p-5 border-2 transition-all flex flex-col justify-between gap-3 ${
                   isSelected
                     ? 'bg-brand-navy text-white border-brand-navy shadow-lg'
                     : 'bg-white text-slate-800 border-slate-200 hover:border-brand-terracotta/60 hover:bg-amber-50/30'
                 }`}
               >
                 <div>
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span
                       className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider ${
-                        isSelected ? 'bg-[#E9B44C] text-brand-navy' : 'bg-slate-100 text-brand-navy'
+                        isSelected
+                          ? 'bg-[#E9B44C] text-brand-navy'
+                          : isTombamento
+                          ? 'bg-brand-terracotta/15 text-brand-terracotta'
+                          : 'bg-slate-100 text-brand-navy'
                       }`}
                     >
                       {mapa.ano}
                     </span>
                     <span className={`text-[11px] font-semibold ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>
-                      {mapa.points.length} marcos mapeados
+                      {mapa.categoria} · {mapa.points.length} marcos
                     </span>
                   </div>
                   <h3 className={`mt-2.5 text-base font-bold leading-snug ${isSelected ? 'text-white' : 'text-brand-navy'}`}>
@@ -130,31 +228,101 @@ export const CartografiaPage: React.FC = () => {
                     {mapa.epocaLabel} · {mapa.autor}
                   </p>
                 </div>
-                <div className={`text-[11px] font-bold flex items-center gap-1 ${isSelected ? 'text-[#E9B44C]' : 'text-brand-terracotta'}`}>
-                  <Layers size={13} aria-hidden="true" />
-                  <span>{isSelected ? 'Planta em exibição abaixo' : 'Alternar para esta planta'}</span>
+
+                <div className="pt-2 border-t border-current/10 flex flex-wrap items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={isSelected}
+                    onClick={() => handleSelectMap(mapa)}
+                    className={`text-xs font-bold inline-flex items-center gap-1.5 ${
+                      isSelected ? 'text-[#E9B44C]' : 'text-brand-navy hover:text-brand-terracotta'
+                    }`}
+                  >
+                    <Layers size={14} aria-hidden="true" />
+                    <span>{isSelected ? 'Em exibição no visor abaixo' : 'Interagir no visor (Zoom/Pinos)'}</span>
+                  </button>
+
+                  <a
+                    href={mapa.downloadUrl}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                      isSelected
+                        ? 'bg-white/15 text-white hover:bg-white/25'
+                        : 'bg-brand-sage-dark/10 text-brand-sage-dark hover:bg-brand-sage-dark hover:text-white'
+                    }`}
+                    title={`Baixar arquivo original (${mapa.formatoDownload})`}
+                  >
+                    <Download size={12} aria-hidden="true" />
+                    <span>Baixar ({mapa.downloadUrl.endsWith('.pdf') ? 'PDF' : 'Imagem'})</span>
+                  </a>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
 
         {/* Palco Principal: PanZoomImage + Ficha do Marco Selecionado */}
-        <div className="bg-brand-navy text-white rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div id="palco-cartografico" className="bg-brand-navy text-white rounded-3xl p-6 sm:p-8 shadow-xl scroll-mt-20">
           <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-6 pb-6 border-b border-white/15">
-            <div className="space-y-1.5 max-w-3xl">
+            <div className="space-y-2 max-w-3xl">
               <div className="flex flex-wrap items-center gap-2 text-xs text-[#E9B44C] font-bold uppercase tracking-wider">
+                <span>{activeMap.categoria}</span>
+                <span aria-hidden="true">·</span>
                 <span>{activeMap.municipio}</span>
                 <span aria-hidden="true">·</span>
                 <span>{activeMap.epocaLabel}</span>
               </div>
               <h3 className="text-2xl font-black text-white">{activeMap.titulo}</h3>
               <p className="text-sm text-slate-200 leading-relaxed">{activeMap.resumo}</p>
+
+              {/* Botões de Download Direto e Abertura em Tela Cheia da Prancha Selecionada */}
+              <div className="pt-2 flex flex-wrap items-center gap-3">
+                <a
+                  href={activeMap.downloadUrl}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#E9B44C] px-4 py-2.5 text-xs font-black text-brand-navy shadow-md hover:bg-amber-300 transition-colors"
+                >
+                  <Download size={15} aria-hidden="true" />
+                  <span>Baixar Mapa Original ({activeMap.formatoDownload})</span>
+                </a>
+
+                {activeMap.downloadUrl.endsWith('.pdf') && (
+                  <a
+                    href={activeMap.srcFull || activeMap.src}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 border border-white/20 px-3.5 py-2.5 text-xs font-bold text-white hover:bg-white/20 transition-colors"
+                  >
+                    <ImageIcon size={14} aria-hidden="true" />
+                    <span>Baixar Versão em Imagem (JPG)</span>
+                  </a>
+                )}
+
+                {activeMap.municipiosRelacionados.length === 1 && (
+                  <Link
+                    to={`/bens-tombados?municipio=${encodeURIComponent(activeMap.municipiosRelacionados[0])}`}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 border border-white/20 px-3.5 py-2.5 text-xs font-bold text-white hover:bg-white/20 transition-colors"
+                  >
+                    <Landmark size={14} aria-hidden="true" />
+                    <span>Ver Bens Tombados de {activeMap.municipiosRelacionados[0]}</span>
+                  </Link>
+                )}
+              </div>
             </div>
-            <div className="text-xs text-slate-300 bg-white/5 border border-white/10 rounded-2xl p-4 lg:max-w-xs shrink-0 space-y-1">
+
+            <div className="text-xs text-slate-300 bg-white/5 border border-white/10 rounded-2xl p-4 lg:max-w-xs shrink-0 space-y-1.5">
               <p className="font-bold text-white">Autoria e Fonte Documental</p>
               <p>{activeMap.autor}</p>
               <p className="text-slate-300">{activeMap.fonte}</p>
+              <p className="text-[11px] text-[#E9B44C] pt-1 font-semibold">
+                Dimensões base: {activeMap.width} × {activeMap.height} px
+              </p>
             </div>
           </div>
 
@@ -171,7 +339,7 @@ export const CartografiaPage: React.FC = () => {
                 onSelectPoint={(ptId) => setSelectedPointId(ptId)}
               />
               <p className="mt-3 text-xs text-slate-300 leading-relaxed">
-                <strong>Leitura urbana:</strong> {activeMap.leituraUrbana}
+                <strong>Leitura urbana e patrimonial:</strong> {activeMap.leituraUrbana}
               </p>
             </div>
 
@@ -185,13 +353,13 @@ export const CartografiaPage: React.FC = () => {
                   <div>
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-terracotta/15 text-brand-terracotta text-[11px] font-black uppercase tracking-wider">
                       <MapPin size={12} aria-hidden="true" />
-                      Marco selecionado na planta
+                      Marco selecionado na prancha
                     </span>
                     <h4 className="mt-2 text-lg font-black text-brand-navy leading-snug">
                       “{activePoint.label}”
                     </h4>
                     <p className="text-xs font-bold text-slate-600 mt-0.5">
-                      Denominação atual: <span className="text-slate-900">{activePoint.nomeAtual}</span>
+                      Correspondência: <span className="text-slate-900">{activePoint.nomeAtual}</span>
                     </p>
                   </div>
 
@@ -205,7 +373,7 @@ export const CartografiaPage: React.FC = () => {
                         <Landmark size={14} className="text-brand-terracotta" aria-hidden="true" />
                         Bens Tombados Relacionados ({linkedAssets.length})
                       </h5>
-                      <ul className="space-y-2.5">
+                      <ul className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
                         {linkedAssets.map((bem) => {
                           const pdf = DECRETOS_PDF[bem.decreto.numero];
                           return (
@@ -250,7 +418,17 @@ export const CartografiaPage: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="pt-2">
+                  <div className="pt-2 space-y-2">
+                    <a
+                      href={activeMap.downloadUrl}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-sage-dark text-white text-xs font-bold hover:bg-brand-navy transition"
+                    >
+                      <Download size={14} aria-hidden="true" />
+                      <span>Baixar esta Prancha ({activeMap.formatoDownload})</span>
+                    </a>
                     <Link
                       to="/bens-tombados"
                       className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-navy text-white text-xs font-bold hover:bg-brand-navy/90 transition"
@@ -270,7 +448,75 @@ export const CartografiaPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Seção 2: Mapa Geográfico dos Municípios Maranhenses com Bens Tombados */}
+      {/* Seção 2: Biblioteca de Download Direto de Mapas de Tombamento e Cartas Históricas */}
+      <section aria-labelledby="catalogo-downloads-mapas" className="max-w-[1240px] mx-auto px-6 pb-12">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+            <div>
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-brand-terracotta">
+                <ShieldCheck size={14} aria-hidden="true" />
+                Repositório Cartográfico Aberto (SPC/DPHAP)
+              </span>
+              <h2 id="catalogo-downloads-mapas" className="text-xl sm:text-2xl font-black text-brand-navy mt-1">
+                Download Direto de Mapas de Tombamento e Plantas Históricas
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 mt-1">
+                Baixe os arquivos originais em PDF vetorial ou imagem de alta resolução para instrução de processos, pesquisas acadêmicas e projetos arquitetônicos.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {MAPAS_HISTORICOS.map((mapa) => (
+              <div
+                key={`dl-${mapa.id}`}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-[#FAF8F5] p-4 hover:border-brand-navy/30 transition-all"
+              >
+                <div className="space-y-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                        mapa.categoria === 'Mapa de Tombamento'
+                          ? 'bg-brand-terracotta/15 text-brand-terracotta'
+                          : 'bg-brand-blue/15 text-brand-blue-dark'
+                      }`}
+                    >
+                      {mapa.categoria}
+                    </span>
+                    <span className="text-xs font-bold text-brand-navy">{mapa.municipio}</span>
+                    <span className="text-[11px] text-slate-500">· {mapa.ano}</span>
+                  </div>
+                  <h3 className="text-sm font-bold text-brand-navy leading-snug">{mapa.titulo}</h3>
+                  <p className="text-xs text-slate-500 truncate">{mapa.fonte}</p>
+                </div>
+
+                <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectMap(mapa)}
+                    className="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-brand-navy hover:bg-slate-100 transition-colors"
+                  >
+                    <Layers size={13} aria-hidden="true" />
+                    <span>Interagir</span>
+                  </button>
+                  <a
+                    href={mapa.downloadUrl}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-brand-navy px-3.5 py-2 text-xs font-bold text-white hover:bg-brand-blue transition-colors"
+                  >
+                    <Download size={13} aria-hidden="true" />
+                    <span>{mapa.downloadUrl.endsWith('.pdf') ? 'Baixar PDF' : 'Baixar Mapa'}</span>
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Seção 3: Mapa Geográfico dos Municípios Maranhenses com Bens Tombados */}
       <section aria-labelledby="mapa-municipios-titulo" className="bg-white border-t border-slate-200 py-12">
         <div className="max-w-[1240px] mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -282,12 +528,12 @@ export const CartografiaPage: React.FC = () => {
                 Municípios com Bens Tombados no Maranhão
               </h2>
               <p className="text-sm text-slate-700 leading-relaxed">
-                Além da cartografia histórica de São Luís, o cadastro oficial da SPC abrange{' '}
+                Além da cartografia histórica e das poligonais de tombamento, o cadastro oficial da SPC abrange{' '}
                 <strong>{BENS_TOMBADOS.length} inscrições estaduais</strong> distribuídas em{' '}
-                <strong>{municipioPoints.length} municípios maranhenses</strong> (incluindo Alcântara, Caxias, Viana, Carolina, Itapecuru-Mirim, Pindaré-Mirim, Paço do Lumiar, Rosário, Barreirinhas e Buriti).
+                <strong>{municipioPoints.length} municípios maranhenses</strong> (incluindo São Luís, Alcântara, Caxias, Viana, Carolina, Itapecuru-Mirim, Pindaré-Mirim, Paço do Lumiar, Rosário, Barreirinhas e Buriti).
               </p>
               <p className="text-xs text-slate-600">
-                Clique em um círculo no mapa ao lado ou acesse a página de Bens Tombados para filtrar as inscrições e baixar os decretos de tombamento.
+                Clique em um círculo no mapa ao lado ou acesse a página de Bens Tombados para filtrar as inscrições e baixar os decretos e mapas de tombamento de cada município.
               </p>
               <div className="pt-2">
                 <Link
@@ -319,4 +565,3 @@ export const CartografiaPage: React.FC = () => {
 };
 
 export default CartografiaPage;
-
