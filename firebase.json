@@ -9,6 +9,7 @@
     "rules": "storage.rules"
   },
   "hosting": {
+    "site": "spcmaranhao",
     "public": "dist",
     "ignore": [
       "firebase.json",
