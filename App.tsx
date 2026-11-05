@@ -33,7 +33,8 @@ import DenunciaPage from './pages/DenunciaPage';
 import TransparenciaPage from './pages/TransparenciaPage';
 import PrivacidadePage from './pages/PrivacidadePage';
 import TermosPage from './pages/TermosPage';
-import { SITE_CONTACT, DEPARTMENTS } from './data/siteContact';
+import DepartamentoOficialPage from './pages/DepartamentoOficialPage';
+import { SITE_CONTACT } from './data/siteContact';
 import { usePageTitle } from './hooks/usePageTitle';
 import { AzulejoBand } from './components/ui/Reveal';
 
@@ -82,6 +83,8 @@ const PrivateRoute = ({ children, roleRequired }: { children: React.ReactNode, r
 };
 
 const HIGH_CONTRAST_KEY = 'spc-high-contrast';
+const FONT_SCALE_KEY = 'spc-font-scale';
+type FontScale = 'sm' | 'md' | 'lg';
 
 /** Alto contraste: guarda a escolha do visitante e aplica a classe no body. */
 const useHighContrast = () => {
@@ -103,6 +106,31 @@ const useHighContrast = () => {
   }, [enabled]);
 
   return { enabled, toggle: () => setEnabled((v) => !v) };
+};
+
+/** Escala tipográfica (e-MAG: A-, A, A+): ajusta o tamanho-base (rem) do documento. */
+const useFontScale = () => {
+  const [scale, setScale] = useState<FontScale>(() => {
+    try {
+      const saved = localStorage.getItem(FONT_SCALE_KEY);
+      if (saved === 'sm' || saved === 'md' || saved === 'lg') return saved;
+      return 'md';
+    } catch {
+      return 'md';
+    }
+  });
+
+  useEffect(() => {
+    const pct = scale === 'lg' ? '112.5%' : scale === 'sm' ? '92.5%' : '100%';
+    document.documentElement.style.fontSize = pct;
+    try {
+      localStorage.setItem(FONT_SCALE_KEY, scale);
+    } catch {
+      /* armazenamento indisponível */
+    }
+  }, [scale]);
+
+  return { scale, setScale };
 };
 
 /** Widget oficial do VLibras (tradução para Libras), do Governo Federal. */
@@ -177,6 +205,7 @@ const Navigation = () => {
 
   const { user, logout, isAdmin, isColaborador } = useAuth();
   const highContrast = useHighContrast();
+  const fontScale = useFontScale();
 
   const navItems = [
     { label: 'A SPC', path: '/institucional', icon: <Info size={18} /> },
@@ -212,7 +241,45 @@ const Navigation = () => {
             </L>
           </div>
 
-          <div className="flex items-center space-x-5">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-1" role="group" aria-label="Tamanho da fonte">
+              <button
+                type="button"
+                onClick={() => fontScale.setScale('sm')}
+                aria-pressed={fontScale.scale === 'sm'}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-black transition-colors ${
+                  fontScale.scale === 'sm' ? 'bg-white text-brand-navy' : 'text-slate-300 hover:text-white'
+                }`}
+                title="Diminuir fonte (A-)"
+              >
+                A-
+              </button>
+              <button
+                type="button"
+                onClick={() => fontScale.setScale('md')}
+                aria-pressed={fontScale.scale === 'md'}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-black transition-colors ${
+                  fontScale.scale === 'md' ? 'bg-white text-brand-navy' : 'text-slate-300 hover:text-white'
+                }`}
+                title="Fonte padrão (A)"
+              >
+                A
+              </button>
+              <button
+                type="button"
+                onClick={() => fontScale.setScale('lg')}
+                aria-pressed={fontScale.scale === 'lg'}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-black transition-colors ${
+                  fontScale.scale === 'lg' ? 'bg-white text-brand-navy' : 'text-slate-300 hover:text-white'
+                }`}
+                title="Aumentar fonte (A+)"
+              >
+                A+
+              </button>
+            </div>
+
+            <span className="text-white/20" aria-hidden="true">|</span>
+
             <button
               type="button"
               aria-pressed={highContrast.enabled}
@@ -373,6 +440,24 @@ const Navigation = () => {
                   <Accessibility size={18} aria-hidden="true" />
                   <span className="text-sm">Alto contraste</span>
                 </button>
+                <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-slate-50 text-xs font-bold text-slate-600">
+                  <span>Tamanho do texto:</span>
+                  <div className="flex items-center gap-1.5" role="group" aria-label="Tamanho da fonte">
+                    {(['sm', 'md', 'lg'] as FontScale[]).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => fontScale.setScale(s)}
+                        aria-pressed={fontScale.scale === s}
+                        className={`px-2.5 py-1 rounded-lg font-black ${
+                          fontScale.scale === s ? 'bg-brand-navy text-white' : 'bg-white text-brand-navy border border-slate-200'
+                        }`}
+                      >
+                        {s === 'sm' ? 'A-' : s === 'md' ? 'A' : 'A+'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="p-2 bg-brand-navy rounded-2xl">
                   <SiteSearch compact />
                 </div>
@@ -473,46 +558,57 @@ const Footer = () => {
   );
 };
 
-/** Páginas internas ainda sem conteúdo público: dizem a verdade e dão um caminho. */
-const ModuloEmAtualizacao = () => {
-  usePageTitle('Página em preparação');
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 px-6 text-center">
-      <Clock size={56} className="text-brand-blue" aria-hidden="true" />
-      <h1 className="text-3xl font-black text-brand-dark">Esta página ainda não está disponível</h1>
-      <p className="text-slate-600 max-w-md">
-        Estamos preparando este conteúdo. Enquanto isso, você pode consultar a legislação ou falar diretamente com a SPC.
-      </p>
-      <div className="flex flex-wrap gap-3 justify-center">
-        <L to="/legislacao" className="px-6 py-3 bg-brand-navy text-white rounded-xl font-bold hover:shadow-xl transition-all">Ver legislação</L>
-        <L to="/contato" className="px-6 py-3 bg-white text-brand-navy border-2 border-brand-navy rounded-xl font-bold hover:bg-slate-50 transition-all">Falar com a SPC</L>
-      </div>
-      <p className="text-sm text-slate-500">
-        <a className="underline font-bold" href={`mailto:${SITE_CONTACT.email}`}>{SITE_CONTACT.email}</a>
-      </p>
-    </div>
-  );
+const ROUTE_BREADCRUMBS: Record<string, { label: string; parent?: { label: string; to: string } }> = {
+  '/institucional': { label: 'A SPC (Institucional)' },
+  '/servicos': { label: 'Carta de Serviços e Protocolo' },
+  '/bens-tombados': { label: 'Bens Tombados (Livro do Tombo)' },
+  '/mapa': { label: 'Cartografia Histórica e Mapas' },
+  '/acervo-digital': { label: 'Cartografia Histórica e Acervo' },
+  '/acervo': { label: 'Cartografia Histórica e Acervo' },
+  '/legislacao': { label: 'Biblioteca de Legislação' },
+  '/repositorio': { label: 'Biblioteca de Legislação e Repositório' },
+  '/dphap': { label: 'DPHAP', parent: { label: 'A SPC', to: '/institucional' } },
+  '/dpi': { label: 'DPI', parent: { label: 'A SPC', to: '/institucional' } },
+  '/dpe': { label: 'DPE', parent: { label: 'A SPC', to: '/institucional' } },
+  '/contato': { label: 'Canais de Atendimento' },
+  '/denuncia': { label: 'Denúncia de Dano ao Patrimônio' },
+  '/transparencia': { label: 'Transparência e Acesso à Informação (LAI)' },
+  '/privacidade': { label: 'Política de Privacidade (LGPD)' },
+  '/termos': { label: 'Termos de Uso' },
+  '/login': { label: 'Acesso Restrito' },
+  '/admin': { label: 'Painel Administrativo' },
+  '/ingestao': { label: 'Central de Ingestão Documental' }
 };
 
-/** Página de departamento ainda sem conteúdo próprio: mostra o que o setor faz e como contatar. */
-const DepartamentoEmPreparacao = ({ code }: { code: 'DPHAP' | 'DPE' | 'DPI' }) => {
-  const dept = DEPARTMENTS.find((d) => d.code === code)!;
-  usePageTitle(dept.code);
+const BreadcrumbBar = () => {
+  const { pathname } = useLocation();
+  if (pathname === '/') return null;
+  const current = ROUTE_BREADCRUMBS[pathname];
+  if (!current) return null;
+
   return (
-    <div className="max-w-3xl mx-auto px-6 py-16 space-y-6">
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Departamento</p>
-      <h1 className="text-3xl font-black text-brand-navy">{dept.code}</h1>
-      <p className="text-lg text-slate-700">{dept.name}</p>
-      <p className="text-slate-700">{dept.summary}</p>
-      <p className="text-slate-600">
-        A página completa deste departamento ainda está em preparação. Para falar com a equipe, escreva para{' '}
-        <a className="font-bold underline text-brand-blue-dark" href={`mailto:${SITE_CONTACT.email}`}>{SITE_CONTACT.email}</a>.
-      </p>
-      <div className="flex flex-wrap gap-3">
-        <L to="/servicos" className="px-6 py-3 bg-brand-navy text-white rounded-xl font-bold">Ver serviços</L>
-        <L to="/legislacao" className="px-6 py-3 bg-white text-brand-navy border-2 border-brand-navy rounded-xl font-bold">Ver legislação</L>
+    <nav
+      aria-label="Você está em"
+      className="bg-[#F4EFEA] border-b border-brand-sand/70 text-xs text-slate-600 print:hidden"
+    >
+      <div className="max-w-[1240px] mx-auto px-6 py-2 flex flex-wrap items-center gap-1.5">
+        <L to="/" className="font-bold text-brand-navy hover:underline">
+          Início
+        </L>
+        <span aria-hidden="true" className="text-slate-400">/</span>
+        {current.parent && (
+          <>
+            <L to={current.parent.to} className="font-bold text-brand-navy hover:underline">
+              {current.parent.label}
+            </L>
+            <span aria-hidden="true" className="text-slate-400">/</span>
+          </>
+        )}
+        <span aria-current="page" className="font-semibold text-slate-800">
+          {current.label}
+        </span>
       </div>
-    </div>
+    </nav>
   );
 };
 
@@ -545,6 +641,7 @@ const App: React.FC = () => {
           </button>
           <ScrollProgress />
           <Navigation />
+          <BreadcrumbBar />
           <main id="conteudo" tabIndex={-1} className="flex-grow outline-none max-w-full overflow-x-hidden">
             <PageTransition>
             <Suspense
@@ -564,12 +661,12 @@ const App: React.FC = () => {
               <Route path="/servicos" element={<ServicosPage />} />
               <Route path="/acervo-digital" element={<CartografiaPage />} />
               <Route path="/acervo" element={<CartografiaPage />} />
-              <Route path="/repositorio" element={<ModuloEmAtualizacao />} />
+              <Route path="/repositorio" element={<LegislacaoPage />} />
               <Route path="/legislacao" element={<LegislacaoPage />} />
               <Route path="/bens-tombados" element={<BensTombadosPage />} />
-              <Route path="/dphap" element={<DepartamentoEmPreparacao code="DPHAP" />} />
-              <Route path="/dpi" element={<DepartamentoEmPreparacao code="DPI" />} />
-              <Route path="/dpe" element={<DepartamentoEmPreparacao code="DPE" />} />
+              <Route path="/dphap" element={<DepartamentoOficialPage code="DPHAP" />} />
+              <Route path="/dpi" element={<DepartamentoOficialPage code="DPI" />} />
+              <Route path="/dpe" element={<DepartamentoOficialPage code="DPE" />} />
               <Route path="/contato" element={<ContatoPage />} />
               <Route path="/denuncia" element={<DenunciaPage />} />
               <Route path="/transparencia" element={<TransparenciaPage />} />

@@ -22,6 +22,9 @@ import { User, UserRole, Department } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { BENS_TOMBADOS, DECRETOS_PDF } from '../data/bensTombados';
+import { PUBLIC_LEGAL_DOCUMENTS } from '../data/publicLegalDocuments';
+import { MAPAS_HISTORICOS } from '../data/mapasHistoricos';
 
 const StatCard = ({ label, value, trend, icon: Icon, color }: any) => (
   <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
@@ -324,26 +327,54 @@ const AdminDashboard: React.FC = () => {
           {activeTab === 'overview' && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard label="Tombamentos" value="2.451" trend="12%" icon={MapIcon} color="bg-brand-blue" />
-                <StatCard label="Registros DPI" value="38" trend="4%" icon={FilePlus} color="bg-brand-red" />
-                <StatCard label="Projetos Ativos" value="12" trend="0%" icon={Database} color="bg-brand-dark" />
-                <StatCard label="Solicitações" value="89" trend="24%" icon={History} color="bg-amber-500" />
+                <StatCard
+                  label="Bens Tombados (DPHAP)"
+                  value={String(BENS_TOMBADOS.length)}
+                  trend="1979–1993"
+                  icon={MapIcon}
+                  color="bg-brand-blue"
+                />
+                <StatCard
+                  label="Decretos com PDF"
+                  value={String(Object.keys(DECRETOS_PDF).length)}
+                  trend={`${BENS_TOMBADOS.filter((b) => DECRETOS_PDF[b.decreto.numero]).length} bens`}
+                  icon={FilePlus}
+                  color="bg-brand-red"
+                />
+                <StatCard
+                  label="Normas Publicadas"
+                  value={String(PUBLIC_LEGAL_DOCUMENTS.length)}
+                  trend="Verificadas"
+                  icon={Database}
+                  color="bg-brand-dark"
+                />
+                <StatCard
+                  label="Plantas Históricas"
+                  value={String(MAPAS_HISTORICOS.length)}
+                  trend="1698–1912"
+                  icon={History}
+                  color="bg-amber-500"
+                />
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
                   <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <History size={18} className="text-brand-blue" /> Edições Recentes
+                    <History size={18} className="text-brand-blue" /> Acervo Público Verificado
                   </h3>
-                  <div className="space-y-4">
-                    {[1, 2, 3, 4].map(i => (
-                      <div key={i} className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-bold">JD</div>
-                        <div className="flex-grow">
-                          <p className="text-sm font-bold text-slate-800">João Silva atualizou "Palácio dos Leões"</p>
-                          <p className="text-[10px] text-slate-400 font-medium">HÁ 2 HORAS • DEPARTAMENTO DPHAP</p>
+                  <div className="space-y-3">
+                    {BENS_TOMBADOS.slice(0, 4).map((bem) => (
+                      <div key={bem.id} className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 text-xs font-mono font-bold">
+                          #{bem.id}
                         </div>
-                        <ChevronRight size={16} className="text-slate-300" />
+                        <div className="flex-grow min-w-0">
+                          <p className="text-sm font-bold text-slate-800 truncate">{bem.nome}</p>
+                          <p className="text-[10px] text-slate-500 font-medium uppercase">
+                            {bem.municipio} • DECRETO Nº {bem.decreto.numero} • FOLHA {bem.livro.folha}
+                          </p>
+                        </div>
+                        <ChevronRight size={16} className="text-slate-300 shrink-0" />
                       </div>
                     ))}
                   </div>
@@ -351,21 +382,29 @@ const AdminDashboard: React.FC = () => {
 
                 <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
                   <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <Database size={18} className="text-brand-red" /> Integridade de Dados
+                    <Database size={18} className="text-brand-red" /> Integridade do Catálogo Oficial
                   </h3>
                   <div className="space-y-4">
-                    <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-4">
-                      <AlertCircle size={20} className="text-amber-600 mt-0.5" />
+                    <div className="p-4 bg-green-50 rounded-xl border border-green-100 flex items-start gap-4">
+                      <CheckCircle2 size={20} className="text-green-600 mt-0.5 shrink-0" />
                       <div>
-                        <p className="text-sm font-bold text-amber-900">12 registros sem coordenadas</p>
-                        <p className="text-xs text-amber-700">Imóveis importados de Caxias estão com erro no GeoJSON.</p>
+                        <p className="text-sm font-bold text-green-900">
+                          {BENS_TOMBADOS.length} inscrições conferidas com o Livro do Tombo
+                        </p>
+                        <p className="text-xs text-green-700">
+                          Distribuídas em {new Set(BENS_TOMBADOS.map((b) => b.municipio)).size} municípios maranhenses, sem dados fictícios ou não verificados.
+                        </p>
                       </div>
                     </div>
-                    <div className="p-4 bg-green-50 rounded-xl border border-green-100 flex items-start gap-4">
-                      <CheckCircle2 size={20} className="text-green-600 mt-0.5" />
+                    <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-4">
+                      <AlertCircle size={20} className="text-amber-600 mt-0.5 shrink-0" />
                       <div>
-                        <p className="text-sm font-bold text-green-900">Sincronização concluída</p>
-                        <p className="text-xs text-green-700">Backup automático do banco de dados realizado hoje às 04:00.</p>
+                        <p className="text-sm font-bold text-amber-900">
+                          {BENS_TOMBADOS.filter((b) => !DECRETOS_PDF[b.decreto.numero]).length} bens com decreto apenas em arquivo físico
+                        </p>
+                        <p className="text-xs text-amber-700">
+                          Utilize a Central de Ingestão (/ingestao) para submeter novas digitalizações de decretos do Diário Oficial.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -378,22 +417,47 @@ const AdminDashboard: React.FC = () => {
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden min-h-[500px]">
               <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Gestão de Bens Materiais</h2>
-                  <p className="text-xs text-slate-500 font-medium">Bens Tombados e Poligonais de Proteção</p>
-                </div>
-                <div className="flex gap-2">
-                  <button className="px-4 py-2 bg-brand-blue text-white rounded-lg text-xs font-bold hover:bg-brand-blue/90 flex items-center gap-2">
-                    <FilePlus size={14} /> Novo Bem
-                  </button>
+                  <h2 className="text-lg font-black text-slate-900">Catálogo Oficial de Bens Tombados ({BENS_TOMBADOS.length})</h2>
+                  <p className="text-xs text-slate-500 font-medium">Relação consolidada do Livro do Tombo Histórico e Artístico (DPHAP/SPC)</p>
                 </div>
               </div>
 
-              <div className="p-12 text-center text-slate-400">
-                <MapIcon size={48} className="mx-auto mb-4 text-slate-300" />
-                <h3 className="text-lg font-bold text-slate-600">Módulo em Desenvolvimento</h3>
-                <p className="text-sm max-w-md mx-auto mt-2">
-                  A interface de edição visual de poligonais e gestão avançada de bens tomabados está sendo implementada. Por favor, utilize a importação em massa para atualizações ou contate o suporte técnico.
-                </p>
+              <div className="overflow-x-auto max-h-[520px]">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-100 text-slate-600 uppercase font-bold sticky top-0">
+                    <tr>
+                      <th className="py-3 px-4">Inscrição</th>
+                      <th className="py-3 px-4">Bem Tombado</th>
+                      <th className="py-3 px-4">Município</th>
+                      <th className="py-3 px-4">Decreto Estadual</th>
+                      <th className="py-3 px-4">Livro / Folha</th>
+                      <th className="py-3 px-4">PDF</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {BENS_TOMBADOS.map((bem) => {
+                      const pdf = DECRETOS_PDF[bem.decreto.numero];
+                      return (
+                        <tr key={bem.id} className="hover:bg-slate-50">
+                          <td className="py-2.5 px-4 font-mono font-bold text-brand-navy">#{bem.id}</td>
+                          <td className="py-2.5 px-4 font-semibold text-slate-800">{bem.nome}</td>
+                          <td className="py-2.5 px-4 text-slate-600">{bem.municipio}</td>
+                          <td className="py-2.5 px-4 text-slate-600">Nº {bem.decreto.numero} ({bem.decreto.ano ?? 's/d'})</td>
+                          <td className="py-2.5 px-4 text-slate-600">Fl. {bem.livro.folha}</td>
+                          <td className="py-2.5 px-4">
+                            {pdf ? (
+                              <a href={pdf.url} target="_blank" rel="noopener noreferrer" className="font-bold text-emerald-700 underline">
+                                Digitalizado
+                              </a>
+                            ) : (
+                              <span className="text-slate-400">Acervo físico</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}

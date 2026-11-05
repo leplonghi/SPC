@@ -19,7 +19,9 @@ import {
   BookOpen,
   ArrowUpDown,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Printer,
+  Compass
 } from 'lucide-react';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { AzulejoBand } from '../components/ui/Reveal';
@@ -92,16 +94,27 @@ const ordemMunicipios = Array.from(
 
 const BensTombadosPage: React.FC = () => {
   usePageTitle('Bens tombados');
-  const [busca, setBusca] = useState('');
-  // A Home leva para cá com ?municipio=Nome ou ?ano=1990; só vale se existir nos dados
+  // A Home e a Cartografia levam para cá com ?municipio=Nome, ?ano=1990 ou ?q=termo
   const [params] = useSearchParams();
+  const qInicial = params.get('q') ?? '';
   const municipioInicial = params.get('municipio') ?? '';
   const anoInicial = Number(params.get('ano'));
+  const [busca, setBusca] = useState(qInicial);
   const [municipio, setMunicipio] = useState(MUNICIPIOS.includes(municipioInicial) ? municipioInicial : '');
   const [tipo, setTipo] = useState('');
   const [faixa, setFaixa] = useState('');
   const [ano, setAno] = useState<number | null>(ANOS.includes(anoInicial) ? anoInicial : null);
   const [pdf, setPdf] = useState<FiltroPdf>('');
+
+  // Sincroniza quando o usuário navega via query string (?municipio= ou ?q=)
+  React.useEffect(() => {
+    const qParam = params.get('q');
+    const munParam = params.get('municipio');
+    const anoParam = Number(params.get('ano'));
+    if (qParam !== null) setBusca(qParam);
+    if (munParam !== null && MUNICIPIOS.includes(munParam)) setMunicipio(munParam);
+    if (anoParam && ANOS.includes(anoParam)) setAno(anoParam);
+  }, [params]);
 
   // Novos controles de UI/UX
   const [viewMode, setViewMode] = useState<'cards' | 'tabela'>('cards');
@@ -124,6 +137,34 @@ const BensTombadosPage: React.FC = () => {
     navigator.clipboard.writeText(citacao);
     setCopiadoId(bem.id);
     setTimeout(() => setCopiadoId(null), 2500);
+  };
+
+  const exportarCsv = () => {
+    const cabecalho = ['Inscricao', 'Nome_do_Bem', 'Municipio', 'Localizacao', 'Categoria', 'Decreto_Numero', 'Decreto_Data', 'Livro_Folha', 'Livro_Data', 'PDF_Disponivel'];
+    const escapeCsv = (val: string) => `"${val.replace(/"/g, '""')}"`;
+    const linhas = resultadosOrdenados.map((b) => [
+      escapeCsv(b.id),
+      escapeCsv(b.nome),
+      escapeCsv(b.municipio),
+      escapeCsv(b.local ?? ''),
+      escapeCsv(TIPO_POR_INSCRICAO[b.id] ?? 'Patrimônio Edificado'),
+      escapeCsv(b.decreto.numero),
+      escapeCsv(fmtData(b.decreto.data) ?? (b.decreto.ano ? String(b.decreto.ano) : '')),
+      escapeCsv(b.livro.folha),
+      escapeCsv(fmtData(b.livro.data) ?? ''),
+      escapeCsv(DECRETOS_PDF[b.decreto.numero] ? 'Sim' : 'Fisico no acervo')
+    ].join(';'));
+
+    const conteudo = '\uFEFF' + [cabecalho.join(';'), ...linhas].join('\r\n');
+    const blob = new Blob([conteudo], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `spc-bens-tombados-${municipio ? norm(municipio).replace(/\s+/g, '-') : 'maranhao'}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const temPdf = (b: BemTombado) => Boolean(DECRETOS_PDF[b.decreto.numero]);
@@ -228,7 +269,16 @@ const BensTombadosPage: React.FC = () => {
               <p className="mt-3 max-w-xl text-base text-slate-200">
                 Bens tombados pelo Estado do Maranhão, com decreto e dados do Livro do Tombo. Os gráficos funcionam como filtro.
               </p>
-              <div className="mt-6 max-w-xl">
+              <div className="mt-4">
+                <Link
+                  to="/mapa"
+                  className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/25 px-4 py-1.5 text-xs font-bold text-[#E9B44C] hover:bg-white/20 transition-colors"
+                >
+                  <Compass size={14} aria-hidden="true" />
+                  <span>Explorar Plantas Históricas de São Luís (1698–1912)</span>
+                </Link>
+              </div>
+              <div className="mt-5 max-w-xl">
                 <label htmlFor="bens-busca" className="sr-only">Nome, rua ou decreto</label>
                 <div className="relative">
                   <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
@@ -504,8 +554,29 @@ const BensTombadosPage: React.FC = () => {
               )}
             </div>
 
-            {/* Lado Direito: Ordenação e Seletor de Modo (Cards vs Tabela) */}
-            <div className="flex items-center gap-2 self-end md:self-auto">
+            {/* Lado Direito: Exportação, Ordenação e Seletor de Modo (Cards vs Tabela) */}
+            <div className="flex flex-wrap items-center gap-2 self-end md:self-auto">
+              <button
+                type="button"
+                onClick={exportarCsv}
+                disabled={resultadosOrdenados.length === 0}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-brand-navy hover:bg-slate-50 disabled:opacity-40 transition-colors"
+                title="Baixar planilha CSV com os bens filtrados"
+              >
+                <Download size={13} className="text-brand-sage-dark" aria-hidden="true" />
+                <span>Exportar CSV</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-brand-navy hover:bg-slate-50 transition-colors print:hidden"
+                title="Imprimir ou salvar como PDF a relação exibida"
+              >
+                <Printer size={13} className="text-brand-blue" aria-hidden="true" />
+                <span className="hidden sm:inline">Imprimir</span>
+              </button>
+
               <div className="flex items-center gap-1.5">
                 <ArrowUpDown size={14} className="text-slate-400" />
                 <label htmlFor="bens-ordem" className="sr-only">Ordenar resultados</label>

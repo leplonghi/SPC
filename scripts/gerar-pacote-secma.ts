@@ -76,3 +76,4 @@ console.log('\nPacotes gerados com sucesso em: entrega-secma/');
 console.log(` - spc-portal-publicacao-pronta.zip (${distSizeMb} MB)`);
 console.log(` - spc-portal-codigo-fonte.zip      (${srcSizeMb} MB)`);
 console.log(` - LEIA-ME-HOSPEDAGEM-SECMA.txt`);
+

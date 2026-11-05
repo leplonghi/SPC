@@ -225,10 +225,10 @@ export const CartografiaPage: React.FC = () => {
                               {bem.local && <p className="text-slate-600">{bem.local} — {bem.municipio}</p>}
                               <div className="flex flex-wrap items-center gap-3 pt-1">
                                 <Link
-                                  to="/bens-tombados"
+                                  to={`/bens-tombados?q=${encodeURIComponent(bem.id)}`}
                                   className="inline-flex items-center gap-1 font-bold text-brand-navy underline hover:text-brand-terracotta"
                                 >
-                                  <span>Ver no catálogo</span>
+                                  <span>Ver ficha #{bem.id} no catálogo</span>
                                   <ArrowUpRight size={12} aria-hidden="true" />
                                 </Link>
                                 {pdf && (
@@ -306,7 +306,7 @@ export const CartografiaPage: React.FC = () => {
                 selected={selectedMunicipio}
                 onSelect={(mun) => {
                   setSelectedMunicipio(mun);
-                  if (mun) navigate('/bens-tombados');
+                  if (mun) navigate(`/bens-tombados?municipio=${encodeURIComponent(mun)}`);
                 }}
                 height={380}
               />
@@ -319,3 +319,4 @@ export const CartografiaPage: React.FC = () => {
 };
 
 export default CartografiaPage;
+

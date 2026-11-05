@@ -59,6 +59,112 @@ export const HomePage: React.FC = () => {
         </dl>
       </section>
 
+      {/* Vitrine Visual do Acervo, Cartografia e Atendimento */}
+      <section className="max-w-[1240px] mx-auto px-6 pt-12 pb-4" aria-labelledby="destaques-titulo">
+        <div className="flex flex-wrap items-baseline justify-between gap-3 mb-6">
+          <div>
+            <span className="text-xs font-black uppercase tracking-widest text-brand-terracotta">
+              Acervo Público & Território
+            </span>
+            <h2 id="destaques-titulo" className="text-2xl font-bold text-brand-navy mt-0.5">
+              Consultas em destaque no portal
+            </h2>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Link
+            to="/bens-tombados"
+            className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all flex flex-col"
+          >
+            <div className="h-44 overflow-hidden bg-brand-navy relative">
+              <img
+                src="/cena-fotos/casarao.webp"
+                alt="Casarões coloniais no Centro Histórico de São Luís"
+                loading="lazy"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <span className="absolute top-3 left-3 rounded-full bg-brand-navy/90 text-white px-3 py-1 text-[11px] font-bold">
+                {totalBens} inscrições · {totalMunicipios} municípios
+              </span>
+            </div>
+            <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+              <div>
+                <h3 className="text-lg font-bold text-brand-navy group-hover:text-brand-terracotta transition-colors">
+                  Livro do Tombo Estadual (1979–1993)
+                </h3>
+                <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
+                  Consulte a relação completa dos bens tombados pelo Estado do Maranhão, filtre por município, baixe os decretos em PDF ou exporte em CSV.
+                </p>
+              </div>
+              <span className="text-xs font-bold text-brand-navy underline">
+                Abrir catálogo de bens tombados →
+              </span>
+            </div>
+          </Link>
+
+          <Link
+            to="/mapa"
+            className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all flex flex-col"
+          >
+            <div className="h-44 overflow-hidden bg-brand-navy relative">
+              <img
+                src="/cena-fotos/planta-1912-mini.webp"
+                alt="Recorte da Planta da Cidade de São Luís de 1912"
+                loading="lazy"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <span className="absolute top-3 left-3 rounded-full bg-brand-terracotta text-white px-3 py-1 text-[11px] font-bold">
+                Séculos XVII a XX · {MAPAS_HISTORICOS.length} pranchas
+              </span>
+            </div>
+            <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+              <div>
+                <h3 className="text-lg font-bold text-brand-navy group-hover:text-brand-terracotta transition-colors">
+                  Cartografia Histórica Interativa
+                </h3>
+                <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
+                  Explore a gravura de 1698 (Pe. Andrea da Silva) e a Planta de 1912 (Ribeiro do Amaral) com zoom e marcos clicáveis vinculados ao Livro do Tombo.
+                </p>
+              </div>
+              <span className="text-xs font-bold text-brand-navy underline">
+                Explorar mapas e plantas históricas →
+              </span>
+            </div>
+          </Link>
+
+          <Link
+            to="/servicos"
+            className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all flex flex-col"
+          >
+            <div className="h-44 overflow-hidden bg-brand-navy relative">
+              <img
+                src="/cena-fotos/azulejos.webp"
+                alt="Detalhe de azulejaria histórica em São Luís"
+                loading="lazy"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <span className="absolute top-3 left-3 rounded-full bg-brand-sage-dark text-white px-3 py-1 text-[11px] font-bold">
+                DPHAP · DPI · DPE
+              </span>
+            </div>
+            <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+              <div>
+                <h3 className="text-lg font-bold text-brand-navy group-hover:text-brand-terracotta transition-colors">
+                  Autorização de Obras e Serviços
+                </h3>
+                <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
+                  Veja a documentação obrigatória para reformas, certidões de poligonal, engenhos publicitários e gere a folha formal de requerimento para protocolo.
+                </p>
+              </div>
+              <span className="text-xs font-bold text-brand-navy underline">
+                Acessar Carta de Serviços e Requerimento →
+              </span>
+            </div>
+          </Link>
+        </div>
+      </section>
+
       <section className="max-w-[1240px] mx-auto px-6 py-12" aria-labelledby="servicos-titulo">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h2 id="servicos-titulo" className="text-2xl font-bold text-brand-navy">Serviços</h2>
