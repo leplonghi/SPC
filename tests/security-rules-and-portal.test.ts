@@ -171,6 +171,8 @@ test('Etapa B - Verificação estrutural de firestore.rules e storage.rules', ()
   assert.match(firestoreRules, /match \/upload_batches\/\{document\}/);
   assert.match(firestoreRules, /match \/tombamento_polygons\/\{document\}/);
   assert.match(firestoreRules, /match \/legislation_documents\/\{document\}/);
+  assert.match(firestoreRules, /match \/analytics_sessions\/\{sessionId\}/);
+  assert.match(firestoreRules, /match \/analytics_config\/\{docId\}/);
   // Verifica imutabilidade do log de auditoria
   assert.match(firestoreRules, /allow update, delete: if false;/);
   // Verifica preservação do SuperAdmin institucional

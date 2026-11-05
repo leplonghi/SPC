@@ -121,6 +121,41 @@ service cloud.firestore {
       allow read, write: if isEditor();
     }
 
+    // Telemetria Anônima de Acessos e Visitantes (LGPD-compliant):
+    // Visitantes podem registrar/atualizar apenas sua própria sessão anônima (sem IP bruto);
+    // Somente Administradores (ex.: leplonghi@gmail.com) podem ler os relatórios e sessões.
+    match /analytics_sessions/{sessionId} {
+      allow read: if isAdmin();
+      allow create, update: if request.resource.data.sessionId == sessionId
+        && request.resource.data.keys().hasOnly([
+          'sessionId',
+          'dateKey',
+          'startedAt',
+          'lastActiveAt',
+          'durationSeconds',
+          'city',
+          'region',
+          'country',
+          'device',
+          'browser',
+          'referrer',
+          'pagesVisited',
+          'pageViews'
+        ])
+        && request.resource.data.durationSeconds is int
+        && request.resource.data.durationSeconds >= 0
+        && request.resource.data.durationSeconds <= 86400
+        && request.resource.data.pageViews is int
+        && request.resource.data.pageViews >= 1
+        && request.resource.data.pageViews <= 500;
+      allow delete: if isSuperAdmin();
+    }
+
+    // Configuração de Relatórios de Acesso (exclusivo SuperAdmin / Admin)
+    match /analytics_config/{docId} {
+      allow read, write: if isAdmin();
+    }
+
     // Bloqueio padrão para quaisquer outras coleções não declaradas
     match /{document=**} {
       allow read, write: if false;

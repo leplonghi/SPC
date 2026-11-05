@@ -37,6 +37,7 @@ import DepartamentoOficialPage from './pages/DepartamentoOficialPage';
 import { SITE_CONTACT } from './data/siteContact';
 import { usePageTitle } from './hooks/usePageTitle';
 import { AzulejoBand } from './components/ui/Reveal';
+import { recordPageVisit, recordSessionHeartbeat } from './services/analyticsService';
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const IngestaoPage = lazy(() => import('./pages/IngestaoPage'));
@@ -612,6 +613,24 @@ const BreadcrumbBar = () => {
   );
 };
 
+/** Registra de forma anônima a visita, páginas navegadas e duração da sessão. */
+const VisitorTracker = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    void recordPageVisit(pathname);
+  }, [pathname]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void recordSessionHeartbeat(15);
+    }, 15000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  return null;
+};
+
 const NaoEncontrada = () => {
   usePageTitle('Página não encontrada');
   return (
@@ -640,6 +659,7 @@ const App: React.FC = () => {
             Ir para o conteúdo
           </button>
           <ScrollProgress />
+          <VisitorTracker />
           <Navigation />
           <BreadcrumbBar />
           <main id="conteudo" tabIndex={-1} className="flex-grow outline-none max-w-full overflow-x-hidden">

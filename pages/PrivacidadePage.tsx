@@ -13,6 +13,9 @@ const PrivacidadePage: React.FC = () => (
       <p>
         Para consultar as páginas públicas (início, serviços, legislação, contato), você não precisa informar nenhum dado pessoal. O portal não tem formulário de inscrição nem de cadastro aberto ao público.
       </p>
+      <p className="mt-2">
+        Para fins estatísticos e de melhoria contínua do serviço público, o portal contabiliza de forma anônima o número de visitas, páginas consultadas, tempo de permanência, tipo de dispositivo e localização aproximada (cidade, estado e país), sem armazenar o endereço de IP bruto nem identificar individualmente o cidadão.
+      </p>
     </section>
 
     <section>
