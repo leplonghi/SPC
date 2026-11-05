@@ -15,3 +15,4 @@ export const SEDE_MUNICIPIO: Record<string, [number, number]> = {
   'Barreirinhas': [-2.7589, -42.8244],
   'Buriti': [-3.9419, -42.9189]
 };
+

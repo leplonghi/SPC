@@ -10,19 +10,20 @@ export const APP_ENV: AppEnvironment =
     (import.meta.env.DEV ? "development" : "homologation");
 
 /**
- * Configuração pública do Firebase Web SDK.
- * Os valores podem ser sobrescritos por variáveis de ambiente VITE_FIREBASE_*
- * para separar projetos de desenvolvimento, homologação e produção institucional.
- * A apiKey do Web SDK identifica o projeto Firebase no cliente; a segurança efetiva
- * depende exclusivamente das regras em firestore.rules, storage.rules e restrições de domínio no GCP.
+ * Configuração do Firebase Web SDK parametrizada por ambiente.
+ * No ambiente de homologação, utiliza exclusivamente o projeto isolado
+ * `spc-maranhao-homologacao` (configurado via variáveis VITE_FIREBASE_* em .env.local ou CI),
+ * preservando o projeto original `spc-maranhao-2025-v1` intacto.
  */
+const defaultProjectId = APP_ENV === "production" ? "spc-maranhao-2025-v1" : "spc-maranhao-homologacao";
+
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDLsZlYVXTlG0llKBp3vurlZ2RsT_SZMUg",
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "spc-maranhao-2025-v1.firebaseapp.com",
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "spc-maranhao-2025-v1",
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "spc-maranhao-2025-v1.firebasestorage.app",
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "242428282674",
-    appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:242428282674:web:5cd60d70a02f13bccbb92b"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "demo-homologacao-key",
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || `${defaultProjectId}.firebaseapp.com`,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || defaultProjectId,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || `${defaultProjectId}.firebasestorage.app`,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+    appId: import.meta.env.VITE_FIREBASE_APP_ID || ""
 };
 
 const app = initializeApp(firebaseConfig);

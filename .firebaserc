@@ -1,7 +1,7 @@
 {
   "projects": {
     "default": "spc-maranhao-2025-v1",
-    "homologacao": "spc-maranhao-2025-v1"
+    "homologacao": "spc-maranhao-homologacao"
   },
   "targets": {},
   "etags": {}
