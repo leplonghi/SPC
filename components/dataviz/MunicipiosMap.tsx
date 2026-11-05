@@ -5,23 +5,8 @@ import { HUE, HUE_DEEP, DIM } from './tokens';
 
 export interface MapPoint { nome: string; lat: number; lng: number; n: number }
 
-/**
- * Posição aproximada da sede de cada município (referência geográfica, só para localizar no mapa).
- * Não é limite municipal nem localização exata do bem.
- */
-export const SEDE_MUNICIPIO: Record<string, [number, number]> = {
-  'São Luís': [-2.5307, -44.3068],
-  'Alcântara': [-2.4083, -44.4136],
-  'Caxias': [-4.8628, -43.3611],
-  'Itapecuru-Mirim': [-3.4008, -44.3536],
-  'Viana': [-3.2036, -44.9922],
-  'Carolina': [-7.3333, -47.4667],
-  'Pindaré-Mirim': [-3.6, -45.3417],
-  'Paço do Lumiar': [-2.5167, -44.1],
-  'Rosário': [-2.9367, -44.2506],
-  'Barreirinhas': [-2.7589, -42.8244],
-  'Buriti': [-3.9419, -42.9189]
-};
+import { SEDE_MUNICIPIO } from '../../data/municipios';
+export { SEDE_MUNICIPIO };
 
 const Fit: React.FC<{ points: MapPoint[] }> = ({ points }) => {
   const map = useMap();
@@ -55,7 +40,9 @@ interface Props {
 }
 
 /** Mapa do Maranhão com um círculo por município, do tamanho do número de bens. Clicar filtra a lista. */
-export const MunicipiosMap: React.FC<Props> = ({ points, selected, onSelect, height = 340, accent, readOnly }) => (
+export const MunicipiosMap: React.FC<Props> = ({ points, selected, onSelect, height: rawHeight, accent, readOnly }) => {
+  const height: number | 'fill' = rawHeight ?? 340;
+  return (
   <div className={`overflow-hidden rounded-2xl border border-[#E7E2DE] ${height === 'fill' ? 'h-full min-h-[340px]' : ''}`} style={height === 'fill' ? undefined : { height }} role="group" aria-label="Mapa do Maranhão com os municípios que têm bens tombados. As mesmas informações estão na lista ao lado.">
     <MapContainer
       center={[-4.2, -45]}
@@ -103,4 +90,5 @@ export const MunicipiosMap: React.FC<Props> = ({ points, selected, onSelect, hei
       })}
     </MapContainer>
   </div>
-);
+  );
+};

@@ -6,6 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:firebase": "vite build --mode homologation",
+    "build:cloudflare": "vite build --mode cloudflare",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/security-rules-and-portal.test.ts",
+    "pacote:secma": "npm run build && node --experimental-strip-types scripts/gerar-pacote-secma.ts",
     "preview": "vite preview"
   },
   "dependencies": {

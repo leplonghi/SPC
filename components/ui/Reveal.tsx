@@ -5,7 +5,7 @@ export const Reveal: React.FC<{
   children: React.ReactNode;
   className?: string;
   delay?: number;
-  as?: keyof JSX.IntrinsicElements;
+  as?: keyof React.JSX.IntrinsicElements;
 }> = ({ children, className = '', delay = 0, as = 'div' }) => {
   const ref = useRef<HTMLElement | null>(null);
   const [seen, setSeen] = useState(false);

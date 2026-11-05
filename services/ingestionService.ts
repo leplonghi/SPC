@@ -281,11 +281,14 @@ export const ingestionService = {
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(doc => doc.data() as IngestionItem);
     } catch (e) {
-      // Fallback em caso de erro de índice
-      const allSnapshot = await getDocs(collection(db, INGESTION_QUEUE_COL));
+      // Fallback sem orderBy composto, mantendo o filtro obrigatório por uploadedBy para respeitar as regras do Firestore
+      const fallbackQuery = query(
+        collection(db, INGESTION_QUEUE_COL),
+        where('uploadedBy', '==', userId)
+      );
+      const allSnapshot = await getDocs(fallbackQuery);
       return allSnapshot.docs
         .map(doc => doc.data() as IngestionItem)
-        .filter(item => item.uploadedBy === userId)
         .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
     }
   },
@@ -364,7 +367,9 @@ export const ingestionService = {
     const publishPayload: any = {
       id: targetId,
       name: item.title,
+      title: item.title,
       description: item.description,
+      status: 'published',
       department_responsible: item.department,
       declared_source: item.declaredSource,
       uploaded_by_name: item.uploadedByName,

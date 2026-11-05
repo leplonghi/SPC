@@ -1,25 +1,63 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
     function isSuperAdminEmail() {
-      return request.auth != null
+      return isAuthenticated()
         && request.auth.token.email_verified == true
         && request.auth.token.email == 'leplonghi@gmail.com';
     }
 
-    function isEditor() {
-      return isSuperAdminEmail() || (
-        request.auth != null
-        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
-        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in
-           ['SuperAdmin', 'AdminSPC', 'EditorDPE', 'EditorDPHAP', 'EditorDPI']
-      );
+    function getUserRole() {
+      return (isAuthenticated() && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)))
+        ? firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role
+        : null;
     }
 
-    // Leitura pública (acervo e documentos públicos). Gravação só de administradores e editores, até 100 MB por arquivo.
-    match /{allPaths=**} {
+    function isEditor() {
+      return isSuperAdminEmail()
+        || getUserRole() in ['SuperAdmin', 'AdminSPC', 'EditorDPE', 'EditorDPHAP', 'EditorDPI'];
+    }
+
+    function isColaborador() {
+      return isEditor() || getUserRole() == 'Colaborador';
+    }
+
+    function isValidUploadSize() {
+      return request.resource != null && request.resource.size < 100 * 1024 * 1024;
+    }
+
+    // Área de ingestão interna: arquivos aguardando curadoria NÃO ficam públicos antes da aprovação.
+    // Apenas o autor do envio e Editores/Administradores podem ler; Colaboradores gravam na própria pasta.
+    match /patrimonio_ingestion/{userId}/{allPaths=**} {
+      allow read: if isEditor() || (isAuthenticated() && request.auth.uid == userId);
+      allow create, update: if isValidUploadSize()
+        && (isEditor() || (isColaborador() && request.auth.uid == userId));
+      allow delete: if isEditor();
+    }
+
+    // Acervo e documentos públicos publicados: leitura pública; escrita restrita a Editores/Administradores até 100 MB.
+    match /acervo/{allPaths=**} {
       allow read: if true;
-      allow write: if isEditor() && request.resource.size < 100 * 1024 * 1024;
+      allow write: if isEditor() && isValidUploadSize();
+    }
+
+    match /legislacao/{allPaths=**} {
+      allow read: if true;
+      allow write: if isEditor() && isValidUploadSize();
+    }
+
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if isEditor() && isValidUploadSize();
+    }
+
+    // Regra padrão para demais caminhos não classificados: bloqueia leitura/escrita anônima acidental
+    match /{allPaths=**} {
+      allow read, write: if isEditor();
     }
   }
 }

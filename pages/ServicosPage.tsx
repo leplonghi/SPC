@@ -49,11 +49,15 @@ const DEPARTAMENTOS_INFO = [
     bgColor: 'bg-brand-blue/10',
     borderColor: 'border-slate-200',
     description: 'Tombamento, fiscalização e autorização de intervenções em bens tombados e poligonais de proteção.',
-    link: '/institucional',
+    link: '/dphap',
     resources: [
       {
         label: 'Diretrizes para engenhos publicitários (PDF)',
         url: '/documentos/legislacao/diretrizes-dphap-engenhos-publicitarios.pdf'
+      },
+      {
+        label: 'Infográfico visual de engenhos publicitários (JPG)',
+        url: '/imagens/infografico_engenhos.jpg'
       }
     ]
   },
@@ -66,7 +70,7 @@ const DEPARTAMENTOS_INFO = [
     bgColor: 'bg-brand-red/10',
     borderColor: 'border-slate-200',
     description: 'Registro e salvaguarda de saberes, celebrações, formas de expressão e lugares de memória.',
-    link: '/institucional',
+    link: '/dpi',
     resources: []
   },
   {
@@ -78,7 +82,7 @@ const DEPARTAMENTOS_INFO = [
     bgColor: 'bg-brand-dark/10',
     borderColor: 'border-slate-200',
     description: 'Projetos, obras de restauração, intervenções arquitetônicas e conservação de edifícios públicos.',
-    link: '/institucional',
+    link: '/dpe',
     resources: []
   }
 ];
@@ -158,7 +162,59 @@ const SERVICOS_LIST: Service[] = [
       {
         label: 'Diretrizes para engenhos publicitários (PDF)',
         href: '/documentos/legislacao/diretrizes-dphap-engenhos-publicitarios.pdf'
+      },
+      {
+        label: 'Infográfico oficial de engenhos publicitários (Imagem)',
+        href: '/imagens/infografico_engenhos.jpg'
       }
+    ]
+  },
+  {
+    id: 's4',
+    title: 'Solicitação de Registro de Patrimônio Cultural Imaterial',
+    category: 'Patrimônio Imaterial',
+    department_responsible: Department.DPI,
+    description:
+      'Pedido de abertura de instrução técnica para reconhecimento de saberes, celebrações, formas de expressão ou lugares tradicionais como Patrimônio Cultural Imaterial do Maranhão.',
+    bring: [
+      'Requerimento assinado por associação, grupo detentor, entidade cultural ou cidadão legitimado',
+      'Manifestação de anuência prévia da comunidade ou grupo detentor da manifestação cultural',
+      'Histórico descritivo da prática cultural, território de ocorrência e continuidade histórica',
+      'Registros fotográficos, audiovisuais, publicações ou referências documentais existentes'
+    ],
+    stages: [
+      '1. Recebimento do pedido e análise preliminar de pertinência pelo DPI/SPC',
+      '2. Pesquisa técnica, inventário participativo e instrução do dossiê de registro',
+      '3. Deliberação institucional e inscrição no Livro de Registro correspondente'
+    ],
+    deadlineHint: 'Procedimento de pesquisa técnica e instrução participativa junto aos detentores.',
+    references: [
+      { label: 'Página do Departamento de Patrimônio Imaterial (DPI)', to: '/dpi' },
+      { label: 'Constituição Federal (arts. 215 e 216) e Decreto nº 3.551/2000', to: '/legislacao' }
+    ]
+  },
+  {
+    id: 's5',
+    title: 'Consulta Técnica Prévia de Projetos e Restauro',
+    category: 'Projetos Especiais',
+    department_responsible: Department.DPE,
+    description:
+      'Orientação técnica preliminar para arquitetos, engenheiros, gestores públicos e proprietários antes da elaboração executiva de projetos de restauração ou requalificação em bens protegidos.',
+    bring: [
+      'Identificação do solicitante ou responsável técnico (CAU/CREA)',
+      'Localização exata do imóvel e indicação de eventual número de inscrição no Livro do Tombo',
+      'Estudo preliminar, levantamento métrico/fotográfico ou programa de necessidades pretendido',
+      'Descrição das patologias construtivas observadas (cobertura, alvenaria, esquadrias, azulejaria)'
+    ],
+    stages: [
+      '1. Apresentação do estudo preliminar ou dúvida técnica ao DPE/SPC',
+      '2. Reunião técnica ou análise orientativa sobre materiais e diretrizes de conservação',
+      '3. Emissão de orientação técnica prévia para subsidiar o projeto executivo'
+    ],
+    deadlineHint: 'Atendimento técnico mediante análise da documentação preliminar apresentada.',
+    references: [
+      { label: 'Página do Departamento de Projetos Especiais (DPE)', to: '/dpe' },
+      { label: 'Portaria IPHAN nº 289/2025 e legislação estadual', to: '/legislacao' }
     ]
   }
 ];
@@ -180,6 +236,7 @@ const ServicosPage: React.FC = () => {
   const [propertyAddress, setPropertyAddress] = useState('');
   const [propertyCity, setPropertyCity] = useState('São Luís');
   const [interventionDesc, setInterventionDesc] = useState('');
+  const [checkedDocs, setCheckedDocs] = useState<Record<string, boolean>>({});
   const [copied, setCopied] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -195,12 +252,20 @@ const ServicosPage: React.FC = () => {
 
   const selectedServiceObj = SERVICOS_LIST.find((s) => s.id === protocolService) || SERVICOS_LIST[0];
 
+  const toggleDocCheck = (docItem: string) => {
+    setCheckedDocs((prev) => ({ ...prev, [docItem]: !prev[docItem] }));
+  };
+
   const handleGenerateSummary = (e: React.FormEvent) => {
     e.preventDefault();
     setShowSummary(true);
   };
 
   const getFormattedSummaryText = () => {
+    const docsChecklist = selectedServiceObj.bring
+      .map((item) => `  [${checkedDocs[item] ? 'X' : ' '}] ${item}`)
+      .join('\n');
+
     return `AO DEPARTAMENTO COMPETENTE DA SUPERINTENDÊNCIA DO PATRIMÔNIO CULTURAL DO MARANHÃO (SPC/SECMA)
 REQUERIMENTO FORMAL DE ATENDIMENTO / PROTOCOLO
 
@@ -223,11 +288,14 @@ REQUERIMENTO FORMAL DE ATENDIMENTO / PROTOCOLO
 4. DESCRIÇÃO DA SOLICITAÇÃO / INTERVENÇÃO PRETENDIDA:
 ${interventionDesc || '[Não informado]'}
 
-5. DOCUMENTOS DE INSTRUÇÃO:
-Conforme informado, apresento as fotos, croqui e comprovações cadastrais solicitadas para exame e manifestação técnica da SPC.
+5. CHECKLIST DE DOCUMENTOS DE INSTRUÇÃO:
+${docsChecklist}
 
 Data da Solicitação: ${new Date().toLocaleDateString('pt-BR')}
-Local: ${propertyCity} - Maranhão`;
+Local: ${propertyCity} - Maranhão
+
+____________________________________________________
+Assinatura do(a) Requerente / Responsável Técnico`;
   };
 
   const handleCopySummary = () => {
@@ -660,13 +728,62 @@ Local: ${propertyCity} - Maranhão`;
               />
             </div>
 
-            <button
-              type="submit"
-              className="px-8 py-3.5 bg-brand-terracotta hover:bg-brand-terracotta/90 text-white rounded-xl font-black text-xs uppercase tracking-wider transition-all shadow-md flex items-center gap-2"
-            >
-              <CheckCircle2 size={16} />
-              <span>Gerar Espelho do Requerimento</span>
-            </button>
+            {/* 6. Conferência Interativa da Documentação Obrigatória */}
+            <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 md:p-5 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-brand-navy flex items-center gap-1.5">
+                  <CheckSquare size={15} className="text-brand-terracotta" />
+                  Checklist de Documentos para {selectedServiceObj.title}
+                </span>
+                <span className="text-[11px] font-semibold text-slate-500">
+                  Marque os documentos que você já separou para anexar
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                {selectedServiceObj.bring.map((docItem) => {
+                  const isChecked = Boolean(checkedDocs[docItem]);
+                  return (
+                    <label
+                      key={docItem}
+                      className={`flex items-start gap-3 p-3 rounded-xl border text-xs cursor-pointer transition-colors ${
+                        isChecked
+                          ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950 font-semibold'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100/70'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleDocCheck(docItem)}
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-navy focus:ring-brand-navy"
+                      />
+                      <span>{docItem}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="submit"
+                className="px-8 py-3.5 bg-brand-terracotta hover:bg-brand-terracotta/90 text-white rounded-xl font-black text-xs uppercase tracking-wider transition-all shadow-md flex items-center gap-2"
+              >
+                <CheckCircle2 size={16} />
+                <span>Gerar Espelho do Requerimento</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSummary(true);
+                  setTimeout(() => window.print(), 150);
+                }}
+                className="px-6 py-3.5 bg-brand-navy hover:bg-brand-navy/90 text-white rounded-xl font-black text-xs uppercase tracking-wider transition-all shadow-sm flex items-center gap-2"
+              >
+                <Printer size={16} />
+                <span>Preencher e Imprimir Folha de Rosto</span>
+              </button>
+            </div>
           </form>
 
           {/* ESPELHO FORMAL GERADO */}
@@ -815,6 +932,15 @@ Local: ${propertyCity} - Maranhão`;
                   <h3 className="text-lg font-black text-brand-navy">{dept.name}</h3>
                   <p className="text-xs font-bold text-slate-500">{dept.fullName}</p>
                   <p className="text-xs text-slate-600 leading-relaxed">{dept.description}</p>
+                  <div className="pt-1">
+                    <Link
+                      to={dept.link}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-brand-navy underline hover:text-brand-terracotta"
+                    >
+                      <span>Acessar página do {dept.name}</span>
+                      <ArrowRight size={12} />
+                    </Link>
+                  </div>
                 </div>
 
                 {dept.resources.length > 0 && (

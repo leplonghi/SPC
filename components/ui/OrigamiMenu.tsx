@@ -15,8 +15,9 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { BENS_TOMBADOS, anoDoDecreto } from '../../data/bensTombados';
+import { BENS_TOMBADOS, DECRETOS_PDF, anoDoDecreto } from '../../data/bensTombados';
 import { PUBLIC_LEGAL_DOCUMENTS } from '../../data/publicLegalDocuments';
+import { SITE_CONTACT } from '../../data/siteContact';
 
 /**
  * ORIGAMI 3D CIRCULAR & CARROSSEL IMERSIVO MOBILE
@@ -216,22 +217,19 @@ export const OrigamiMenu: React.FC = () => {
   const [anyOpen, setAnyOpen] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState(0);
 
-  // Estados de Rotação 3D em Todas as Dimensões
-  // pitch = 14deg (visão isométrica elegante olhando de cima para a tampa superior e as faces frontais)
-  // yaw = -18deg (mostra as faces 01 Consulta e 02 Serviços em destaque com perspectiva tridimensional)
-  const INITIAL_PITCH = 14;
-  const INITIAL_YAW = -18;
-  const rotX = useRef(INITIAL_PITCH);
+  // Estados de Rotação 3D exclusivamente no sentido horizontal (eixo Y)
+  const INITIAL_PITCH = 0;
+  const INITIAL_YAW = 0;
+  const rotX = useRef(0);
   const rotY = useRef(INITIAL_YAW);
   const rotZ = useRef(0);
-  const targetRotX = useRef(INITIAL_PITCH);
+  const targetRotX = useRef(0);
   const targetRotY = useRef(INITIAL_YAW);
   const targetRotZ = useRef(0);
   const isDragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0, rotX: 0, rotY: 0, time: 0 });
   const lastPointer = useRef({ x: 0, y: 0, time: 0 });
   const velocity = useRef({ x: 0, y: 0 });
-  const ambientTime = useRef(0);
   const isTransitioning = useRef(false);
   const [isRotating, setIsRotating] = useState(false);
 
@@ -272,7 +270,7 @@ export const OrigamiMenu: React.FC = () => {
     };
   }, [flat]);
 
-  // Dados das folhas do origami
+  // Dados das folhas do origami alinhados com o conteúdo real das páginas do portal
   const sheets: Sheet[] = useMemo(() => {
     const porMun = new Map<string, number>();
     const anos: number[] = [];
@@ -282,7 +280,7 @@ export const OrigamiMenu: React.FC = () => {
       if (a) anos.push(a);
     });
     const muns = Array.from(porMun.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'pt-BR'));
-    const norms = PUBLIC_LEGAL_DOCUMENTS.filter((d) => d.featured).slice(0, 2);
+    const totalComPdf = BENS_TOMBADOS.filter((b) => DECRETOS_PDF[b.decreto.numero]).length;
     const de = anos.length ? Math.min(...anos) : null;
     const ate = anos.length ? Math.max(...anos) : null;
     return [
@@ -290,9 +288,9 @@ export const OrigamiMenu: React.FC = () => {
         id: 'bens', num: '01', kicker: 'Consulta', title: 'Este bem é tombado?', to: '/bens-tombados', tone: 'blue',
         photo: '/cena-fotos/casarao.webp', focus: '50% 40%', icon: Landmark,
         headline: `${BENS_TOMBADOS.length} bens em ${muns.length} municípios`,
-        text: 'Relação dos bens tombados pelo Estado, com localização, número do decreto e dados do Livro do Tombo.',
+        text: `Relação oficial com localização, decreto, Livro do Tombo e ${totalComPdf} inscrições com decreto digitalizado.`,
         stamp: de && ate ? `${de} a ${ate}` : undefined,
-        linksTitle: 'Atalhos de Consulta',
+        linksTitle: 'Atalhos de consulta',
         links: [
           { label: 'Relação completa de bens', to: '/bens-tombados', hint: String(BENS_TOMBADOS.length) },
           ...muns.slice(0, 2).map(([m, n]) => ({ label: `Só em ${m}`, to: `/bens-tombados?municipio=${encodeURIComponent(m)}`, hint: String(n) }))
@@ -301,60 +299,59 @@ export const OrigamiMenu: React.FC = () => {
       {
         id: 'servicos', num: '02', kicker: 'Atendimento', title: 'Serviços ao cidadão', to: '/servicos', tone: 'terra',
         photo: '/cena-fotos/telhados.webp', focus: '50% 45%', icon: FileText,
-        headline: 'Diretórios e Protocolos Técnicos',
-        text: 'Orientações oficiais por setor (DPHAP, DPI e DPE) e emissão de petições administrativas para obras e reformas.',
-        stamp: '3 setores',
-        linksTitle: 'Serviços Prioritários',
+        headline: 'Carta de serviços e requerimento',
+        text: 'Documentação exigida, etapas de análise (DPHAP, DPI e DPE) e assistente para gerar requerimento de atendimento.',
+        stamp: 'DPHAP · DPI · DPE',
+        linksTitle: 'Serviços disponíveis',
         links: [
-          { label: 'Autorização prévia para obras', to: '/servicos' },
-          { label: 'Certidão de limites e poligonal', to: '/servicos' },
-          { label: 'Registro de patrimônio imaterial', to: '/servicos' }
+          { label: 'Intervenção em imóvel tombado', to: '/servicos', hint: 'DPHAP' },
+          { label: 'Certidão de poligonal e tombamento', to: '/servicos', hint: 'DPHAP' },
+          { label: 'Engenhos publicitários', to: '/servicos', hint: 'DPHAP' }
         ]
       },
       {
-        id: 'legislacao', num: '03', kicker: 'Biblioteca', title: 'Biblioteca de Legislação', to: '/legislacao', tone: 'sage',
+        id: 'legislacao', num: '03', kicker: 'Biblioteca', title: 'Consultar a legislação', to: '/legislacao', tone: 'sage',
         photo: '/cena-fotos/azulejos.webp', focus: '50% 30%', icon: BookOpen,
-        headline: `${PUBLIC_LEGAL_DOCUMENTS.length} normas digitalizadas`,
-        text: 'Leis estaduais de proteção cultural, decretos de tombamento em PDF e resoluções com a fonte documental de cada texto.',
-        stamp: 'PDF Oficial',
-        linksTitle: 'Normas em Destaque',
+        headline: `${PUBLIC_LEGAL_DOCUMENTS.length} normas na biblioteca`,
+        text: 'Leis, decretos, portarias e diretrizes (Federal, Estadual, Municipal e SPC), com resumo didático e fonte de cada documento.',
+        stamp: 'Com fonte',
+        linksTitle: 'Em destaque',
         links: [
-          { label: 'Biblioteca de normas completa', to: '/legislacao', hint: String(PUBLIC_LEGAL_DOCUMENTS.length) },
-          ...norms.map((d) => ({
-            label: d.title.split(',')[0],
-            to: `/legislacao?q=${encodeURIComponent(d.title.split(',')[0])}`,
-            hint: d.title.match(/(\d{4})\s*$/)?.[1]
-          }))
+          { label: 'Biblioteca completa de normas', to: '/legislacao', hint: String(PUBLIC_LEGAL_DOCUMENTS.length) },
+          { label: 'Lei Estadual nº 5.082/1990', to: '/legislacao?q=5.082', hint: '1990' },
+          { label: 'Decreto Estadual nº 10.089/1986', to: '/legislacao?q=10.089', hint: '1986' }
         ]
       },
       {
-        id: 'denuncia', num: '04', kicker: 'Fiscalização', title: 'Comunicação e Denúncia', to: '/denuncia', tone: 'red',
+        id: 'denuncia', num: '04', kicker: 'Fiscalização', title: 'Denúncias', to: '/denuncia', tone: 'red',
         photo: '/cena-fotos/rua-noite.webp', focus: '50% 55%', icon: AlertTriangle,
-        headline: 'Canal de Proteção e Vistoria',
-        text: 'Canal oficial da SPC para comunicação de dano, intervenção clandestina ou risco de demolição em imóveis protegidos.',
-        linksTitle: 'Ações de Fiscalização',
+        headline: 'Comunicação de irregularidade',
+        text: 'Canal para informar obra sem autorização, risco de demolição, descaracterização de fachada ou abandono em bem protegido.',
+        stamp: 'DPHAP',
+        linksTitle: 'Como agir',
         links: [
-          { label: 'Registrar denúncia com protocolo', to: '/denuncia' },
-          { label: 'Consultar bens tombados', to: '/bens-tombados' },
-          { label: 'Plantão de atendimento técnico', to: '/contato' }
+          { label: 'Denunciar dano ou obra irregular', to: '/denuncia' },
+          { label: 'Conferir se o bem é tombado', to: '/bens-tombados' },
+          { label: 'Canais de atendimento', to: '/contato' }
         ]
       },
       {
         id: 'spc', num: '05', kicker: 'Institucional', title: 'Sobre a SPC', to: '/institucional', tone: 'navy',
         photo: '/cena-fotos/balcao.webp', focus: '50% 50%', icon: Users,
-        headline: 'Governo do Maranhão · SECMA',
-        text: 'Órgão estadual responsável pela pesquisa, tombamento, fiscalização e salvaguarda do patrimônio cultural maranhense.',
-        linksTitle: 'Acesso Institucional',
+        headline: 'Quem somos e estrutura',
+        text: `Órgão vinculado à SECMA, dividido em DPHAP, DPE e DPI, com sede no ${SITE_CONTACT.buildingName} (${SITE_CONTACT.city}).`,
+        stamp: 'SECMA',
+        linksTitle: 'Para saber mais',
         links: [
-          { label: 'Estrutura e competências', to: '/institucional' },
-          { label: 'Acesso à informação e transparência', to: '/transparencia' },
-          { label: 'Contatos e sedes em São Luís', to: '/contato' }
+          { label: 'Quem somos e departamentos', to: '/institucional' },
+          { label: 'Transparência e acesso à informação', to: '/transparencia' },
+          { label: `Sede: ${SITE_CONTACT.buildingName}`, to: '/contato' }
         ]
       }
     ];
   }, []);
 
-  /* ===== Motor de Rotação 3D em Todas as Dimensões ===== */
+  /* ===== Motor de Rotação 3D Exclusivamente Horizontal (Eixo Y) ===== */
   useEffect(() => {
     let animId = 0;
     const update3D = () => {
@@ -362,47 +359,34 @@ export const OrigamiMenu: React.FC = () => {
       const tilt = tiltRef.current;
       if (!tilt) return;
 
+      rotX.current = 0;
+      rotZ.current = 0;
+      targetRotX.current = 0;
+      targetRotZ.current = 0;
+
       if (!anyOpen) {
-        // MODO RECOLHIDO: CILINDRO CIRCULAR 3D COM ROTAÇÃO ORBITAL LIVRE
+        // MODO RECOLHIDO: CILINDRO CIRCULAR 3D COM ROTAÇÃO APENAS HORIZONTAL (EIXO Y)
         if (isDragging.current) {
-          rotX.current += (targetRotX.current - rotX.current) * 0.4;
           rotY.current += (targetRotY.current - rotY.current) * 0.4;
-          rotZ.current += (targetRotZ.current - rotZ.current) * 0.4;
         } else if (isTransitioning.current) {
-          rotX.current += (0 - rotX.current) * 0.25;
           rotY.current += (0 - rotY.current) * 0.25;
-          rotZ.current += (0 - rotZ.current) * 0.25;
         } else {
-          // Desaceleração inercial pós-arrasto
-          if (Math.abs(velocity.current.x) > 0.04 || Math.abs(velocity.current.y) > 0.04) {
+          // Desaceleração inercial horizontal pós-arrasto (fica parado após desacelerar)
+          if (Math.abs(velocity.current.x) > 0.04) {
             targetRotY.current += velocity.current.x;
-            targetRotX.current += velocity.current.y;
-            targetRotX.current = Math.max(-65, Math.min(65, targetRotX.current));
             velocity.current.x *= 0.93;
-            velocity.current.y *= 0.93;
-            targetRotZ.current *= 0.88;
           } else {
-            // Flutuação 3D ambiente suave e lenta
-            ambientTime.current += 0.012;
-            const floatX = Math.sin(ambientTime.current * 0.8) * 3;
-            const floatY = Math.cos(ambientTime.current * 0.5) * 4;
-            targetRotX.current += (INITIAL_PITCH + floatX - targetRotX.current) * 0.02;
-            targetRotY.current += ((INITIAL_YAW + floatY) - targetRotY.current) * 0.02;
-            targetRotZ.current += (0 - targetRotZ.current) * 0.02;
+            velocity.current.x = 0;
           }
 
-          rotX.current += (targetRotX.current - rotX.current) * 0.15;
           rotY.current += (targetRotY.current - rotY.current) * 0.15;
-          rotZ.current += (targetRotZ.current - rotZ.current) * 0.15;
         }
 
-        tilt.style.transform = `rotateX(${rotX.current.toFixed(2)}deg) rotateY(${rotY.current.toFixed(2)}deg) rotateZ(${rotZ.current.toFixed(2)}deg)`;
+        tilt.style.transform = `rotateX(0deg) rotateY(${rotY.current.toFixed(2)}deg) rotateZ(0deg)`;
       } else {
         // MODO DESDOBRADO: Alinhamento frontal estável para leitura e clique
-        rotX.current += (0 - rotX.current) * 0.18;
         rotY.current += (0 - rotY.current) * 0.18;
-        rotZ.current += (0 - rotZ.current) * 0.18;
-        tilt.style.transform = `rotateX(${rotX.current.toFixed(2)}deg) rotateY(${rotY.current.toFixed(2)}deg) rotateZ(${rotZ.current.toFixed(2)}deg)`;
+        tilt.style.transform = `rotateX(0deg) rotateY(${rotY.current.toFixed(2)}deg) rotateZ(0deg)`;
       }
     };
 
@@ -410,7 +394,7 @@ export const OrigamiMenu: React.FC = () => {
     return () => cancelAnimationFrame(animId);
   }, [anyOpen]);
 
-  // Gestos de arrasto para girar o cilindro circular 3D quando recolhido
+  // Gestos de arrasto para girar o cilindro circular 3D apenas na horizontal quando recolhido
   const handlePointerDown = (e: React.PointerEvent) => {
     if (anyOpen) return;
     const target = e.target as HTMLElement;
@@ -421,7 +405,7 @@ export const OrigamiMenu: React.FC = () => {
     dragStart.current = {
       x: e.clientX,
       y: e.clientY,
-      rotX: targetRotX.current,
+      rotX: 0,
       rotY: targetRotY.current,
       time: Date.now()
     };
@@ -435,17 +419,15 @@ export const OrigamiMenu: React.FC = () => {
     const now = Date.now();
     const dt = Math.max(1, now - lastPointer.current.time);
     const dx = e.clientX - dragStart.current.x;
-    const dy = e.clientY - dragStart.current.y;
     const stepX = e.clientX - lastPointer.current.x;
-    const stepY = e.clientY - lastPointer.current.y;
 
     targetRotY.current = dragStart.current.rotY + dx * 0.65;
-    targetRotX.current = Math.max(-65, Math.min(65, dragStart.current.rotX - dy * 0.65));
-    targetRotZ.current = Math.max(-15, Math.min(15, -stepX * 0.2));
+    targetRotX.current = 0;
+    targetRotZ.current = 0;
 
     velocity.current = {
       x: (stepX / dt) * 12,
-      y: -(stepY / dt) * 12
+      y: 0
     };
 
     lastPointer.current = { x: e.clientX, y: e.clientY, time: now };
@@ -895,7 +877,7 @@ export const OrigamiMenu: React.FC = () => {
                   ? isWide
                     ? 'Origami Desdobrado — 5 Seções em Exibição'
                     : `Origami Desdobrado 3D — Seção ${sheets[activeMobileTab].num}: ${sheets[activeMobileTab].kicker}`
-                  : '✦ Cilindro 3D Circular: Arraste para girar em todas as dimensões'}
+                  : '✦ Cilindro 3D Circular: Arraste na horizontal para girar em 360°'}
               </span>
             </div>
 
@@ -947,7 +929,7 @@ export const OrigamiMenu: React.FC = () => {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className={`mx-auto max-w-[1560px] px-4 sm:px-6 pb-12 pt-4 select-none overflow-hidden max-w-full ${
+        className={`mx-auto max-w-[1560px] px-4 sm:px-6 pb-12 pt-4 select-none overflow-hidden max-w-full touch-pan-y ${
           !anyOpen ? (isRotating ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-default'
         }`}
       >
@@ -1256,7 +1238,7 @@ export const OrigamiMenu: React.FC = () => {
         <div className="flex flex-col items-center gap-2 mt-4 text-center">
           {!flat && !anyOpen && (
             <p className="text-[11px] font-mono uppercase tracking-widest text-[#E9B44C] bg-[#071D33]/80 px-4 py-1.5 rounded-full border border-white/10 shadow-sm">
-              ✦ Formato Circular 3D: Arraste com o mouse para orbitar em 360° · Clique para desdobrar
+              ✦ Formato Circular 3D: Arraste na horizontal para girar em 360° · Clique para desdobrar
             </p>
           )}
           {anyOpen && !isWide && (

@@ -1,9 +1,10 @@
-import { BENS_TOMBADOS, DECRETOS_PDF, anoDoDecreto } from '../data/bensTombados';
-import { PUBLIC_LEGAL_DOCUMENTS as L } from '../data/publicLegalDocuments';
+import { BENS_TOMBADOS, DECRETOS_PDF, anoDoDecreto } from '../data/bensTombados.ts';
+import { PUBLIC_LEGAL_DOCUMENTS as L } from '../data/publicLegalDocuments.ts';
 import fs from 'fs';
 import path from 'path';
-/** Conferência dos números e arquivos publicados no portal. Uso: npx tsx scripts/validar-dados.ts */
-const PUBLIC = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../public');
+import { fileURLToPath } from 'url';
+/** Conferência dos números e arquivos publicados no portal. Uso: node --experimental-strip-types scripts/validar-dados.ts */
+const PUBLIC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public');
 const B=BENS_TOMBADOS;
 console.log('bens',B.length,'ids unicos',new Set(B.map(b=>b.id)).size);
 const mun:Record<string,number>={}; B.forEach(b=>mun[b.municipio]=(mun[b.municipio]||0)+1);

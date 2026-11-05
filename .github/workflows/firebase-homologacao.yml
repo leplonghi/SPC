@@ -1,0 +1,158 @@
+name: CI/CD - Homologação Firebase (Portal SPC)
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - chore/firebase-homologacao
+  workflow_dispatch:
+    inputs:
+      confirm_homologacao:
+        description: 'Digite HOMOLOGAR para autorizar a publicação no ambiente de homologação Firebase'
+        required: true
+        default: 'NAO'
+      channel_id:
+        description: 'Canal do Firebase Hosting (use "homologacao" para canal isolado ou "live" para o domínio de homologação)'
+        required: true
+        default: 'homologacao'
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  validate:
+    name: 1. Auditoria, TypeScript, Testes e Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Instalar dependências (npm ci)
+        run: npm ci
+
+      - name: Verificar tipagem TypeScript (tsc --noEmit)
+        run: npm run typecheck
+
+      - name: Executar testes automatizados (Regras RBAC, Acervo e Configuração)
+        run: npm test
+
+      - name: Compilar bundle para Firebase Hosting
+        env:
+          VITE_APP_ENV: homologation
+          VITE_DEPLOY_TARGET: firebase
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID || 'spc-maranhao-homologacao' }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_SUPER_ADMIN_EMAIL: ${{ secrets.VITE_SUPER_ADMIN_EMAIL || 'leplonghi@gmail.com' }}
+        run: npm run build
+
+      - name: Validar artefatos de publicação e regras de segurança
+        run: |
+          test -f dist/index.html || (echo "ERRO: dist/index.html não encontrado" && exit 1)
+          test -f firebase.json || (echo "ERRO: firebase.json não encontrado" && exit 1)
+          test -f firestore.rules || (echo "ERRO: firestore.rules não encontrado" && exit 1)
+          test -f storage.rules || (echo "ERRO: storage.rules não encontrado" && exit 1)
+          echo "Validação de build e arquivos de configuração concluída com sucesso."
+
+      - name: Armazenar artefato de build (dist)
+        uses: actions/upload-artifact@v4
+        with:
+          name: spc-portal-dist
+          path: dist/
+          retention-days: 7
+
+  preview-pr:
+    name: 2. Prévia de Pull Request (Firebase Preview Channel)
+    needs: validate
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      HAS_WIF: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && secrets.GCP_SERVICE_ACCOUNT != '' }}
+      HAS_SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HOMOLOGACAO != '' }}
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Baixar artefato compilado (dist)
+        uses: actions/download-artifact@v4
+        with:
+          name: spc-portal-dist
+          path: dist/
+
+      - name: Autenticar via Workload Identity Federation (Preferencial)
+        if: env.HAS_WIF == 'true'
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Publicar canal de prévia para revisão do PR (via Service Account JSON)
+        if: env.HAS_SA_JSON == 'true'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HOMOLOGACAO }}
+          projectId: ${{ secrets.VITE_FIREBASE_PROJECT_ID || 'spc-maranhao-homologacao' }}
+          expires: 7d
+
+      - name: Aviso quando credenciais de prévia ainda não estão configuradas
+        if: env.HAS_WIF != 'true' && env.HAS_SA_JSON != 'true'
+        run: |
+          echo "::notice title=Credenciais Firebase ausentes::Configure FIREBASE_SERVICE_ACCOUNT_HOMOLOGACAO (ou GCP_WORKLOAD_IDENTITY_PROVIDER + GCP_SERVICE_ACCOUNT) nos GitHub Secrets para habilitar o deploy automático de Preview Channel nos Pull Requests."
+
+  deploy-homologacao:
+    name: 3. Publicação em Homologação (Mediante Aprovação)
+    needs: validate
+    if: github.event_name == 'workflow_dispatch' && inputs.confirm_homologacao == 'HOMOLOGAR'
+    runs-on: ubuntu-latest
+    environment:
+      name: homologacao
+    env:
+      HAS_WIF: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && secrets.GCP_SERVICE_ACCOUNT != '' }}
+      HAS_SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HOMOLOGACAO != '' }}
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Baixar artefato compilado (dist)
+        uses: actions/download-artifact@v4
+        with:
+          name: spc-portal-dist
+          path: dist/
+
+      - name: Verificar credenciais de homologação
+        if: env.HAS_WIF != 'true' && env.HAS_SA_JSON != 'true'
+        run: |
+          echo "::error title=Credenciais ausentes::Configure FIREBASE_SERVICE_ACCOUNT_HOMOLOGACAO ou Workload Identity Federation no ambiente 'homologacao' do GitHub antes de executar o deploy."
+          exit 1
+
+      - name: Autenticar via Workload Identity Federation (quando disponível)
+        if: env.HAS_WIF == 'true'
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Publicar no Firebase Hosting (Homologação)
+        if: env.HAS_SA_JSON == 'true'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HOMOLOGACAO }}
+          projectId: ${{ secrets.VITE_FIREBASE_PROJECT_ID || 'spc-maranhao-homologacao' }}
+          channelId: ${{ inputs.channel_id }}
+

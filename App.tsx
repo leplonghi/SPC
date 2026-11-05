@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Link as L, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import {
   Home,
@@ -22,34 +22,34 @@ import {
 } from 'lucide-react';
 import HomePage from './pages/HomePage';
 import { ScrollProgress, PageTransition } from './components/ui/Motion';
-import MapaPage from './pages/MapaPage';
-import AdminDashboard from './pages/AdminDashboard';
 import InstitucionalPage from './pages/InstitucionalPage';
 import ServicosPage from './pages/ServicosPage';
-import LegislacaoPage from './pages/LegislacaoPage';
-import AcervoDigitalPage from './pages/AcervoDigitalPage';
-import AcervoPage from './pages/AcervoPage';
-import RepositorioPage from './pages/RepositorioPage';
-import DphapPage from './pages/DphapPage';
-import DpiPage from './pages/DpiPage';
-import DpePage from './pages/DpePage';
 import LoginPage from './pages/LoginPage';
-import IngestaoPage from './pages/IngestaoPage';
 import { UserRole, User as UserType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LogOut, Accessibility, Clock, Compass, Landmark } from 'lucide-react';
-import BensTombadosPage from './pages/BensTombadosPage';
 import ContatoPage from './pages/ContatoPage';
 import DenunciaPage from './pages/DenunciaPage';
 import TransparenciaPage from './pages/TransparenciaPage';
 import PrivacidadePage from './pages/PrivacidadePage';
 import TermosPage from './pages/TermosPage';
-import { SITE_CONTACT, DEPARTMENTS } from './data/siteContact';
+import DepartamentoOficialPage from './pages/DepartamentoOficialPage';
+import { SITE_CONTACT } from './data/siteContact';
 import { usePageTitle } from './hooks/usePageTitle';
 import { AzulejoBand } from './components/ui/Reveal';
+import { recordPageVisit, recordSessionHeartbeat } from './services/analyticsService';
 
-/** Perfis que podem abrir as áreas internas. Administradores passam sempre. */
-const EDITOR_ROLES: UserRole[] = [UserRole.EDITOR_DPE, UserRole.EDITOR_DPHAP, UserRole.EDITOR_DPI, UserRole.COLABORADOR];
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const IngestaoPage = lazy(() => import('./pages/IngestaoPage'));
+const BensTombadosPage = lazy(() => import('./pages/BensTombadosPage'));
+const LegislacaoPage = lazy(() => import('./pages/LegislacaoPage'));
+const CartografiaPage = lazy(() => import('./pages/CartografiaPage'));
+
+/** Perfis que podem abrir o Painel Administrativo (/admin). Administradores passam sempre. */
+const ADMIN_PANEL_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN_SPC, UserRole.EDITOR_DPE, UserRole.EDITOR_DPHAP, UserRole.EDITOR_DPI];
+
+/** Perfis que podem acessar a Central de Ingestão (/ingestao), incluindo Colaboradores. */
+const EDITOR_ROLES: UserRole[] = [...ADMIN_PANEL_ROLES, UserRole.COLABORADOR];
 
 const PrivateRoute = ({ children, roleRequired }: { children: React.ReactNode, roleRequired?: UserRole[] }) => {
   const { user, loading, isAdmin } = useAuth();
@@ -84,6 +84,8 @@ const PrivateRoute = ({ children, roleRequired }: { children: React.ReactNode, r
 };
 
 const HIGH_CONTRAST_KEY = 'spc-high-contrast';
+const FONT_SCALE_KEY = 'spc-font-scale';
+type FontScale = 'sm' | 'md' | 'lg';
 
 /** Alto contraste: guarda a escolha do visitante e aplica a classe no body. */
 const useHighContrast = () => {
@@ -105,6 +107,31 @@ const useHighContrast = () => {
   }, [enabled]);
 
   return { enabled, toggle: () => setEnabled((v) => !v) };
+};
+
+/** Escala tipográfica (e-MAG: A-, A, A+): ajusta o tamanho-base (rem) do documento. */
+const useFontScale = () => {
+  const [scale, setScale] = useState<FontScale>(() => {
+    try {
+      const saved = localStorage.getItem(FONT_SCALE_KEY);
+      if (saved === 'sm' || saved === 'md' || saved === 'lg') return saved;
+      return 'md';
+    } catch {
+      return 'md';
+    }
+  });
+
+  useEffect(() => {
+    const pct = scale === 'lg' ? '112.5%' : scale === 'sm' ? '92.5%' : '100%';
+    document.documentElement.style.fontSize = pct;
+    try {
+      localStorage.setItem(FONT_SCALE_KEY, scale);
+    } catch {
+      /* armazenamento indisponível */
+    }
+  }, [scale]);
+
+  return { scale, setScale };
 };
 
 /** Widget oficial do VLibras (tradução para Libras), do Governo Federal. */
@@ -179,11 +206,13 @@ const Navigation = () => {
 
   const { user, logout, isAdmin, isColaborador } = useAuth();
   const highContrast = useHighContrast();
+  const fontScale = useFontScale();
 
   const navItems = [
     { label: 'A SPC', path: '/institucional', icon: <Info size={18} /> },
     { label: 'Serviços', path: '/servicos', icon: <FileText size={18} /> },
     { label: 'Bens tombados', path: '/bens-tombados', icon: <Landmark size={18} /> },
+    { label: 'Mapas', path: '/mapa', icon: <MapIcon size={18} /> },
     { label: 'Legislação', path: '/legislacao', icon: <Gavel size={18} /> },
     { label: 'Contato', path: '/contato', icon: <Mail size={18} /> },
   ];
@@ -213,7 +242,45 @@ const Navigation = () => {
             </L>
           </div>
 
-          <div className="flex items-center space-x-5">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-1" role="group" aria-label="Tamanho da fonte">
+              <button
+                type="button"
+                onClick={() => fontScale.setScale('sm')}
+                aria-pressed={fontScale.scale === 'sm'}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-black transition-colors ${
+                  fontScale.scale === 'sm' ? 'bg-white text-brand-navy' : 'text-slate-300 hover:text-white'
+                }`}
+                title="Diminuir fonte (A-)"
+              >
+                A-
+              </button>
+              <button
+                type="button"
+                onClick={() => fontScale.setScale('md')}
+                aria-pressed={fontScale.scale === 'md'}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-black transition-colors ${
+                  fontScale.scale === 'md' ? 'bg-white text-brand-navy' : 'text-slate-300 hover:text-white'
+                }`}
+                title="Fonte padrão (A)"
+              >
+                A
+              </button>
+              <button
+                type="button"
+                onClick={() => fontScale.setScale('lg')}
+                aria-pressed={fontScale.scale === 'lg'}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-black transition-colors ${
+                  fontScale.scale === 'lg' ? 'bg-white text-brand-navy' : 'text-slate-300 hover:text-white'
+                }`}
+                title="Aumentar fonte (A+)"
+              >
+                A+
+              </button>
+            </div>
+
+            <span className="text-white/20" aria-hidden="true">|</span>
+
             <button
               type="button"
               aria-pressed={highContrast.enabled}
@@ -231,10 +298,10 @@ const Navigation = () => {
         </div>
       </div>
 
-      {/* Main Navigation Header */}
+      {/* Main Navigation Header (Fixo no topo em dispositivos móveis e tablets; sticky no desktop) */}
       <nav
-        className={`sticky top-0 z-[100] border-b bg-white py-1.5 transition-shadow duration-300
-        ${scrolled ? 'border-slate-200/60 shadow-md' : 'border-slate-200/70 shadow-sm'}`}
+        className={`fixed top-0 left-0 right-0 lg:sticky lg:top-0 z-[150] border-b bg-white/95 backdrop-blur-md py-1.5 transition-shadow duration-300
+        ${scrolled ? 'border-slate-200/80 shadow-md' : 'border-slate-200/70 shadow-sm'}`}
       >
         <div className="max-w-[1440px] mx-auto px-6">
           <div className="flex justify-between items-center relative">
@@ -320,7 +387,7 @@ const Navigation = () => {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="lg:hidden absolute top-full left-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-100 shadow-2xl animate-fade-in z-[90]">
+          <div className="lg:hidden fixed top-[53px] sm:top-[57px] left-0 right-0 max-h-[calc(100dvh-53px)] sm:max-h-[calc(100dvh-57px)] overflow-y-auto overscroll-contain bg-white/98 backdrop-blur-xl border-t border-slate-100 shadow-2xl animate-fade-in z-[140]">
             <div className="p-4 space-y-2">
               {navItems.map((item) => (
                 <L
@@ -374,6 +441,24 @@ const Navigation = () => {
                   <Accessibility size={18} aria-hidden="true" />
                   <span className="text-sm">Alto contraste</span>
                 </button>
+                <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-slate-50 text-xs font-bold text-slate-600">
+                  <span>Tamanho do texto:</span>
+                  <div className="flex items-center gap-1.5" role="group" aria-label="Tamanho da fonte">
+                    {(['sm', 'md', 'lg'] as FontScale[]).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => fontScale.setScale(s)}
+                        aria-pressed={fontScale.scale === s}
+                        className={`px-2.5 py-1 rounded-lg font-black ${
+                          fontScale.scale === s ? 'bg-brand-navy text-white' : 'bg-white text-brand-navy border border-slate-200'
+                        }`}
+                      >
+                        {s === 'sm' ? 'A-' : s === 'md' ? 'A' : 'A+'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="p-2 bg-brand-navy rounded-2xl">
                   <SiteSearch compact />
                 </div>
@@ -391,6 +476,8 @@ const Navigation = () => {
           </div>
         )}
       </nav>
+      {/* Espaçador para compensar o header fixo no mobile/tablet (<lg) */}
+      <div className="h-[53px] sm:h-[57px] lg:hidden shrink-0" aria-hidden="true" />
     </>
   );
 };
@@ -472,47 +559,76 @@ const Footer = () => {
   );
 };
 
-/** Páginas internas ainda sem conteúdo público: dizem a verdade e dão um caminho. */
-const ModuloEmAtualizacao = () => {
-  usePageTitle('Página em preparação');
+const ROUTE_BREADCRUMBS: Record<string, { label: string; parent?: { label: string; to: string } }> = {
+  '/institucional': { label: 'A SPC (Institucional)' },
+  '/servicos': { label: 'Carta de Serviços e Protocolo' },
+  '/bens-tombados': { label: 'Bens Tombados (Livro do Tombo)' },
+  '/mapa': { label: 'Cartografia Histórica e Mapas' },
+  '/acervo-digital': { label: 'Cartografia Histórica e Acervo' },
+  '/acervo': { label: 'Cartografia Histórica e Acervo' },
+  '/legislacao': { label: 'Biblioteca de Legislação' },
+  '/repositorio': { label: 'Biblioteca de Legislação e Repositório' },
+  '/dphap': { label: 'DPHAP', parent: { label: 'A SPC', to: '/institucional' } },
+  '/dpi': { label: 'DPI', parent: { label: 'A SPC', to: '/institucional' } },
+  '/dpe': { label: 'DPE', parent: { label: 'A SPC', to: '/institucional' } },
+  '/contato': { label: 'Canais de Atendimento' },
+  '/denuncia': { label: 'Denúncia de Dano ao Patrimônio' },
+  '/transparencia': { label: 'Transparência e Acesso à Informação (LAI)' },
+  '/privacidade': { label: 'Política de Privacidade (LGPD)' },
+  '/termos': { label: 'Termos de Uso' },
+  '/login': { label: 'Acesso Restrito' },
+  '/admin': { label: 'Painel Administrativo' },
+  '/ingestao': { label: 'Central de Ingestão Documental' }
+};
+
+const BreadcrumbBar = () => {
+  const { pathname } = useLocation();
+  if (pathname === '/') return null;
+  const current = ROUTE_BREADCRUMBS[pathname];
+  if (!current) return null;
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 px-6 text-center">
-      <Clock size={56} className="text-brand-blue" aria-hidden="true" />
-      <h1 className="text-3xl font-black text-brand-dark">Esta página ainda não está disponível</h1>
-      <p className="text-slate-600 max-w-md">
-        Estamos preparando este conteúdo. Enquanto isso, você pode consultar a legislação ou falar diretamente com a SPC.
-      </p>
-      <div className="flex flex-wrap gap-3 justify-center">
-        <L to="/legislacao" className="px-6 py-3 bg-brand-navy text-white rounded-xl font-bold hover:shadow-xl transition-all">Ver legislação</L>
-        <L to="/contato" className="px-6 py-3 bg-white text-brand-navy border-2 border-brand-navy rounded-xl font-bold hover:bg-slate-50 transition-all">Falar com a SPC</L>
+    <nav
+      aria-label="Você está em"
+      className="bg-[#F4EFEA] border-b border-brand-sand/70 text-xs text-slate-600 print:hidden"
+    >
+      <div className="max-w-[1240px] mx-auto px-6 py-2 flex flex-wrap items-center gap-1.5">
+        <L to="/" className="font-bold text-brand-navy hover:underline">
+          Início
+        </L>
+        <span aria-hidden="true" className="text-slate-400">/</span>
+        {current.parent && (
+          <>
+            <L to={current.parent.to} className="font-bold text-brand-navy hover:underline">
+              {current.parent.label}
+            </L>
+            <span aria-hidden="true" className="text-slate-400">/</span>
+          </>
+        )}
+        <span aria-current="page" className="font-semibold text-slate-800">
+          {current.label}
+        </span>
       </div>
-      <p className="text-sm text-slate-500">
-        <a className="underline font-bold" href={`mailto:${SITE_CONTACT.email}`}>{SITE_CONTACT.email}</a>
-      </p>
-    </div>
+    </nav>
   );
 };
 
-/** Página de departamento ainda sem conteúdo próprio: mostra o que o setor faz e como contatar. */
-const DepartamentoEmPreparacao = ({ code }: { code: 'DPHAP' | 'DPE' | 'DPI' }) => {
-  const dept = DEPARTMENTS.find((d) => d.code === code)!;
-  usePageTitle(dept.code);
-  return (
-    <div className="max-w-3xl mx-auto px-6 py-16 space-y-6">
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Departamento</p>
-      <h1 className="text-3xl font-black text-brand-navy">{dept.code}</h1>
-      <p className="text-lg text-slate-700">{dept.name}</p>
-      <p className="text-slate-700">{dept.summary}</p>
-      <p className="text-slate-600">
-        A página completa deste departamento ainda está em preparação. Para falar com a equipe, escreva para{' '}
-        <a className="font-bold underline text-brand-blue-dark" href={`mailto:${SITE_CONTACT.email}`}>{SITE_CONTACT.email}</a>.
-      </p>
-      <div className="flex flex-wrap gap-3">
-        <L to="/servicos" className="px-6 py-3 bg-brand-navy text-white rounded-xl font-bold">Ver serviços</L>
-        <L to="/legislacao" className="px-6 py-3 bg-white text-brand-navy border-2 border-brand-navy rounded-xl font-bold">Ver legislação</L>
-      </div>
-    </div>
-  );
+/** Registra de forma anônima a visita, páginas navegadas e duração da sessão. */
+const VisitorTracker = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    void recordPageVisit(pathname);
+  }, [pathname]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void recordSessionHeartbeat(15);
+    }, 15000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  return null;
 };
 
 const NaoEncontrada = () => {
@@ -534,7 +650,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <HashRouter>
-        <div className="min-h-screen flex flex-col font-sans selection:bg-brand-blue selection:text-white max-w-full overflow-x-hidden">
+        <div className="min-h-screen flex flex-col font-sans selection:bg-brand-blue selection:text-white max-w-full overflow-x-clip">
           <button
             type="button"
             onClick={() => document.getElementById('conteudo')?.focus()}
@@ -543,22 +659,34 @@ const App: React.FC = () => {
             Ir para o conteúdo
           </button>
           <ScrollProgress />
+          <VisitorTracker />
           <Navigation />
+          <BreadcrumbBar />
           <main id="conteudo" tabIndex={-1} className="flex-grow outline-none max-w-full overflow-x-hidden">
             <PageTransition>
+            <Suspense
+              fallback={
+                <div className="min-h-[50vh] flex items-center justify-center p-8" role="status" aria-live="polite">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-10 h-10 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs font-bold text-slate-600">Carregando módulo...</span>
+                  </div>
+                </div>
+              }
+            >
             <Routes>
               <Route path="/" element={<HomePage />} />
-              <Route path="/mapa" element={<ModuloEmAtualizacao />} />
+              <Route path="/mapa" element={<CartografiaPage />} />
               <Route path="/institucional" element={<InstitucionalPage />} />
               <Route path="/servicos" element={<ServicosPage />} />
-              <Route path="/acervo-digital" element={<ModuloEmAtualizacao />} />
-              <Route path="/acervo" element={<ModuloEmAtualizacao />} />
-              <Route path="/repositorio" element={<ModuloEmAtualizacao />} />
+              <Route path="/acervo-digital" element={<CartografiaPage />} />
+              <Route path="/acervo" element={<CartografiaPage />} />
+              <Route path="/repositorio" element={<LegislacaoPage />} />
               <Route path="/legislacao" element={<LegislacaoPage />} />
               <Route path="/bens-tombados" element={<BensTombadosPage />} />
-              <Route path="/dphap" element={<DepartamentoEmPreparacao code="DPHAP" />} />
-              <Route path="/dpi" element={<DepartamentoEmPreparacao code="DPI" />} />
-              <Route path="/dpe" element={<DepartamentoEmPreparacao code="DPE" />} />
+              <Route path="/dphap" element={<DepartamentoOficialPage code="DPHAP" />} />
+              <Route path="/dpi" element={<DepartamentoOficialPage code="DPI" />} />
+              <Route path="/dpe" element={<DepartamentoOficialPage code="DPE" />} />
               <Route path="/contato" element={<ContatoPage />} />
               <Route path="/denuncia" element={<DenunciaPage />} />
               <Route path="/transparencia" element={<TransparenciaPage />} />
@@ -569,7 +697,7 @@ const App: React.FC = () => {
               <Route
                 path="/admin"
                 element={
-                  <PrivateRoute roleRequired={EDITOR_ROLES}>
+                  <PrivateRoute roleRequired={ADMIN_PANEL_ROLES}>
                     <AdminDashboard />
                   </PrivateRoute>
                 }
@@ -584,6 +712,7 @@ const App: React.FC = () => {
               />
               <Route path="*" element={<NaoEncontrada />} />
             </Routes>
+            </Suspense>
             </PageTransition>
           </main>
           <Footer />

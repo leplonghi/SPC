@@ -16,12 +16,35 @@ import {
   Search,
   MoreVertical,
   Shield,
-  Save
+  Save,
+  Globe,
+  Clock,
+  Mail,
+  Download,
+  RefreshCw,
+  Smartphone
 } from 'lucide-react';
 import { User, UserRole, Department } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { BENS_TOMBADOS, DECRETOS_PDF } from '../data/bensTombados';
+import { PUBLIC_LEGAL_DOCUMENTS } from '../data/publicLegalDocuments';
+import { MAPAS_HISTORICOS } from '../data/mapasHistoricos';
+import { SUPER_ADMIN_EMAIL } from '../data/adminConfig';
+import {
+  fetchVisitorSessions,
+  getAnalyticsReportConfig,
+  saveAnalyticsReportConfig,
+  sendAnalyticsEmailReport,
+  checkAndTriggerScheduledReport,
+  buildAnalyticsSummaryText,
+  formatDuration,
+  initGoogleAnalytics,
+  type VisitorSession,
+  type AnalyticsReportConfig,
+  type ReportTriggerMode
+} from '../services/analyticsService';
 
 const StatCard = ({ label, value, trend, icon: Icon, color }: any) => (
   <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
@@ -45,6 +68,122 @@ const AdminDashboard: React.FC = () => {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [tempRole, setTempRole] = useState<UserRole | null>(null);
+
+  // Estados do módulo de Acessos e Visitantes (exclusivo Admin / leplonghi@gmail.com)
+  const [visitorSessions, setVisitorSessions] = useState<VisitorSession[]>([]);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+  const [reportConfig, setReportConfig] = useState<AnalyticsReportConfig>({
+    recipientEmail: SUPER_ADMIN_EMAIL,
+    enabled: true,
+    mode: 'every_n_visits',
+    everyNVisits: 10,
+    lastSentAt: null,
+    lastSentTotalVisits: 0,
+    gaMeasurementId: ''
+  });
+  const [reportStatusMsg, setReportStatusMsg] = useState<string | null>(null);
+  const [sendingReport, setSendingReport] = useState(false);
+
+  const loadAnalyticsData = async () => {
+    setLoadingAnalytics(true);
+    try {
+      const [sessions, cfg] = await Promise.all([
+        fetchVisitorSessions(300),
+        getAnalyticsReportConfig()
+      ]);
+      setVisitorSessions(sessions);
+      setReportConfig(cfg);
+      if (cfg.gaMeasurementId) {
+        initGoogleAnalytics(cfg.gaMeasurementId);
+      }
+      const autoTriggered = await checkAndTriggerScheduledReport(sessions);
+      if (autoTriggered) {
+        setReportStatusMsg(autoTriggered);
+      }
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAdmin && (activeTab === 'analytics' || activeTab === 'overview')) {
+      void loadAnalyticsData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, isAdmin]);
+
+  const handleSaveReportConfig = async (next: AnalyticsReportConfig) => {
+    setReportConfig(next);
+    await saveAnalyticsReportConfig(next);
+    if (next.gaMeasurementId) {
+      initGoogleAnalytics(next.gaMeasurementId);
+    }
+    setReportStatusMsg(`Configuração salva! Relatórios automáticos configurados para ${SUPER_ADMIN_EMAIL}.`);
+  };
+
+  const handleSendReportNow = async () => {
+    setSendingReport(true);
+    setReportStatusMsg(null);
+    try {
+      const res = await sendAnalyticsEmailReport(
+        visitorSessions,
+        `Disparo manual solicitado no Painel Administrativo por ${user?.email || SUPER_ADMIN_EMAIL}`
+      );
+      setReportStatusMsg(res.message);
+      const updatedCfg = await getAnalyticsReportConfig();
+      setReportConfig(updatedCfg);
+    } finally {
+      setSendingReport(false);
+    }
+  };
+
+  const handleExportSessionsCsv = () => {
+    const header = [
+      'Sessao_ID',
+      'Dia',
+      'Inicio_DataHora',
+      'Ultima_Atividade',
+      'Duracao_Segundos',
+      'Duracao_Formatada',
+      'Cidade',
+      'Estado_Regiao',
+      'Pais',
+      'Dispositivo',
+      'Navegador',
+      'Origem_Trafego',
+      'Qtd_Paginas',
+      'Paginas_Visitadas'
+    ];
+    const esc = (v: string | number) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = visitorSessions.map((s) =>
+      [
+        esc(s.sessionId),
+        esc(s.dateKey),
+        esc(new Date(s.startedAt).toLocaleString('pt-BR')),
+        esc(new Date(s.lastActiveAt).toLocaleString('pt-BR')),
+        esc(s.durationSeconds),
+        esc(formatDuration(s.durationSeconds)),
+        esc(s.city),
+        esc(s.region),
+        esc(s.country),
+        esc(s.device),
+        esc(s.browser),
+        esc(s.referrer),
+        esc(s.pageViews),
+        esc((s.pagesVisited || []).join(' -> '))
+      ].join(';')
+    );
+    const csv = '\uFEFF' + [header.join(';'), ...rows].join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `spc-acessos-visitantes-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     if (activeTab === 'users' && isAdmin) {
@@ -160,7 +299,7 @@ const AdminDashboard: React.FC = () => {
       const pdfjs = await import('pdfjs-dist');
 
       // Configure worker
-      pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+      pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
       const loadingTask = pdfjs.getDocument({ data: buffer });
       const pdf = await loadingTask.promise;
@@ -298,6 +437,7 @@ const AdminDashboard: React.FC = () => {
         <div className="w-full lg:w-64 bg-white border-r border-slate-200 p-4 space-y-1">
           {[
             { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard, role: 'any' },
+            { id: 'analytics', label: 'Acessos & Visitantes', icon: BarChart, role: 'admin' },
             { id: 'assets', label: 'Bens Materiais', icon: MapIcon, role: 'any' },
             { id: 'intangible', label: 'Imaterial', icon: FilePlus, role: 'any' },
             { id: 'import', label: 'Importar Dados', icon: UploadCloud, role: 'any' },
@@ -324,26 +464,78 @@ const AdminDashboard: React.FC = () => {
           {activeTab === 'overview' && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard label="Tombamentos" value="2.451" trend="12%" icon={MapIcon} color="bg-brand-blue" />
-                <StatCard label="Registros DPI" value="38" trend="4%" icon={FilePlus} color="bg-brand-red" />
-                <StatCard label="Projetos Ativos" value="12" trend="0%" icon={Database} color="bg-brand-dark" />
-                <StatCard label="Solicitações" value="89" trend="24%" icon={History} color="bg-amber-500" />
+                <StatCard
+                  label="Bens Tombados (DPHAP)"
+                  value={String(BENS_TOMBADOS.length)}
+                  trend="1979–1993"
+                  icon={MapIcon}
+                  color="bg-brand-blue"
+                />
+                <StatCard
+                  label="Decretos com PDF"
+                  value={String(Object.keys(DECRETOS_PDF).length)}
+                  trend={`${BENS_TOMBADOS.filter((b) => DECRETOS_PDF[b.decreto.numero]).length} bens`}
+                  icon={FilePlus}
+                  color="bg-brand-red"
+                />
+                <StatCard
+                  label="Normas Publicadas"
+                  value={String(PUBLIC_LEGAL_DOCUMENTS.length)}
+                  trend="Verificadas"
+                  icon={Database}
+                  color="bg-brand-dark"
+                />
+                <StatCard
+                  label="Plantas Históricas"
+                  value={String(MAPAS_HISTORICOS.length)}
+                  trend="1698–1912"
+                  icon={History}
+                  color="bg-amber-500"
+                />
               </div>
+
+              {isAdmin && (
+                <div className="bg-slate-900 text-white rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md">
+                  <div className="space-y-1">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-amber-400">
+                      <BarChart size={14} /> Monitoramento de Audiência Ativo ({SUPER_ADMIN_EMAIL})
+                    </span>
+                    <h3 className="text-base font-bold">
+                      {visitorSessions.length} {visitorSessions.length === 1 ? 'visita registrada' : 'visitas registradas'} •{' '}
+                      {visitorSessions.reduce((acc, s) => acc + (s.pageViews || 1), 0)} páginas visualizadas
+                    </h3>
+                    <p className="text-xs text-slate-300">
+                      Consulte de onde são os visitantes, os dias de maior acesso, a duração de cada sessão e dispare o relatório por e-mail.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('analytics')}
+                    className="px-4 py-2.5 rounded-xl bg-brand-blue hover:bg-brand-blue/90 text-white text-xs font-black uppercase tracking-wider shrink-0 transition"
+                  >
+                    Ver Acessos & Visitantes →
+                  </button>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
                   <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <History size={18} className="text-brand-blue" /> Edições Recentes
+                    <History size={18} className="text-brand-blue" /> Acervo Público Verificado
                   </h3>
-                  <div className="space-y-4">
-                    {[1, 2, 3, 4].map(i => (
-                      <div key={i} className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-bold">JD</div>
-                        <div className="flex-grow">
-                          <p className="text-sm font-bold text-slate-800">João Silva atualizou "Palácio dos Leões"</p>
-                          <p className="text-[10px] text-slate-400 font-medium">HÁ 2 HORAS • DEPARTAMENTO DPHAP</p>
+                  <div className="space-y-3">
+                    {BENS_TOMBADOS.slice(0, 4).map((bem) => (
+                      <div key={bem.id} className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 text-xs font-mono font-bold">
+                          #{bem.id}
                         </div>
-                        <ChevronRight size={16} className="text-slate-300" />
+                        <div className="flex-grow min-w-0">
+                          <p className="text-sm font-bold text-slate-800 truncate">{bem.nome}</p>
+                          <p className="text-[10px] text-slate-500 font-medium uppercase">
+                            {bem.municipio} • DECRETO Nº {bem.decreto.numero} • FOLHA {bem.livro.folha}
+                          </p>
+                        </div>
+                        <ChevronRight size={16} className="text-slate-300 shrink-0" />
                       </div>
                     ))}
                   </div>
@@ -351,21 +543,29 @@ const AdminDashboard: React.FC = () => {
 
                 <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
                   <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <Database size={18} className="text-brand-red" /> Integridade de Dados
+                    <Database size={18} className="text-brand-red" /> Integridade do Catálogo Oficial
                   </h3>
                   <div className="space-y-4">
-                    <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-4">
-                      <AlertCircle size={20} className="text-amber-600 mt-0.5" />
+                    <div className="p-4 bg-green-50 rounded-xl border border-green-100 flex items-start gap-4">
+                      <CheckCircle2 size={20} className="text-green-600 mt-0.5 shrink-0" />
                       <div>
-                        <p className="text-sm font-bold text-amber-900">12 registros sem coordenadas</p>
-                        <p className="text-xs text-amber-700">Imóveis importados de Caxias estão com erro no GeoJSON.</p>
+                        <p className="text-sm font-bold text-green-900">
+                          {BENS_TOMBADOS.length} inscrições conferidas com o Livro do Tombo
+                        </p>
+                        <p className="text-xs text-green-700">
+                          Distribuídas em {new Set(BENS_TOMBADOS.map((b) => b.municipio)).size} municípios maranhenses, sem dados fictícios ou não verificados.
+                        </p>
                       </div>
                     </div>
-                    <div className="p-4 bg-green-50 rounded-xl border border-green-100 flex items-start gap-4">
-                      <CheckCircle2 size={20} className="text-green-600 mt-0.5" />
+                    <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-4">
+                      <AlertCircle size={20} className="text-amber-600 mt-0.5 shrink-0" />
                       <div>
-                        <p className="text-sm font-bold text-green-900">Sincronização concluída</p>
-                        <p className="text-xs text-green-700">Backup automático do banco de dados realizado hoje às 04:00.</p>
+                        <p className="text-sm font-bold text-amber-900">
+                          {BENS_TOMBADOS.filter((b) => !DECRETOS_PDF[b.decreto.numero]).length} bens com decreto apenas em arquivo físico
+                        </p>
+                        <p className="text-xs text-amber-700">
+                          Utilize a Central de Ingestão (/ingestao) para submeter novas digitalizações de decretos do Diário Oficial.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -374,26 +574,450 @@ const AdminDashboard: React.FC = () => {
             </>
           )}
 
+          {activeTab === 'analytics' && isAdmin && (() => {
+            const totalVisits = visitorSessions.length;
+            const totalPageViews = visitorSessions.reduce((acc, s) => acc + (s.pageViews || 1), 0);
+            const avgDurationSec =
+              totalVisits > 0
+                ? Math.round(visitorSessions.reduce((acc, s) => acc + (s.durationSeconds || 1), 0) / totalVisits)
+                : 0;
+
+            // Agrupamento por Dia
+            const byDayMap = new Map<string, { count: number; totalSec: number; pageViews: number }>();
+            // Agrupamento por Origem Geográfica (Cidade / Estado / País)
+            const byGeoMap = new Map<string, { count: number; totalSec: number }>();
+            // Agrupamento por Dispositivo
+            const byDeviceMap = new Map<string, number>();
+
+            for (const s of visitorSessions) {
+              const d = byDayMap.get(s.dateKey) || { count: 0, totalSec: 0, pageViews: 0 };
+              d.count += 1;
+              d.totalSec += s.durationSeconds || 1;
+              d.pageViews += s.pageViews || 1;
+              byDayMap.set(s.dateKey, d);
+
+              const geoKey = `${s.city} • ${s.region} (${s.country})`;
+              const g = byGeoMap.get(geoKey) || { count: 0, totalSec: 0 };
+              g.count += 1;
+              g.totalSec += s.durationSeconds || 1;
+              byGeoMap.set(geoKey, g);
+
+              byDeviceMap.set(s.device, (byDeviceMap.get(s.device) || 0) + 1);
+            }
+
+            const daysList = Array.from(byDayMap.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+            const geoList = Array.from(byGeoMap.entries()).sort((a, b) => b[1].count - a[1].count);
+            const maxDayCount = Math.max(1, ...daysList.map(([, v]) => v.count));
+            const maxGeoCount = Math.max(1, ...geoList.map(([, v]) => v.count));
+
+            const mailtoReportHref = `mailto:${SUPER_ADMIN_EMAIL}?subject=${encodeURIComponent(
+              `[Portal SPC Maranhão] Relatório de Acessos (${totalVisits} visitas) — ${new Date().toLocaleDateString('pt-BR')}`
+            )}&body=${encodeURIComponent(buildAnalyticsSummaryText(visitorSessions, 'Relatório exportado pelo Painel Administrativo'))}`;
+
+            return (
+              <div className="space-y-6">
+                {/* Cabeçalho e Ações Rápidas */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-brand-blue">
+                      <Globe size={14} /> Telemetria & Audiência do Portal (LGPD)
+                    </span>
+                    <h2 className="text-xl font-black text-slate-900 mt-0.5">
+                      Painel de Acessos, Origem Geográfica e Duração
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Visualização e relatórios configurados exclusivamente para <strong>{SUPER_ADMIN_EMAIL}</strong>.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void loadAnalyticsData()}
+                      disabled={loadingAnalytics}
+                      className="px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition"
+                    >
+                      <RefreshCw size={14} className={loadingAnalytics ? 'animate-spin' : ''} />
+                      <span>Atualizar</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleExportSessionsCsv}
+                      disabled={totalVisits === 0}
+                      className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-800 flex items-center gap-1.5 transition disabled:opacity-40"
+                    >
+                      <Download size={14} className="text-emerald-700" />
+                      <span>Exportar CSV</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => void handleSendReportNow()}
+                      disabled={sendingReport}
+                      className="px-4 py-2 rounded-xl bg-brand-blue hover:bg-brand-blue/90 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition disabled:opacity-50"
+                    >
+                      <Mail size={14} />
+                      <span>{sendingReport ? 'Enviando...' : `Enviar Relatório para ${SUPER_ADMIN_EMAIL}`}</span>
+                    </button>
+
+                    <a
+                      href={mailtoReportHref}
+                      className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 transition"
+                    >
+                      <span>Abrir no E-mail</span>
+                    </a>
+                  </div>
+                </div>
+
+                {reportStatusMsg && (
+                  <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs font-semibold flex items-center justify-between gap-4">
+                    <span>{reportStatusMsg}</span>
+                    <button
+                      type="button"
+                      onClick={() => setReportStatusMsg(null)}
+                      className="text-emerald-700 font-bold underline"
+                    >
+                      Fechar
+                    </button>
+                  </div>
+                )}
+
+                {/* 4 Indicadores Principais */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                  <StatCard
+                    label="Total de Visitas (Sessões)"
+                    value={String(totalVisits)}
+                    trend={`${totalPageViews} págs vistas`}
+                    icon={Users}
+                    color="bg-brand-blue"
+                  />
+                  <StatCard
+                    label="Duração Média por Visita"
+                    value={formatDuration(avgDurationSec)}
+                    trend="Tempo ativo"
+                    icon={Clock}
+                    color="bg-emerald-600"
+                  />
+                  <StatCard
+                    label="Cidades / Regiões"
+                    value={String(geoList.length)}
+                    trend="Origens distintas"
+                    icon={Globe}
+                    color="bg-brand-red"
+                  />
+                  <StatCard
+                    label="Dias com Acesso"
+                    value={String(daysList.length)}
+                    trend={daysList[0]?.[0] || 'Hoje'}
+                    icon={BarChart}
+                    color="bg-slate-900"
+                  />
+                </div>
+
+                {/* Grade: Acessos por Dia + De Onde São os Visitantes */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Coluna 1: Acessos por Dia e Duração Média */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                        <Clock size={16} className="text-brand-blue" /> Acessos por Dia & Duração Média
+                      </h3>
+                      <span className="text-[11px] font-semibold text-slate-400">Histórico diário</span>
+                    </div>
+
+                    {daysList.length === 0 ? (
+                      <p className="text-xs text-slate-400 py-6 text-center">Nenhum acesso registrado ainda.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {daysList.slice(0, 14).map(([dateKey, info]) => {
+                          const pct = Math.round((info.count / maxDayCount) * 100);
+                          const avgDaySec = Math.round(info.totalSec / info.count);
+                          const [y, m, d] = dateKey.split('-');
+                          const fmtDay = d && m && y ? `${d}/${m}/${y}` : dateKey;
+                          return (
+                            <div key={dateKey} className="space-y-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-slate-800">{fmtDay}</span>
+                                <span className="text-slate-600">
+                                  <strong>{info.count}</strong> {info.count === 1 ? 'visita' : 'visitas'} •{' '}
+                                  {info.pageViews} págs • média <strong>{formatDuration(avgDaySec)}</strong>
+                                </span>
+                              </div>
+                              <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                                <div
+                                  className="h-full rounded-full bg-brand-blue transition-all"
+                                  style={{ width: `${Math.max(6, pct)}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Coluna 2: De onde são os visitantes (Cidade / Estado / País) */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                        <Globe size={16} className="text-brand-red" /> De Onde São os Visitantes (Cidade / UF / País)
+                      </h3>
+                      <span className="text-[11px] font-semibold text-slate-400">Localização aproximada</span>
+                    </div>
+
+                    {geoList.length === 0 ? (
+                      <p className="text-xs text-slate-400 py-6 text-center">Nenhuma origem registrada ainda.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {geoList.slice(0, 12).map(([geoLabel, info]) => {
+                          const pct = Math.round((info.count / maxGeoCount) * 100);
+                          const avgGeoSec = Math.round(info.totalSec / info.count);
+                          return (
+                            <div key={geoLabel} className="space-y-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-slate-800 truncate max-w-[60%]">{geoLabel}</span>
+                                <span className="text-slate-600">
+                                  <strong>{info.count}</strong> ({Math.round((info.count / totalVisits) * 100)}%) •{' '}
+                                  média {formatDuration(avgGeoSec)}
+                                </span>
+                              </div>
+                              <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                                <div
+                                  className="h-full rounded-full bg-brand-red transition-all"
+                                  style={{ width: `${Math.max(6, pct)}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Resumo rápido de Dispositivos */}
+                    <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                      <span className="font-bold text-slate-700 flex items-center gap-1">
+                        <Smartphone size={13} /> Dispositivos:
+                      </span>
+                      {Array.from(byDeviceMap.entries()).map(([dev, count]) => (
+                        <span key={dev} className="px-2.5 py-0.5 rounded-full bg-slate-100 font-semibold text-slate-700">
+                          {dev}: {count}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Configuração de Envio Automático para leplonghi@gmail.com + Google Analytics 4 */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                        <Mail size={16} className="text-brand-blue" /> Notificações Automáticas para {SUPER_ADMIN_EMAIL} & Google Analytics 4
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Configure a frequência dos relatórios automáticos enviados para o seu e-mail e, se desejar, vincule também o ID do Google Analytics (G-XXXXXXXXXX).
+                      </p>
+                    </div>
+                    <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
+                      Destinatário fixo: {SUPER_ADMIN_EMAIL}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div>
+                      <label htmlFor="report-mode" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                        Regra de Disparo Automático
+                      </label>
+                      <select
+                        id="report-mode"
+                        value={reportConfig.mode}
+                        onChange={(e) =>
+                          void handleSaveReportConfig({
+                            ...reportConfig,
+                            mode: e.target.value as ReportTriggerMode
+                          })
+                        }
+                        className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-800"
+                      >
+                        <option value="every_n_visits">A cada N novos acessos</option>
+                        <option value="daily">Fechamento Diário (a cada 24h)</option>
+                        <option value="weekly">Fechamento Semanal (a cada 7 dias)</option>
+                      </select>
+                    </div>
+
+                    {reportConfig.mode === 'every_n_visits' ? (
+                      <div>
+                        <label htmlFor="report-every-n" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                          Disparar a cada quantos acessos?
+                        </label>
+                        <select
+                          id="report-every-n"
+                          value={reportConfig.everyNVisits}
+                          onChange={(e) =>
+                            void handleSaveReportConfig({
+                              ...reportConfig,
+                              everyNVisits: Number(e.target.value)
+                            })
+                          }
+                          className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-800"
+                        >
+                          <option value={5}>A cada 5 acessos</option>
+                          <option value={10}>A cada 10 acessos (Padrão)</option>
+                          <option value={25}>A cada 25 acessos</option>
+                          <option value={50}>A cada 50 acessos</option>
+                          <option value={100}>A cada 100 acessos</option>
+                        </select>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-500 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        Último envio registrado:{' '}
+                        <strong>
+                          {reportConfig.lastSentAt
+                            ? new Date(reportConfig.lastSentAt).toLocaleString('pt-BR')
+                            : 'Ainda não disparado'}
+                        </strong>
+                      </div>
+                    )}
+
+                    <div>
+                      <label htmlFor="ga4-id" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                        ID Google Analytics 4 (Opcional)
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          id="ga4-id"
+                          type="text"
+                          placeholder="Ex.: G-XXXXXXXXXX"
+                          value={reportConfig.gaMeasurementId || ''}
+                          onChange={(e) => setReportConfig({ ...reportConfig, gaMeasurementId: e.target.value })}
+                          className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-mono text-slate-800"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void handleSaveReportConfig(reportConfig)}
+                          className="px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 shrink-0"
+                        >
+                          Salvar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tabela Detalhada de Cada Visitante (Dia, Hora, Origem, Duração e Páginas) */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <div>
+                      <h3 className="text-base font-black text-slate-900">
+                        Registro Individual de Visitantes ({visitorSessions.length})
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        Detalhamento de cada visita: dia/horário, de onde veio, dispositivo, tempo de permanência e páginas navegadas.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto max-h-[520px]">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-100 text-slate-600 uppercase font-bold sticky top-0">
+                        <tr>
+                          <th className="py-3 px-4">Dia & Horário</th>
+                          <th className="py-3 px-4">Origem (Cidade / UF / País)</th>
+                          <th className="py-3 px-4">Dispositivo & Canal</th>
+                          <th className="py-3 px-4">Duração</th>
+                          <th className="py-3 px-4">Páginas Visitadas</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {visitorSessions.map((s) => (
+                          <tr key={s.sessionId} className="hover:bg-slate-50">
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              <div className="font-bold text-slate-900">{s.dateKey.split('-').reverse().join('/')}</div>
+                              <div className="text-[11px] text-slate-500">
+                                {new Date(s.startedAt).toLocaleTimeString('pt-BR')}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="font-bold text-brand-navy">{s.city}</div>
+                              <div className="text-[11px] text-slate-500">
+                                {s.region} • {s.country}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              <div className="font-semibold text-slate-800">
+                                {s.device} ({s.browser})
+                              </div>
+                              <div className="text-[11px] text-slate-500">{s.referrer}</div>
+                            </td>
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold">
+                                <Clock size={12} /> {formatDuration(s.durationSeconds)}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="font-semibold text-slate-800">
+                                {s.pageViews} {s.pageViews === 1 ? 'página' : 'páginas'}
+                              </div>
+                              <div className="text-[11px] text-slate-500 truncate max-w-md" title={(s.pagesVisited || []).join(' → ')}>
+                                {(s.pagesVisited || []).join(' → ')}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {activeTab === 'assets' && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden min-h-[500px]">
               <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Gestão de Bens Materiais</h2>
-                  <p className="text-xs text-slate-500 font-medium">Bens Tombados e Poligonais de Proteção</p>
-                </div>
-                <div className="flex gap-2">
-                  <button className="px-4 py-2 bg-brand-blue text-white rounded-lg text-xs font-bold hover:bg-brand-blue/90 flex items-center gap-2">
-                    <FilePlus size={14} /> Novo Bem
-                  </button>
+                  <h2 className="text-lg font-black text-slate-900">Catálogo Oficial de Bens Tombados ({BENS_TOMBADOS.length})</h2>
+                  <p className="text-xs text-slate-500 font-medium">Relação consolidada do Livro do Tombo Histórico e Artístico (DPHAP/SPC)</p>
                 </div>
               </div>
 
-              <div className="p-12 text-center text-slate-400">
-                <MapIcon size={48} className="mx-auto mb-4 text-slate-300" />
-                <h3 className="text-lg font-bold text-slate-600">Módulo em Desenvolvimento</h3>
-                <p className="text-sm max-w-md mx-auto mt-2">
-                  A interface de edição visual de poligonais e gestão avançada de bens tomabados está sendo implementada. Por favor, utilize a importação em massa para atualizações ou contate o suporte técnico.
-                </p>
+              <div className="overflow-x-auto max-h-[520px]">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-100 text-slate-600 uppercase font-bold sticky top-0">
+                    <tr>
+                      <th className="py-3 px-4">Inscrição</th>
+                      <th className="py-3 px-4">Bem Tombado</th>
+                      <th className="py-3 px-4">Município</th>
+                      <th className="py-3 px-4">Decreto Estadual</th>
+                      <th className="py-3 px-4">Livro / Folha</th>
+                      <th className="py-3 px-4">PDF</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {BENS_TOMBADOS.map((bem) => {
+                      const pdf = DECRETOS_PDF[bem.decreto.numero];
+                      return (
+                        <tr key={bem.id} className="hover:bg-slate-50">
+                          <td className="py-2.5 px-4 font-mono font-bold text-brand-navy">#{bem.id}</td>
+                          <td className="py-2.5 px-4 font-semibold text-slate-800">{bem.nome}</td>
+                          <td className="py-2.5 px-4 text-slate-600">{bem.municipio}</td>
+                          <td className="py-2.5 px-4 text-slate-600">Nº {bem.decreto.numero} ({bem.decreto.ano ?? 's/d'})</td>
+                          <td className="py-2.5 px-4 text-slate-600">Fl. {bem.livro.folha}</td>
+                          <td className="py-2.5 px-4">
+                            {pdf ? (
+                              <a href={pdf.url} target="_blank" rel="noopener noreferrer" className="font-bold text-emerald-700 underline">
+                                Digitalizado
+                              </a>
+                            ) : (
+                              <span className="text-slate-400">Acervo físico</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -446,7 +1070,7 @@ const AdminDashboard: React.FC = () => {
                                 value={tempRole || u.role}
                                 onChange={(e) => setTempRole(e.target.value as UserRole)}
                               >
-                                {Object.values(UserRole).map(role => (
+                                {Object.values(UserRole).filter(role => user.role === UserRole.SUPER_ADMIN || role !== UserRole.SUPER_ADMIN).map(role => (
                                   <option key={role} value={role}>{role}</option>
                                 ))}
                               </select>
