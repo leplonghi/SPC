@@ -228,10 +228,10 @@ const Navigation = () => {
         </div>
       </div>
 
-      {/* Main Navigation Header */}
+      {/* Main Navigation Header (Fixo no topo em dispositivos móveis e tablets; sticky no desktop) */}
       <nav
-        className={`sticky top-0 z-[100] border-b bg-white py-1.5 transition-shadow duration-300
-        ${scrolled ? 'border-slate-200/60 shadow-md' : 'border-slate-200/70 shadow-sm'}`}
+        className={`fixed top-0 left-0 right-0 lg:sticky lg:top-0 z-[150] border-b bg-white/95 backdrop-blur-md py-1.5 transition-shadow duration-300
+        ${scrolled ? 'border-slate-200/80 shadow-md' : 'border-slate-200/70 shadow-sm'}`}
       >
         <div className="max-w-[1440px] mx-auto px-6">
           <div className="flex justify-between items-center relative">
@@ -317,7 +317,7 @@ const Navigation = () => {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="lg:hidden absolute top-full left-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-100 shadow-2xl animate-fade-in z-[90]">
+          <div className="lg:hidden fixed top-[53px] sm:top-[57px] left-0 right-0 max-h-[calc(100dvh-53px)] sm:max-h-[calc(100dvh-57px)] overflow-y-auto overscroll-contain bg-white/98 backdrop-blur-xl border-t border-slate-100 shadow-2xl animate-fade-in z-[140]">
             <div className="p-4 space-y-2">
               {navItems.map((item) => (
                 <L
@@ -388,6 +388,8 @@ const Navigation = () => {
           </div>
         )}
       </nav>
+      {/* Espaçador para compensar o header fixo no mobile/tablet (<lg) */}
+      <div className="h-[53px] sm:h-[57px] lg:hidden shrink-0" aria-hidden="true" />
     </>
   );
 };
@@ -531,7 +533,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <HashRouter>
-        <div className="min-h-screen flex flex-col font-sans selection:bg-brand-blue selection:text-white max-w-full overflow-x-hidden">
+        <div className="min-h-screen flex flex-col font-sans selection:bg-brand-blue selection:text-white max-w-full overflow-x-clip">
           <button
             type="button"
             onClick={() => document.getElementById('conteudo')?.focus()}
