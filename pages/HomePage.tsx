@@ -1,23 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { OrigamiMenu } from '../components/ui/OrigamiMenu';
-import { PanZoomImage, type PanZoomPoint } from '../components/ui/PanZoomImage';
 import { PUBLIC_LEGAL_DOCUMENTS } from '../data/publicLegalDocuments';
 import { BENS_TOMBADOS, DECRETOS_PDF } from '../data/bensTombados';
+import { MAPAS_HISTORICOS } from '../data/mapasHistoricos';
 import { SITE_CONTACT, DEPARTMENTS } from '../data/siteContact';
 import { usePageTitle } from '../hooks/usePageTitle';
-
-/** Pontos lidos diretamente na planta de 1912 (posição aproximada em fração da imagem). */
-const PLANTA_PONTOS: PanZoomPoint[] = [
-  { id: 'governo', label: 'Palacio do Governo', x: 0.238, y: 0.634 },
-  { id: 'se', label: 'Igd da Sé', x: 0.316, y: 0.576 },
-  { id: 'theatro', label: 'Theatro', x: 0.35, y: 0.547 },
-  { id: 'carmo', label: 'Ig. do Carmo', x: 0.375, y: 0.579 },
-  { id: 'mercado', label: 'Mercado', x: 0.427, y: 0.599 },
-  { id: 'alfandega', label: 'Alfandêga', x: 0.338, y: 0.653 },
-  { id: 'merces', label: 'Ig. de N.S. das Mercês', x: 0.385, y: 0.705 },
-  { id: 'cemiterio', label: 'Cemiterio Municipal', x: 0.679, y: 0.602 }
-];
 
 const SERVICOS = [
   { label: 'Autorização para obra em imóvel tombado', dept: 'DPHAP' },
@@ -47,7 +35,7 @@ export const HomePage: React.FC = () => {
       <OrigamiMenu />
 
       <section className="border-y border-brand-sand/30 bg-[#071D33] text-white" aria-label="Números">
-        <dl className="max-w-[1240px] mx-auto px-6 py-4 grid grid-cols-3 gap-4 text-center">
+        <dl className="max-w-[1240px] mx-auto px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
           <div>
             <dd className="text-2xl font-black">{totalBens}</dd>
             <dt className="text-xs text-slate-300">bens tombados</dt>
@@ -59,6 +47,14 @@ export const HomePage: React.FC = () => {
           <div>
             <dd className="text-2xl font-black">{totalPdf}</dd>
             <dt className="text-xs text-slate-300">decretos digitalizados</dt>
+          </div>
+          <div>
+            <dd className="text-2xl font-black">{MAPAS_HISTORICOS.length}</dd>
+            <dt className="text-xs text-slate-300">
+              <Link to="/mapa" className="underline hover:text-[#E9B44C]">
+                plantas históricas interativas
+              </Link>
+            </dt>
           </div>
         </dl>
       </section>
@@ -98,32 +94,14 @@ export const HomePage: React.FC = () => {
             <p className="mt-4 text-sm">
               <Link to="/bens-tombados" className={linkClass}>Consultar bens tombados</Link>
               {' · '}
+              <Link to="/mapa" className={linkClass}>Explorar plantas históricas (1698–1912)</Link>
+              {' · '}
               <Link to="/servicos" className={linkClass}>Montar requerimento</Link>
             </p>
           </div>
           <ol className="space-y-2 text-sm text-slate-700 list-decimal pl-5">
             {ETAPAS_OBRA.map((e) => (<li key={e}>{e}</li>))}
           </ol>
-        </div>
-      </section>
-
-      <section aria-labelledby="planta-titulo" className="bg-brand-navy text-white py-12">
-        <div className="mx-auto max-w-[1240px] px-6">
-          <h2 id="planta-titulo" className="text-2xl font-bold text-white">Planta da cidade de São Luís, 1912</h2>
-          <p className="mt-2 mb-6 max-w-2xl text-sm text-slate-200">
-            Planta de Justo Jansen Ferreira. Use o zoom para ver edifícios e logradouros da época.
-          </p>
-          <PanZoomImage
-            src="/cena-fotos/planta-1912-mini.webp"
-            srcFull="/cena-fotos/planta-1912.webp"
-            width={1200}
-            height={896}
-            alt="Planta da Cidade de S. Luiz, Capital do Estado do Maranhão, de 1912, adaptada por Justo Jansen Ferreira"
-            points={PLANTA_PONTOS}
-          />
-          <p className="mt-3 text-xs text-slate-300">
-            Nomes na grafia original do mapa. Fonte: Biblioteca Nacional (cota ARC.10,05,18).
-          </p>
         </div>
       </section>
 

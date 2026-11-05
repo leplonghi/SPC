@@ -21,6 +21,8 @@ type Props = {
   height: number;
   points?: PanZoomPoint[];
   maxScale?: number;
+  /** Callback opcional disparado quando um ponto do mapa é selecionado ou desmarcado. */
+  onSelectPoint?: (pointId: string | null) => void;
 };
 
 type View = { s: number; x: number; y: number };
@@ -31,7 +33,7 @@ const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
  * Visualizador de imagem com zoom e arrasto: roda do mouse (com Ctrl), pinça no celular,
  * botões +/−, duplo clique, setas do teclado. Não prende a rolagem da página.
  */
-export const PanZoomImage: React.FC<Props> = ({ src, srcFull, alt, width, height, points = [], maxScale = 6 }) => {
+export const PanZoomImage: React.FC<Props> = ({ src, srcFull, alt, width, height, points = [], maxScale = 6, onSelectPoint }) => {
   const box = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [view, setView] = useState<View>({ s: 1, x: 0, y: 0 });
@@ -75,7 +77,14 @@ export const PanZoomImage: React.FC<Props> = ({ src, srcFull, alt, width, height
     if (size.w) setView((v) => limit(v));
   }, [size.w, size.h, limit]);
 
-  // Carrega a imagem grande só quando faz sentido
+  // Carrega a imagem grande só quando faz sentido e reseta o estado ao trocar de mapa
+  useEffect(() => {
+    setFull(false);
+    setFullReady(false);
+    setActive(null);
+    setView({ s: 1, x: 0, y: 0 });
+  }, [src]);
+
   useEffect(() => {
     if (!srcFull || !full) return;
     const im = new Image();
@@ -110,12 +119,14 @@ export const PanZoomImage: React.FC<Props> = ({ src, srcFull, alt, width, height
   const reset = () => {
     setAnimate(true);
     setActive(null);
+    onSelectPoint?.(null);
     setView(limit({ s: 1, x: 0, y: 0 }));
   };
 
   const focusPoint = (p: PanZoomPoint) => {
     wake();
     setActive(p.id);
+    onSelectPoint?.(p.id);
     setAnimate(true);
     const s = Math.min(maxScale, 3.4);
     setView(limit({ s, x: size.w / 2 - p.x * imgW * s, y: size.h / 2 - p.y * imgH * s }));

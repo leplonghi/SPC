@@ -41,6 +41,7 @@ const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const IngestaoPage = lazy(() => import('./pages/IngestaoPage'));
 const BensTombadosPage = lazy(() => import('./pages/BensTombadosPage'));
 const LegislacaoPage = lazy(() => import('./pages/LegislacaoPage'));
+const CartografiaPage = lazy(() => import('./pages/CartografiaPage'));
 
 /** Perfis que podem abrir o Painel Administrativo (/admin). Administradores passam sempre. */
 const ADMIN_PANEL_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN_SPC, UserRole.EDITOR_DPE, UserRole.EDITOR_DPHAP, UserRole.EDITOR_DPI];
@@ -181,6 +182,7 @@ const Navigation = () => {
     { label: 'A SPC', path: '/institucional', icon: <Info size={18} /> },
     { label: 'Serviços', path: '/servicos', icon: <FileText size={18} /> },
     { label: 'Bens tombados', path: '/bens-tombados', icon: <Landmark size={18} /> },
+    { label: 'Mapas', path: '/mapa', icon: <MapIcon size={18} /> },
     { label: 'Legislação', path: '/legislacao', icon: <Gavel size={18} /> },
     { label: 'Contato', path: '/contato', icon: <Mail size={18} /> },
   ];
@@ -557,11 +559,11 @@ const App: React.FC = () => {
             >
             <Routes>
               <Route path="/" element={<HomePage />} />
-              <Route path="/mapa" element={<ModuloEmAtualizacao />} />
+              <Route path="/mapa" element={<CartografiaPage />} />
               <Route path="/institucional" element={<InstitucionalPage />} />
               <Route path="/servicos" element={<ServicosPage />} />
-              <Route path="/acervo-digital" element={<ModuloEmAtualizacao />} />
-              <Route path="/acervo" element={<ModuloEmAtualizacao />} />
+              <Route path="/acervo-digital" element={<CartografiaPage />} />
+              <Route path="/acervo" element={<CartografiaPage />} />
               <Route path="/repositorio" element={<ModuloEmAtualizacao />} />
               <Route path="/legislacao" element={<LegislacaoPage />} />
               <Route path="/bens-tombados" element={<BensTombadosPage />} />
