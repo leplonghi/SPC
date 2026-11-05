@@ -160,7 +160,7 @@ const AdminDashboard: React.FC = () => {
       const pdfjs = await import('pdfjs-dist');
 
       // Configure worker
-      pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+      pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
       const loadingTask = pdfjs.getDocument({ data: buffer });
       const pdf = await loadingTask.promise;
@@ -446,7 +446,7 @@ const AdminDashboard: React.FC = () => {
                                 value={tempRole || u.role}
                                 onChange={(e) => setTempRole(e.target.value as UserRole)}
                               >
-                                {Object.values(UserRole).map(role => (
+                                {Object.values(UserRole).filter(role => user.role === UserRole.SUPER_ADMIN || role !== UserRole.SUPER_ADMIN).map(role => (
                                   <option key={role} value={role}>{role}</option>
                                 ))}
                               </select>

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Link as L, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import {
   Home,
@@ -22,23 +22,12 @@ import {
 } from 'lucide-react';
 import HomePage from './pages/HomePage';
 import { ScrollProgress, PageTransition } from './components/ui/Motion';
-import MapaPage from './pages/MapaPage';
-import AdminDashboard from './pages/AdminDashboard';
 import InstitucionalPage from './pages/InstitucionalPage';
 import ServicosPage from './pages/ServicosPage';
-import LegislacaoPage from './pages/LegislacaoPage';
-import AcervoDigitalPage from './pages/AcervoDigitalPage';
-import AcervoPage from './pages/AcervoPage';
-import RepositorioPage from './pages/RepositorioPage';
-import DphapPage from './pages/DphapPage';
-import DpiPage from './pages/DpiPage';
-import DpePage from './pages/DpePage';
 import LoginPage from './pages/LoginPage';
-import IngestaoPage from './pages/IngestaoPage';
 import { UserRole, User as UserType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LogOut, Accessibility, Clock, Compass, Landmark } from 'lucide-react';
-import BensTombadosPage from './pages/BensTombadosPage';
 import ContatoPage from './pages/ContatoPage';
 import DenunciaPage from './pages/DenunciaPage';
 import TransparenciaPage from './pages/TransparenciaPage';
@@ -48,8 +37,16 @@ import { SITE_CONTACT, DEPARTMENTS } from './data/siteContact';
 import { usePageTitle } from './hooks/usePageTitle';
 import { AzulejoBand } from './components/ui/Reveal';
 
-/** Perfis que podem abrir as áreas internas. Administradores passam sempre. */
-const EDITOR_ROLES: UserRole[] = [UserRole.EDITOR_DPE, UserRole.EDITOR_DPHAP, UserRole.EDITOR_DPI, UserRole.COLABORADOR];
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const IngestaoPage = lazy(() => import('./pages/IngestaoPage'));
+const BensTombadosPage = lazy(() => import('./pages/BensTombadosPage'));
+const LegislacaoPage = lazy(() => import('./pages/LegislacaoPage'));
+
+/** Perfis que podem abrir o Painel Administrativo (/admin). Administradores passam sempre. */
+const ADMIN_PANEL_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN_SPC, UserRole.EDITOR_DPE, UserRole.EDITOR_DPHAP, UserRole.EDITOR_DPI];
+
+/** Perfis que podem acessar a Central de Ingestão (/ingestao), incluindo Colaboradores. */
+const EDITOR_ROLES: UserRole[] = [...ADMIN_PANEL_ROLES, UserRole.COLABORADOR];
 
 const PrivateRoute = ({ children, roleRequired }: { children: React.ReactNode, roleRequired?: UserRole[] }) => {
   const { user, loading, isAdmin } = useAuth();
@@ -546,6 +543,16 @@ const App: React.FC = () => {
           <Navigation />
           <main id="conteudo" tabIndex={-1} className="flex-grow outline-none max-w-full overflow-x-hidden">
             <PageTransition>
+            <Suspense
+              fallback={
+                <div className="min-h-[50vh] flex items-center justify-center p-8" role="status" aria-live="polite">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-10 h-10 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs font-bold text-slate-600">Carregando módulo...</span>
+                  </div>
+                </div>
+              }
+            >
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/mapa" element={<ModuloEmAtualizacao />} />
@@ -569,7 +576,7 @@ const App: React.FC = () => {
               <Route
                 path="/admin"
                 element={
-                  <PrivateRoute roleRequired={EDITOR_ROLES}>
+                  <PrivateRoute roleRequired={ADMIN_PANEL_ROLES}>
                     <AdminDashboard />
                   </PrivateRoute>
                 }
@@ -584,6 +591,7 @@ const App: React.FC = () => {
               />
               <Route path="*" element={<NaoEncontrada />} />
             </Routes>
+            </Suspense>
             </PageTransition>
           </main>
           <Footer />
