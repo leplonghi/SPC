@@ -6,7 +6,6 @@ import {
   FileText,
   Info,
   Download,
-  ArrowDown,
   X,
   LayoutGrid,
   List,
@@ -14,18 +13,12 @@ import {
   ChevronUp,
   Copy,
   Check,
-  Landmark,
-  Calendar,
-  BookOpen,
-  ArrowUpDown,
-  Sparkles,
-  ShieldCheck,
   Printer,
-  Compass
+  Compass,
+  BarChart3,
+  ShieldCheck
 } from 'lucide-react';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { AzulejoBand } from '../components/ui/Reveal';
-import { StatTile } from '../components/dataviz/StatTile';
 import { ChartCard } from '../components/dataviz/ChartCard';
 import { BarList } from '../components/dataviz/BarList';
 import { ColumnChart } from '../components/dataviz/ColumnChart';
@@ -48,7 +41,7 @@ const norm = (s: string) =>
   s
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '');
+    .replace(/[\u0300-\u036f]/g, '');
 
 const fmtData = (iso: string | null) => {
   if (!iso) return null;
@@ -56,50 +49,28 @@ const fmtData = (iso: string | null) => {
   return `${d}/${m}/${y}`;
 };
 
-const MUNICIPIOS = Array.from(new Set(BENS_TOMBADOS.map((b) => b.municipio))).sort((a, b) => a.localeCompare(b, 'pt-BR'));
-
-/** Cor da lateral da ficha por período do decreto. */
-const bordaPeriodo = (b: BemTombado) => {
-  const a = anoDoDecreto(b);
-  if (a === null) return 'border-l-slate-300';
-  return a <= 1981
-    ? 'border-l-brand-blue'
-    : a <= 1988
-    ? 'border-l-brand-sage'
-    : a === 1990
-    ? 'border-l-brand-terracotta'
-    : 'border-l-brand-red';
-};
-
-const periodoBadge = (b: BemTombado) => {
-  const a = anoDoDecreto(b);
-  if (a === null) return { bg: 'bg-slate-100 text-slate-700', label: 'Ano a definir' };
-  if (a <= 1981) return { bg: 'bg-brand-blue/10 text-brand-blue-dark', label: '1979–1981' };
-  if (a <= 1988) return { bg: 'bg-brand-sage/10 text-brand-sage-dark', label: '1982–1988' };
-  if (a === 1990) return { bg: 'bg-brand-terracotta/10 text-brand-terracotta', label: '1990' };
-  return { bg: 'bg-brand-red/10 text-brand-red-dark', label: '1991–1993' };
-};
-
-const H2: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <h2 className="text-xl font-extrabold text-brand-navy mb-3">{children}</h2>
+const MUNICIPIOS = Array.from(new Set(BENS_TOMBADOS.map((b) => b.municipio))).sort((a, b) =>
+  a.localeCompare(b, 'pt-BR')
 );
 
 type FiltroPdf = '' | 'com' | 'sem';
 type Pular = 'municipio' | 'tipo' | 'periodo' | 'pdf' | null;
-type OrdenacaoOpcao = 'inscricao-asc' | 'inscricao-desc' | 'nome-asc' | 'nome-desc' | 'ano-asc' | 'ano-desc';
+type OrdenacaoOpcao = 'inscricao-asc' | 'inscricao-desc' | 'nome-asc' | 'ano-desc' | 'ano-asc';
 
 const ANOS = Array.from({ length: 1993 - 1979 + 1 }, (_, k) => 1979 + k);
 const ordemMunicipios = Array.from(
   BENS_TOMBADOS.reduce((m, b) => m.set(b.municipio, (m.get(b.municipio) ?? 0) + 1), new Map<string, number>())
-).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'pt-BR')).map(([n]) => n);
+)
+  .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'pt-BR'))
+  .map(([n]) => n);
 
 const BensTombadosPage: React.FC = () => {
   usePageTitle('Bens tombados');
-  // A Home e a Cartografia levam para cá com ?municipio=Nome, ?ano=1990 ou ?q=termo
   const [params] = useSearchParams();
   const qInicial = params.get('q') ?? '';
   const municipioInicial = params.get('municipio') ?? '';
   const anoInicial = Number(params.get('ano'));
+
   const [busca, setBusca] = useState(qInicial);
   const [municipio, setMunicipio] = useState(MUNICIPIOS.includes(municipioInicial) ? municipioInicial : '');
   const [tipo, setTipo] = useState('');
@@ -107,7 +78,6 @@ const BensTombadosPage: React.FC = () => {
   const [ano, setAno] = useState<number | null>(ANOS.includes(anoInicial) ? anoInicial : null);
   const [pdf, setPdf] = useState<FiltroPdf>('');
 
-  // Sincroniza quando o usuário navega via query string (?municipio= ou ?q=)
   React.useEffect(() => {
     const qParam = params.get('q');
     const munParam = params.get('municipio');
@@ -117,16 +87,13 @@ const BensTombadosPage: React.FC = () => {
     if (anoParam && ANOS.includes(anoParam)) setAno(anoParam);
   }, [params]);
 
-  // Novos controles de UI/UX
   const [viewMode, setViewMode] = useState<'cards' | 'tabela'>('cards');
   const [ordenacao, setOrdenacao] = useState<OrdenacaoOpcao>('inscricao-asc');
   const [expandidos, setExpandidos] = useState<Record<string, boolean>>({});
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
-  const [mostrarGuiaDidatico, setMostrarGuiaDidatico] = useState(false);
+  const [mostrarPainelGraficos, setMostrarPainelGraficos] = useState(false);
 
-  const toggleExpand = (id: string) => {
-    setExpandidos((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  const toggleExpand = (id: string) => setExpandidos((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const copiarCitacao = (bem: BemTombado) => {
     const dataDecreto = fmtData(bem.decreto.data);
@@ -134,43 +101,13 @@ const BensTombadosPage: React.FC = () => {
     const folha = bem.livro.folha ? `Livro do Tombo Histórico, folha ${bem.livro.folha}` : 'Livro do Tombo Histórico';
     const local = bem.local ? `, ${bem.local}` : '';
     const citacao = `${bem.nome} — ${bem.municipio}${local}. Inscrição nº ${bem.id}, ${folha}. ${textoDecreto}. DPHAP/SPC.`;
-
     navigator.clipboard.writeText(citacao);
     setCopiadoId(bem.id);
-    setTimeout(() => setCopiadoId(null), 2500);
-  };
-
-  const exportarCsv = () => {
-    const cabecalho = ['Inscricao', 'Nome_do_Bem', 'Municipio', 'Localizacao', 'Categoria', 'Decreto_Numero', 'Decreto_Data', 'Livro_Folha', 'Livro_Data', 'PDF_Disponivel'];
-    const escapeCsv = (val: string) => `"${val.replace(/"/g, '""')}"`;
-    const linhas = resultadosOrdenados.map((b) => [
-      escapeCsv(b.id),
-      escapeCsv(b.nome),
-      escapeCsv(b.municipio),
-      escapeCsv(b.local ?? ''),
-      escapeCsv(TIPO_POR_INSCRICAO[b.id] ?? 'Patrimônio Edificado'),
-      escapeCsv(b.decreto.numero),
-      escapeCsv(fmtData(b.decreto.data) ?? (b.decreto.ano ? String(b.decreto.ano) : '')),
-      escapeCsv(b.livro.folha),
-      escapeCsv(fmtData(b.livro.data) ?? ''),
-      escapeCsv(DECRETOS_PDF[b.decreto.numero] ? 'Sim' : 'Fisico no acervo')
-    ].join(';'));
-
-    const conteudo = '\uFEFF' + [cabecalho.join(';'), ...linhas].join('\r\n');
-    const blob = new Blob([conteudo], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `spc-bens-tombados-${municipio ? norm(municipio).replace(/\s+/g, '-') : 'maranhao'}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setTimeout(() => setCopiadoId(null), 2200);
   };
 
   const temPdf = (b: BemTombado) => Boolean(DECRETOS_PDF[b.decreto.numero]);
 
-  /** Aplica todos os filtros, menos o da dimensão "pular": assim cada gráfico mostra as opções que ainda existem ao redor da escolha dele. */
   const passa = (b: BemTombado, pular: Pular = null) => {
     if (pular !== 'municipio' && municipio && b.municipio !== municipio) return false;
     if (pular !== 'tipo' && tipo && TIPO_POR_INSCRICAO[b.id] !== tipo) return false;
@@ -202,52 +139,62 @@ const BensTombadosPage: React.FC = () => {
         return lista.sort((a, b) => b.id.localeCompare(a.id, undefined, { numeric: true }));
       case 'nome-asc':
         return lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-      case 'nome-desc':
-        return lista.sort((a, b) => b.nome.localeCompare(a.nome, 'pt-BR'));
       case 'ano-asc':
-        return lista.sort((a, b) => (anoDoDecreto(a) ?? 9999) - (anoDoDecreto(b) ?? 9999) || a.id.localeCompare(b.id, undefined, { numeric: true }));
+        return lista.sort((a, b) => (anoDoDecreto(a) ?? 9999) - (anoDoDecreto(b) ?? 9999));
       case 'ano-desc':
-        return lista.sort((a, b) => (anoDoDecreto(b) ?? 0) - (anoDoDecreto(a) ?? 0) || a.id.localeCompare(b.id, undefined, { numeric: true }));
-      case 'inscricao-asc':
+        return lista.sort((a, b) => (anoDoDecreto(b) ?? 0) - (anoDoDecreto(a) ?? 0));
       default:
         return lista.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
     }
   }, [resultados, ordenacao]);
 
+  const exportarCsv = () => {
+    const cabecalho = ['Inscricao', 'Nome_do_Bem', 'Municipio', 'Localizacao', 'Categoria', 'Decreto_Numero', 'Decreto_Data', 'Livro_Folha', 'PDF_Disponivel'];
+    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const linhas = resultadosOrdenados.map((b) =>
+      [
+        esc(b.id),
+        esc(b.nome),
+        esc(b.municipio),
+        esc(b.local ?? ''),
+        esc(TIPO_POR_INSCRICAO[b.id] ?? 'Patrimônio Edificado'),
+        esc(b.decreto.numero),
+        esc(fmtData(b.decreto.data) ?? (b.decreto.ano ? String(b.decreto.ano) : '')),
+        esc(b.livro.folha),
+        esc(DECRETOS_PDF[b.decreto.numero] ? 'Sim' : 'Físico no acervo')
+      ].join(';')
+    );
+    const blob = new Blob(['\uFEFF' + [cabecalho.join(';'), ...linhas].join('\r\n')], {
+      type: 'text/csv;charset=utf-8;'
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `spc-bens-tombados-${municipio ? norm(municipio).replace(/\s+/g, '-') : 'maranhao'}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const g = useMemo(() => {
     const base = (p: Pular) => BENS_TOMBADOS.filter((b) => passa(b, p));
     const porMun = base('municipio');
-    const porTipo = base('tipo');
     const porAno = base('periodo');
     const porPdf = base('pdf');
     return {
       municipios: ordemMunicipios.map((m) => ({ key: m, label: m, value: porMun.filter((b) => b.municipio === m).length })),
-      tipos: TIPOS_BEM.map((t) => ({ key: t, label: t, value: porTipo.filter((b) => TIPO_POR_INSCRICAO[b.id] === t).length })).sort((a, b) => b.value - a.value || a.label.localeCompare(b.label, 'pt-BR')),
-      anos: ANOS.map((y) => ({ key: String(y), label: String(y), short: `’${String(y).slice(2)}`, parts: [{ id: 'bens', value: porAno.filter((b) => anoDoDecreto(b) === y).length }] })),
-      semAno: porAno.filter((b) => anoDoDecreto(b) === null).length,
+      anos: ANOS.map((y) => ({
+        key: String(y),
+        label: String(y),
+        short: `’${String(y).slice(2)}`,
+        parts: [{ id: 'bens', value: porAno.filter((b) => anoDoDecreto(b) === y).length }]
+      })),
       com: porPdf.filter(temPdf).length,
       sem: porPdf.filter((b) => !temPdf(b)).length
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busca, municipio, tipo, faixa, ano, pdf]);
-
-  const totalSL = BENS_TOMBADOS.filter((b) => b.municipio === 'São Luís').length;
-  const totalPdf = BENS_TOMBADOS.filter(temPdf).length;
-  const faixaSel = FAIXAS_DECRETO.find((x) => x.id === faixa);
-  const anosSelecionados = ano !== null ? [String(ano)] : faixaSel ? ANOS.filter((y) => y >= faixaSel.de && y <= faixaSel.ate).map(String) : [];
-  const periodoLabel = ano !== null ? String(ano) : faixaSel ? faixaSel.label : null;
-
-  const chips: { label: string; limpar: () => void }[] = [];
-  if (busca.trim()) chips.push({ label: `Busca: ${busca.trim()}`, limpar: () => setBusca('') });
-  if (municipio) chips.push({ label: municipio, limpar: () => setMunicipio('') });
-  if (tipo) chips.push({ label: tipo, limpar: () => setTipo('') });
-  if (periodoLabel) chips.push({ label: `Decreto de ${periodoLabel}`, limpar: () => { setAno(null); setFaixa(''); } });
-  if (pdf) chips.push({ label: pdf === 'com' ? 'Com decreto digitalizado' : 'Decreto ainda não localizado', limpar: () => setPdf('') });
-  const limparTudo = () => { setBusca(''); setMunicipio(''); setTipo(''); setFaixa(''); setAno(null); setPdf(''); };
-
-  const contar = (fn: (b: BemTombado) => boolean) => BENS_TOMBADOS.filter(fn).length;
-  const campo = 'w-full rounded-2xl border-2 border-slate-200 bg-white py-3 px-4 text-sm font-medium text-brand-dark focus:border-brand-blue focus:outline-none';
-  const rotulo = 'block text-xs font-bold uppercase tracking-widest text-slate-600 mb-1';
 
   const pontos = MUNICIPIOS.filter((m) => SEDE_MUNICIPIO[m]).map((m) => ({
     nome: m,
@@ -256,798 +203,551 @@ const BensTombadosPage: React.FC = () => {
     n: g.municipios.find((x) => x.key === m)?.value ?? 0
   }));
 
+  const temFiltroAtivo = Boolean(busca.trim() || municipio || tipo || faixa || ano !== null || pdf);
+  const limparTudo = () => {
+    setBusca('');
+    setMunicipio('');
+    setTipo('');
+    setFaixa('');
+    setAno(null);
+    setPdf('');
+  };
+
+  const mapasMunicipioAtivo = municipio
+    ? getMapasTombamentoPorMunicipio(municipio)
+    : MAPAS_HISTORICOS.filter((m) => m.categoria === 'Mapa de Tombamento');
+
   return (
-    <>
-      {/* Entrada em formato de painel */}
-      <section className="relative overflow-hidden bg-brand-navy text-white">
-        <div aria-hidden="true" className="deco absolute -right-24 -top-24 h-[34rem] w-[34rem] glow-blue" />
-        <div aria-hidden="true" className="deco absolute -left-32 bottom-0 h-[26rem] w-[26rem] glow-terracotta opacity-60" />
-        <div className="relative mx-auto max-w-[1200px] px-6 pb-28 pt-12 md:pb-32 md:pt-16">
+    <div className="bg-brand-surface text-slate-800 min-h-screen">
+      {/* Cabeçalho Editorial Compacto com Busca Direta */}
+      <header className="bg-brand-navy text-white py-9 sm:py-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">
+            Livro do Tombo Estadual · {BENS_TOMBADOS.length} bens · {MUNICIPIOS.length} municípios
+          </p>
+          <h1 className="mt-2 font-serif text-3xl sm:text-4xl font-medium tracking-tight text-white">
+            Bens Tombados do Maranhão
+          </h1>
+          <p className="mt-2 max-w-[62ch] text-sm sm:text-base text-slate-200 leading-relaxed">
+            Consulte as inscrições estaduais (1979–1993), baixe os decretos digitalizados e acesse os mapas de poligonal dos municípios.
+          </p>
 
-          <div className="grid items-end gap-10 lg:grid-cols-[1.1fr_1fr]">
-            <div>
-              <h1 className="font-display text-3xl font-black leading-tight md:text-5xl">Bens tombados</h1>
-              <p className="mt-3 max-w-xl text-base text-slate-200">
-                Bens tombados pelo Estado do Maranhão, com decreto e dados do Livro do Tombo. Os gráficos funcionam como filtro.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link
-                  to="/mapa"
-                  className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/25 px-4 py-1.5 text-xs font-bold text-[#E9B44C] hover:bg-white/20 transition-colors"
-                >
-                  <Compass size={14} aria-hidden="true" />
-                  <span>Explorar Plantas Históricas (1698–1912) e Mapas de Tombamento ({MAPAS_HISTORICOS.length} pranchas)</span>
-                </Link>
-              </div>
-              <div className="mt-5 max-w-xl">
-                <label htmlFor="bens-busca" className="sr-only">Nome, rua ou decreto</label>
-                <div className="relative">
-                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
-                  <input
-                    id="bens-busca"
-                    type="search"
-                    value={busca}
-                    onChange={(e) => setBusca(e.target.value)}
-                    placeholder="Nome, rua ou decreto (ex.: 7.090)"
-                    className="w-full rounded-2xl bg-white py-4 pl-11 pr-4 text-sm font-semibold text-brand-dark shadow-2xl placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-[#F3A99C]/50"
-                  />
-                </div>
-              </div>
-            </div>
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-6 border-t border-white/15 pt-6 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0">
-              <div className="col-span-2">
-                <dt className="sr-only">Total</dt>
-                <dd><StatTile size="hero" label="Bens tombados" value={BENS_TOMBADOS.length} hint={`Decretos de 1979 a 1993. Não há tombamentos estaduais depois de 1993.`} /></dd>
-              </div>
-              <div><dt className="sr-only">Municípios</dt><dd><StatTile label="Municípios" value={MUNICIPIOS.length} /></dd></div>
-              <div><dt className="sr-only">Decretos digitalizados</dt><dd><StatTile label="Decretos digitalizados" value={totalPdf} hint={`de ${BENS_TOMBADOS.length}`} /></dd></div>
-            </dl>
+          <div className="mt-6 max-w-2xl relative">
+            <label htmlFor="bens-busca" className="sr-only">
+              Buscar bem por nome, rua, município ou decreto
+            </label>
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+            <input
+              id="bens-busca"
+              type="search"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Buscar por nome, rua, município ou decreto (ex.: Alcântara, 10.089)..."
+              className="w-full min-h-[48px] rounded-xl bg-white pl-11 pr-4 py-3 text-sm font-medium text-brand-navy placeholder:text-slate-500 shadow-lg focus:outline-none focus:ring-2 focus:ring-brand-gold"
+            />
           </div>
         </div>
-        <AzulejoBand />
-      </section>
+      </header>
 
-      {/* Painel */}
-      <div className="relative z-10 mx-auto -mt-20 max-w-[1200px] px-4 sm:px-6 md:-mt-24">
-        <div className="grid gap-5 lg:grid-cols-12">
-          <ChartCard
-            className="lg:col-span-7 lg:row-span-2"
-            title="Onde estão os bens"
-            subtitle={`${totalSL} dos ${BENS_TOMBADOS.length} bens (${Math.round((totalSL / BENS_TOMBADOS.length) * 100)}%) ficam em São Luís. Clique em um município para ver só os bens dele.`}
-            activeLabel={municipio || null}
-            onClear={() => setMunicipio('')}
-            table={{ head: ['Município', 'Bens'], rows: g.municipios.map((m) => [m.label, m.value]) }}
-            footer="Cada círculo marca a sede do município e não a localização exata dos bens. Mapa base: OpenStreetMap."
-            source="Relação de Bens Tombados (SPC/DPHAP), conferida com o texto dos decretos de tombamento e com o Livro do Tombo."
-          >
-            <div className="grid h-full min-w-0 gap-4 md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
-              <MunicipiosMap height="fill" points={pontos} selected={municipio || null} onSelect={(m) => setMunicipio(m ?? '')} />
-              <BarList
-                items={g.municipios}
-                selected={municipio || null}
-                onSelect={(k) => setMunicipio(k ?? '')}
-                unit="bens"
-                ariaLabel="Bens tombados por município"
-                max={Math.max(...ordemMunicipios.map((m) => BENS_TOMBADOS.filter((b) => b.municipio === m).length))}
-              />
-            </div>
-          </ChartCard>
-
-          <ChartCard
-            className="lg:col-span-5"
-            title="Quando o Estado tombou"
-            subtitle="Bens por ano do decreto. Clique em uma coluna para filtrar o ano."
-            activeLabel={periodoLabel}
-            onClear={() => { setAno(null); setFaixa(''); }}
-            table={{ head: ['Ano do decreto', 'Bens'], rows: g.anos.map((c) => [c.label, c.parts[0].value]) }}
-            source="Ano do decreto de tombamento, conforme o texto do decreto. Em três bens (inscrições 017, 031 e 055) o número do decreto consta na Relação, mas a data ainda está em conferência, e o ano usado é o da Relação."
-            footer={<>Não há tombamentos estaduais depois de 1993.{g.semAno > 0 && ` ${g.semAno} ${g.semAno === 1 ? 'bem está' : 'bens estão'} com o ano a confirmar e não aparece${g.semAno === 1 ? '' : 'm'} no gráfico.`}</>}
-          >
-            <ColumnChart
-              cols={g.anos}
-              selected={anosSelecionados}
-              onSelect={(k) => { const y = Number(k); setFaixa(''); setAno(ano === y ? null : y); }}
-              unit="bens"
-              ariaLabel="Bens tombados por ano do decreto"
-              emptyNote="Nenhum tombamento neste ano"
-              height={250}
-              compactLabels
-            />
-          </ChartCard>
-
-          <ChartCard
-            className="lg:col-span-5"
-            title="Decretos digitalizados"
-            subtitle="Quantos bens têm cópia do decreto disponível neste portal. As demais cópias serão incluídas à medida que forem localizadas pela SPC."
-            activeLabel={pdf ? (pdf === 'com' ? 'Com decreto' : 'Sem decreto') : null}
-            onClear={() => setPdf('')}
-            table={{ head: ['Situação', 'Bens'], rows: [['Decreto digitalizado', g.com], ['Decreto ainda não localizado', g.sem]] }}
-            source="Arquivo de decretos da SPC; só entram cópias que foram lidas antes da publicação."
-          >
-            <ShareBar
-              parts={[
-                { id: 'com', label: 'Decreto digitalizado', value: g.com, color: HUE },
-                { id: 'sem', label: 'Ainda não localizado', value: g.sem, color: '#8996A3' }
-              ]}
-              selected={pdf || null}
-              onSelect={(id) => setPdf((id as FiltroPdf) ?? '')}
-              unit="bens"
-              ariaLabel="Situação do decreto digitalizado"
-            />
-            <button
-              type="button"
-              onClick={() => { setPdf(pdf === 'com' ? '' : 'com'); document.getElementById('resultados')?.scrollIntoView({ behavior: 'smooth' }); }}
-              className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-sage-dark px-5 py-2.5 text-xs font-bold text-white hover:bg-brand-navy focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-blue/30"
-            >
-              <Download size={14} aria-hidden="true" /> {pdf === 'com' ? 'Mostrar todos os bens' : 'Ver só os bens com decreto digitalizado'}
-            </button>
-          </ChartCard>
-
-        </div>
-
-        {/* Filtros por lista: a mesma coisa que os gráficos, para quem prefere formulário */}
-        <details className="mt-5 rounded-3xl border border-brand-sand bg-white p-4 md:p-5">
-          <summary className="cursor-pointer text-sm font-bold text-brand-blue-dark">Filtrar por lista</summary>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <div id="resultados" className="max-w-5xl mx-auto px-4 sm:px-6 py-7 space-y-5">
+        {/* Barra Única e Clean de Filtros */}
+        <div className="rounded-2xl bg-white border border-[#E5DDD5] p-4 shadow-sm space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
             <div>
-              <label htmlFor="bens-municipio" className={rotulo}>Município</label>
-              <select id="bens-municipio" value={municipio} onChange={(e) => setMunicipio(e.target.value)} className={campo}>
-                <option value="">Todos ({MUNICIPIOS.length})</option>
-                {MUNICIPIOS.map((m) => (<option key={m} value={m}>{m} ({contar((b) => b.municipio === m)})</option>))}
+              <label htmlFor="bens-municipio" className="sr-only">Município</label>
+              <select
+                id="bens-municipio"
+                value={municipio}
+                onChange={(e) => setMunicipio(e.target.value)}
+                className="w-full min-h-[42px] rounded-xl border border-[#E5DDD5] bg-brand-surface px-3 py-2 text-xs font-semibold text-brand-navy focus:outline-none focus:border-brand-blue"
+              >
+                <option value="">Todos os municípios ({MUNICIPIOS.length})</option>
+                {MUNICIPIOS.map((m) => (
+                  <option key={m} value={m}>
+                    {m} ({BENS_TOMBADOS.filter((b) => b.municipio === m).length})
+                  </option>
+                ))}
               </select>
             </div>
+
             <div>
-              <label htmlFor="bens-tipo" className={rotulo}>Tipo de bem</label>
-              <select id="bens-tipo" value={tipo} onChange={(e) => setTipo(e.target.value)} className={campo}>
-                <option value="">Todos os tipos</option>
+              <label htmlFor="bens-tipo" className="sr-only">Categoria</label>
+              <select
+                id="bens-tipo"
+                value={tipo}
+                onChange={(e) => setTipo(e.target.value)}
+                className="w-full min-h-[42px] rounded-xl border border-[#E5DDD5] bg-brand-surface px-3 py-2 text-xs font-semibold text-brand-navy focus:outline-none focus:border-brand-blue"
+              >
+                <option value="">Todas as categorias</option>
                 {TIPOS_BEM.map((t) => (
-                  <option key={t} value={t}>{t} ({contar((b) => TIPO_POR_INSCRICAO[b.id] === t)})</option>
+                  <option key={t} value={t}>
+                    {t} ({BENS_TOMBADOS.filter((b) => TIPO_POR_INSCRICAO[b.id] === t).length})
+                  </option>
                 ))}
               </select>
             </div>
+
             <div>
-              <label htmlFor="bens-faixa" className={rotulo}>Ano do decreto</label>
-              <select id="bens-faixa" value={faixa} onChange={(e) => { setFaixa(e.target.value); setAno(null); }} className={campo}>
-                <option value="">Todos os anos</option>
+              <label htmlFor="bens-faixa" className="sr-only">Período do decreto</label>
+              <select
+                id="bens-faixa"
+                value={faixa}
+                onChange={(e) => {
+                  setFaixa(e.target.value);
+                  setAno(null);
+                }}
+                className="w-full min-h-[42px] rounded-xl border border-[#E5DDD5] bg-brand-surface px-3 py-2 text-xs font-semibold text-brand-navy focus:outline-none focus:border-brand-blue"
+              >
+                <option value="">Todos os períodos</option>
                 {FAIXAS_DECRETO.map((f) => (
-                  <option key={f.id} value={f.id}>{f.label} ({contar((b) => { const a = anoDoDecreto(b); return a !== null && a >= f.de && a <= f.ate; })})</option>
+                  <option key={f.id} value={f.id}>
+                    Decretos de {f.label}
+                  </option>
                 ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="bens-ordem" className="sr-only">Ordenação</label>
+              <select
+                id="bens-ordem"
+                value={ordenacao}
+                onChange={(e) => setOrdenacao(e.target.value as OrdenacaoOpcao)}
+                className="w-full min-h-[42px] rounded-xl border border-[#E5DDD5] bg-brand-surface px-3 py-2 text-xs font-semibold text-brand-navy focus:outline-none focus:border-brand-blue"
+              >
+                <option value="inscricao-asc">Inscrição (001 → 065)</option>
+                <option value="inscricao-desc">Inscrição (065 → 001)</option>
+                <option value="nome-asc">Nome (A → Z)</option>
+                <option value="ano-desc">Mais recentes primeiro</option>
+                <option value="ano-asc">Mais antigos primeiro</option>
               </select>
             </div>
           </div>
-        </details>
-      </div>
 
-      {/* Seção de Resultados Aprimorada: Fluida, Intuitiva e Didática */}
-      <div id="resultados" className="mx-auto max-w-6xl scroll-mt-24 px-4 sm:px-6 pb-16 pt-10">
-
-        {/* Barra de Filtro Rápido por Categoria / Tipo de Bem */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between gap-2 mb-2.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Landmark size={14} className="text-brand-blue" /> Categorias de Patrimônio:
-            </span>
-            {tipo && (
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => setTipo('')}
-                className="text-xs font-semibold text-brand-red-dark hover:underline"
+                onClick={() => setPdf(pdf === 'com' ? '' : 'com')}
+                className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                  pdf === 'com'
+                    ? 'bg-brand-sage-dark text-white'
+                    : 'bg-brand-surface text-slate-700 hover:bg-brand-sand/60'
+                }`}
               >
-                Limpar categoria
+                Somente com PDF ({BENS_TOMBADOS.filter(temPdf).length})
               </button>
-            )}
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-            <button
-              type="button"
-              onClick={() => setTipo('')}
-              className={`inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
-                !tipo
-                  ? 'bg-brand-navy text-white shadow-sm'
-                  : 'bg-white text-slate-700 border border-slate-200 hover:border-brand-navy/40 hover:bg-slate-50'
-              }`}
-            >
-              Todos os tipos ({BENS_TOMBADOS.length})
-            </button>
-            {TIPOS_BEM.map((t) => {
-              const totalCat = BENS_TOMBADOS.filter((b) => TIPO_POR_INSCRICAO[b.id] === t).length;
-              const isSelected = tipo === t;
-              return (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTipo(isSelected ? '' : t)}
-                  className={`inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
-                    isSelected
-                      ? 'bg-brand-blue text-white shadow-sm'
-                      : 'bg-white text-slate-700 border border-slate-200 hover:border-brand-blue hover:text-brand-navy hover:bg-slate-50'
-                  }`}
-                >
-                  <span>{t}</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                    {totalCat}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
-        {/* Guia Didático Rápido (Retrátil) */}
-        <div className="mb-6 rounded-2xl border border-brand-sand bg-brand-light/70 p-4 transition-all">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-blue/10 text-brand-blue-dark">
-                <Sparkles size={16} />
-              </span>
-              <div>
-                <h3 className="text-sm font-bold text-brand-navy">Como entender os dados de tombamento estadual</h3>
-                <p className="text-xs text-slate-600">Entenda os termos oficiais e o significado jurídico de cada registro.</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setMostrarGuiaDidatico(!mostrarGuiaDidatico)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-brand-navy hover:bg-slate-50 focus:outline-none"
-            >
-              {mostrarGuiaDidatico ? 'Ocultar guia' : 'Ver guia explicativo'}
-              {mostrarGuiaDidatico ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => setMostrarPainelGraficos((v) => !v)}
+                className={`min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                  mostrarPainelGraficos
+                    ? 'bg-brand-navy text-white'
+                    : 'bg-brand-surface text-brand-navy hover:bg-brand-sand/60'
+                }`}
+              >
+                <BarChart3 size={13} aria-hidden="true" />
+                <span>{mostrarPainelGraficos ? 'Ocultar mapa e gráficos' : 'Ver mapa e gráficos'}</span>
+              </button>
 
-          {mostrarGuiaDidatico && (
-            <div className="mt-4 grid gap-3 border-t border-slate-200/80 pt-4 sm:grid-cols-3 text-xs leading-relaxed text-slate-700">
-              <div className="rounded-xl bg-white p-3 border border-slate-200/60">
-                <span className="font-bold text-brand-navy block mb-1">📜 Decreto Estadual</span>
-                Ato formal do Governador do Estado que estabelece o tombamento. Fixa a data jurídica em que a proteção entra em vigor no Maranhão.
-              </div>
-              <div className="rounded-xl bg-white p-3 border border-slate-200/60">
-                <span className="font-bold text-brand-navy block mb-1">📖 Livro do Tombo</span>
-                Registro público histórico mantido pelo DPHAP. O número de folha identifica onde os limites e a memória do imóvel foram lavrados.
-              </div>
-              <div className="rounded-xl bg-white p-3 border border-slate-200/60">
-                <span className="font-bold text-brand-navy block mb-1">🛡️ Proteção & Obras</span>
-                Qualquer projeto, reforma, intervenção ou pintura em bem tombado necessita de autorização prévia junto à SPC/DPHAP.
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Painel de Mapas de Tombamento por Município (São Luís, Alcântara, Viana, Caxias e Carolina) */}
-        {(() => {
-          const mapasMunicipio = municipio
-            ? getMapasTombamentoPorMunicipio(municipio)
-            : MAPAS_HISTORICOS.filter((m) => m.categoria === 'Mapa de Tombamento');
-          if (mapasMunicipio.length === 0) return null;
-          return (
-            <div className="mb-6 rounded-2xl border border-brand-terracotta/30 bg-white p-4 sm:p-5 shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                <div>
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-brand-terracotta">
-                    <Compass size={13} aria-hidden="true" />
-                    {municipio
-                      ? `Mapas Oficiais de Tombamento — ${municipio}`
-                      : 'Mapas e Poligonais de Tombamento por Município (SPC/DPHAP)'}
-                  </span>
-                  <h3 className="text-sm sm:text-base font-bold text-brand-navy mt-0.5">
-                    {municipio
-                      ? `Baixe ou interaja com as pranchas de delimitação do tombamento de ${municipio}`
-                      : 'Disponíveis para download e consulta interativa: São Luís, Alcântara, Viana, Caxias e Carolina'}
-                  </h3>
-                </div>
-                <Link
-                  to="/mapa?categoria=tombamento"
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-blue-dark hover:text-brand-navy underline shrink-0"
-                >
-                  <span>Abrir visor cartográfico completo</span>
-                </Link>
-              </div>
-
-              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                {mapasMunicipio.map((mapa) => (
-                  <div
-                    key={mapa.id}
-                    className="flex flex-col justify-between gap-2.5 rounded-xl border border-slate-200 bg-[#FAF8F5] p-3 text-xs"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setMunicipio(mapa.municipio)}
-                          className="font-black text-brand-navy hover:text-brand-terracotta underline-offset-2 hover:underline text-left"
-                        >
-                          {mapa.municipio}
-                        </button>
-                        <span className="rounded bg-brand-navy/10 px-2 py-0.5 text-[10px] font-bold text-brand-navy">
-                          {mapa.ano}
-                        </span>
-                      </div>
-                      <p className="mt-1 font-semibold text-slate-800 leading-snug line-clamp-2">{mapa.titulo}</p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200/70">
-                      <a
-                        href={mapa.downloadUrl}
-                        download
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 rounded-lg bg-brand-navy px-2.5 py-1 text-[11px] font-bold text-white hover:bg-brand-blue transition-colors"
-                      >
-                        <Download size={11} aria-hidden="true" />
-                        <span>Baixar Mapa ({mapa.downloadUrl.endsWith('.pdf') ? 'PDF' : 'PNG'})</span>
-                      </a>
-                      <Link
-                        to={`/mapa?mapa=${encodeURIComponent(mapa.id)}`}
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-bold text-brand-navy hover:bg-slate-100 transition-colors"
-                      >
-                        <Compass size={11} aria-hidden="true" />
-                        <span>Interagir</span>
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Barra de Controles Sticky: Contagem, Ordenação e Modo de Visualização */}
-        <div className="sticky top-[62px] z-20 mb-6 rounded-2xl border border-brand-sand bg-white/95 px-4 py-3 shadow-sm backdrop-blur">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            {/* Lado Esquerdo: Contagem de resultados e chips de filtro */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div role="status" aria-live="polite" className="text-sm font-bold text-brand-navy mr-1">
-                {resultados.length === 0 ? (
-                  'Nenhum bem encontrado'
-                ) : (
-                  <>
-                    <span>{resultados.length} {resultados.length === 1 ? 'bem tombado' : 'bens tombados'}</span>
-                    <span className="ml-1.5 font-normal text-xs text-slate-500">
-                      ({resultados.filter(temPdf).length} com decreto em PDF)
-                    </span>
-                  </>
-                )}
-              </div>
-
-              {chips.map((c) => (
-                <button
-                  key={c.label}
-                  type="button"
-                  onClick={c.limpar}
-                  className="inline-flex items-center gap-1 rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-bold text-brand-blue-dark hover:bg-brand-blue/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
-                  aria-label={`Remover filtro: ${c.label}`}
-                >
-                  <span className="max-w-[12rem] truncate">{c.label}</span>
-                  <X size={12} aria-hidden="true" />
-                </button>
-              ))}
-
-              {chips.length > 0 && (
+              {temFiltroAtivo && (
                 <button
                   type="button"
                   onClick={limparTudo}
-                  className="text-xs font-bold uppercase tracking-wider text-brand-red-dark hover:underline ml-1"
+                  className="min-h-[36px] inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold text-brand-terracotta hover:bg-brand-terracotta/10"
                 >
-                  Limpar tudo
+                  <X size={13} aria-hidden="true" />
+                  Limpar filtros
                 </button>
               )}
             </div>
 
-            {/* Lado Direito: Exportação, Ordenação e Seletor de Modo (Cards vs Tabela) */}
-            <div className="flex flex-wrap items-center gap-2 self-end md:self-auto">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={exportarCsv}
                 disabled={resultadosOrdenados.length === 0}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-brand-navy hover:bg-slate-50 disabled:opacity-40 transition-colors"
-                title="Baixar planilha CSV com os bens filtrados"
+                className="min-h-[36px] inline-flex items-center gap-1 rounded-xl border border-[#E5DDD5] bg-white px-2.5 py-1.5 text-xs font-bold text-brand-navy hover:bg-brand-surface disabled:opacity-40"
               >
-                <Download size={13} className="text-brand-sage-dark" aria-hidden="true" />
-                <span>Exportar CSV</span>
+                <Download size={13} aria-hidden="true" />
+                <span>CSV</span>
               </button>
-
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-brand-navy hover:bg-slate-50 transition-colors print:hidden"
-                title="Imprimir ou salvar como PDF a relação exibida"
+                className="min-h-[36px] inline-flex items-center gap-1 rounded-xl border border-[#E5DDD5] bg-white px-2.5 py-1.5 text-xs font-bold text-brand-navy hover:bg-brand-surface print:hidden"
+                aria-label="Imprimir lista"
               >
-                <Printer size={13} className="text-brand-blue" aria-hidden="true" />
-                <span className="hidden sm:inline">Imprimir</span>
+                <Printer size={13} aria-hidden="true" />
               </button>
-
-              <div className="flex items-center gap-1.5">
-                <ArrowUpDown size={14} className="text-slate-400" />
-                <label htmlFor="bens-ordem" className="sr-only">Ordenar resultados</label>
-                <select
-                  id="bens-ordem"
-                  value={ordenacao}
-                  onChange={(e) => setOrdenacao(e.target.value as OrdenacaoOpcao)}
-                  className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-brand-navy focus:border-brand-blue focus:outline-none"
-                >
-                  <option value="inscricao-asc">Inscrição (001 a 070)</option>
-                  <option value="inscricao-desc">Inscrição (070 a 001)</option>
-                  <option value="nome-asc">Nome do bem (A – Z)</option>
-                  <option value="nome-desc">Nome do bem (Z – A)</option>
-                  <option value="ano-desc">Ano do decreto (recentes primeiro)</option>
-                  <option value="ano-asc">Ano do decreto (antigos primeiro)</option>
-                </select>
-              </div>
-
-              <div className="flex rounded-xl border border-slate-200 bg-slate-100 p-0.5">
+              <div className="flex rounded-xl border border-[#E5DDD5] bg-brand-surface p-0.5">
                 <button
                   type="button"
                   onClick={() => setViewMode('cards')}
-                  className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${
-                    viewMode === 'cards'
-                      ? 'bg-white text-brand-navy shadow-xs'
-                      : 'text-slate-600 hover:text-brand-navy'
-                  }`}
-                  aria-label="Visualização em cartões didáticos"
+                  className={`p-1.5 rounded-lg ${viewMode === 'cards' ? 'bg-white text-brand-navy shadow-sm' : 'text-slate-500'}`}
+                  aria-label="Visualização em cartões"
                 >
-                  <LayoutGrid size={13} />
-                  <span className="hidden sm:inline">Cards</span>
+                  <LayoutGrid size={14} />
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode('tabela')}
-                  className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors ${
-                    viewMode === 'tabela'
-                      ? 'bg-white text-brand-navy shadow-xs'
-                      : 'text-slate-600 hover:text-brand-navy'
-                  }`}
-                  aria-label="Visualização em tabela técnica"
+                  className={`p-1.5 rounded-lg ${viewMode === 'tabela' ? 'bg-white text-brand-navy shadow-sm' : 'text-slate-500'}`}
+                  aria-label="Visualização em tabela"
                 >
-                  <List size={13} />
-                  <span className="hidden sm:inline">Tabela</span>
+                  <List size={14} />
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Lista de Resultados */}
-        {resultadosOrdenados.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm shadow-sm">
-            <div className="flex items-start gap-4">
-              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
-                <Info size={20} />
-              </span>
-              <div>
-                <p className="font-bold text-brand-navy text-base">Nenhum resultado encontrado para estes filtros.</p>
-                <p className="mt-1 text-slate-600 leading-relaxed">
-                  Não encontrar um imóvel aqui não significa que ele não tenha proteção patrimonial. Ele pode estar dentro de um conjunto tombado (como o Centro Histórico de São Luís ou Alcântara), ou possuir proteção federal (IPHAN) ou municipal.
-                </p>
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={limparTudo}
-                    className="rounded-xl bg-brand-navy px-4 py-2 text-xs font-bold text-white hover:bg-brand-blue transition-colors"
-                  >
-                    Restaurar todos os bens
-                  </button>
-                  <a
-                    className="text-xs font-bold text-brand-blue-dark underline"
-                    href={`mailto:${SITE_CONTACT.email}?subject=Consulta%20de%20tombamento`}
-                  >
-                    Dúvidas sobre um imóvel? Escreva para a SPC ({SITE_CONTACT.email})
-                  </a>
-                </div>
+        {/* Painel de Mapa & Gráficos Interativos (Sob Demanda — não bloqueia a lista!) */}
+        {mostrarPainelGraficos && (
+          <div className="grid gap-4 lg:grid-cols-12">
+            <ChartCard
+              className="lg:col-span-7"
+              title="Distribuição por Município"
+              subtitle="Clique em um município para filtrar a relação abaixo."
+              activeLabel={municipio || null}
+              onClear={() => setMunicipio('')}
+              table={{ head: ['Município', 'Bens'], rows: g.municipios.map((m) => [m.label, m.value]) }}
+              source="Relação de Bens Tombados (SPC/DPHAP)."
+            >
+              <div className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
+                <MunicipiosMap height={260} points={pontos} selected={municipio || null} onSelect={(m) => setMunicipio(m ?? '')} />
+                <BarList
+                  items={g.municipios}
+                  selected={municipio || null}
+                  onSelect={(k) => setMunicipio(k ?? '')}
+                  unit="bens"
+                  ariaLabel="Bens tombados por município"
+                  max={Math.max(...ordemMunicipios.map((m) => BENS_TOMBADOS.filter((b) => b.municipio === m).length))}
+                />
               </div>
+            </ChartCard>
+
+            <div className="lg:col-span-5 space-y-4">
+              <ChartCard
+                title="Tombamentos por Ano"
+                subtitle="Clique em uma coluna para filtrar o ano."
+                activeLabel={ano ? String(ano) : null}
+                onClear={() => setAno(null)}
+                table={{ head: ['Ano', 'Bens'], rows: g.anos.map((c) => [c.label, c.parts[0].value]) }}
+                source="Ano do decreto de tombamento."
+              >
+                <ColumnChart
+                  cols={g.anos}
+                  selected={ano ? [String(ano)] : []}
+                  onSelect={(k) => {
+                    const y = Number(k);
+                    setFaixa('');
+                    setAno(ano === y ? null : y);
+                  }}
+                  unit="bens"
+                  ariaLabel="Bens tombados por ano"
+                  emptyNote="Sem tombamentos"
+                  height={160}
+                  compactLabels
+                />
+              </ChartCard>
+
+              <ChartCard
+                title="Decretos Digitalizados"
+                subtitle="Situação das cópias disponíveis em PDF."
+                activeLabel={pdf ? (pdf === 'com' ? 'Com PDF' : 'Sem PDF') : null}
+                onClear={() => setPdf('')}
+                table={{ head: ['Situação', 'Bens'], rows: [['Digitalizado', g.com], ['Físico', g.sem]] }}
+                source="Arquivo de decretos da SPC."
+              >
+                <ShareBar
+                  parts={[
+                    { id: 'com', label: 'PDF disponível', value: g.com, color: HUE },
+                    { id: 'sem', label: 'Acervo físico', value: g.sem, color: '#8996A3' }
+                  ]}
+                  selected={pdf || null}
+                  onSelect={(id) => setPdf((id as FiltroPdf) ?? '')}
+                  unit="bens"
+                  ariaLabel="Situação de digitalização"
+                />
+              </ChartCard>
             </div>
           </div>
+        )}
+
+        {/* Faixa Compacta de Mapas de Tombamento (apenas quando existem mapas para o município/filtro) */}
+        {mapasMunicipioAtivo.length > 0 && (
+          <div className="rounded-2xl bg-white border border-[#E5DDD5] px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2 text-xs text-slate-600">
+              <Compass size={15} className="text-brand-terracotta shrink-0" aria-hidden="true" />
+              <span>
+                <strong className="text-brand-navy">
+                  {municipio ? `Mapas de tombamento de ${municipio}:` : 'Mapas de tombamento disponíveis:'}
+                </strong>{' '}
+                {!municipio && 'São Luís, Alcântara, Viana, Caxias e Carolina'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
+              {mapasMunicipioAtivo.map((m) => (
+                <a
+                  key={m.id}
+                  href={m.downloadUrl}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 inline-flex min-h-[34px] items-center gap-1 rounded-lg bg-brand-surface border border-[#E5DDD5] px-2.5 py-1 text-xs font-bold text-brand-navy hover:border-brand-terracotta hover:text-brand-terracotta transition-colors"
+                >
+                  <Download size={11} aria-hidden="true" />
+                  <span>{m.ano}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Contagem limpa */}
+        <p className="text-xs font-semibold text-slate-600 px-1" role="status" aria-live="polite">
+          Exibindo <strong className="text-brand-navy">{resultadosOrdenados.length}</strong>{' '}
+          {resultadosOrdenados.length === 1 ? 'bem tombado' : 'bens tombados'}
+          {municipio ? ` em ${municipio}` : ''}
+        </p>
+
+        {/* Resultados: Cards Limpos ou Tabela */}
+        {resultadosOrdenados.length === 0 ? (
+          <div className="rounded-2xl border border-[#E5DDD5] bg-white p-10 text-center space-y-3">
+            <Info size={28} className="mx-auto text-slate-400" />
+            <p className="font-bold text-brand-navy">Nenhum bem encontrado com os filtros selecionados.</p>
+            <p className="text-xs text-slate-600 max-w-md mx-auto">
+              O imóvel pode integrar um conjunto tombado (como o Centro Histórico de São Luís ou Alcântara) ou possuir proteção federal (IPHAN).
+            </p>
+            <button
+              type="button"
+              onClick={limparTudo}
+              className="min-h-[40px] px-4 py-2 rounded-xl bg-brand-navy text-white text-xs font-bold hover:bg-brand-blue"
+            >
+              Mostrar todos os bens
+            </button>
+          </div>
         ) : viewMode === 'cards' ? (
-          /* MODO CARDS DIDÁTICOS */
-          <div className="space-y-3.5">
+          <div className="space-y-3">
             {resultadosOrdenados.map((bem) => {
               const dataDecreto = fmtData(bem.decreto.data);
               const dataLivro = fmtData(bem.livro.data);
-              const pdf = DECRETOS_PDF[bem.decreto.numero];
+              const pdfDecreto = DECRETOS_PDF[bem.decreto.numero];
               const tipoBem = TIPO_POR_INSCRICAO[bem.id] ?? 'Patrimônio Edificado';
               const isExpanded = Boolean(expandidos[bem.id]);
-              const pBadge = periodoBadge(bem);
-              const mapasTombamentoMun = getMapasTombamentoPorMunicipio(bem.municipio);
+              const mapasMun = getMapasTombamentoPorMunicipio(bem.municipio);
 
               return (
                 <article
                   key={bem.id}
-                  className={`rounded-2xl border border-slate-200/90 bg-white shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden border-l-4 ${bordaPeriodo(
-                    bem
-                  )}`}
+                  className="rounded-2xl border border-[#E5DDD5] bg-white p-5 sm:p-6 shadow-sm hover:border-brand-navy/30 transition-all"
                 >
-                  <div className="p-4 sm:p-5">
-                    {/* Linha Superior: Identificação e PDF do Decreto */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center rounded-md bg-brand-navy px-2.5 py-1 text-xs font-mono font-bold text-white tracking-wide">
-                          Inscrição #{bem.id}
-                        </span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-blue-dark">
-                          <Landmark size={12} className="opacity-70" />
-                          {tipoBem}
-                        </span>
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${pBadge.bg}`}>
-                          <Calendar size={11} className="opacity-70" />
-                          {pBadge.label}
-                        </span>
-                      </div>
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div className="space-y-1.5 min-w-0">
+                      <p className="text-xs font-bold text-slate-500 flex flex-wrap items-center gap-1.5">
+                        <span className="font-mono text-brand-navy">#{bem.id}</span>
+                        <span aria-hidden="true">·</span>
+                        <span className="text-brand-terracotta">{bem.municipio}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{tipoBem}</span>
+                      </p>
 
-                      <div className="flex items-center gap-2">
-                        {pdf ? (
-                          <a
-                            href={pdf.url}
-                            download
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-brand-sage-dark/40 bg-brand-sage-dark/10 px-3 py-1.5 text-xs font-bold text-brand-sage-dark hover:bg-brand-sage-dark hover:text-white transition-colors"
-                            aria-label={`Baixar o decreto nº ${bem.decreto.numero} em PDF`}
-                          >
-                            <Download size={13} />
-                            <span>PDF do Decreto</span>
-                          </a>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-medium text-slate-500">
-                            <FileText size={12} /> Cópia física no acervo
+                      <h2 className="font-display text-base sm:text-lg font-bold text-brand-navy leading-snug">
+                        {bem.nome}
+                      </h2>
+
+                      <p className="text-xs sm:text-sm text-slate-600 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        {bem.local && (
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin size={13} className="text-slate-400 shrink-0" aria-hidden="true" />
+                            {bem.local}
                           </span>
                         )}
-                      </div>
+                        <span className="text-slate-400" aria-hidden="true">·</span>
+                        <span>
+                          Decreto nº <strong className="text-slate-800">{bem.decreto.numero}</strong>
+                          {bem.decreto.ano ? ` (${bem.decreto.ano})` : ''}
+                        </span>
+                      </p>
                     </div>
 
-                    {/* Nome do Bem */}
-                    <h3 className="font-display text-base sm:text-lg font-bold text-brand-navy leading-snug">
-                      {bem.nome}
-                    </h3>
-
-                    {/* Localização */}
-                    <p className="mt-1 flex items-center gap-1.5 text-xs sm:text-sm text-slate-600 font-medium">
-                      <MapPin size={14} className="text-brand-terracotta flex-shrink-0" />
-                      <span>
-                        <strong className="text-brand-dark">{bem.municipio}</strong>
-                        {bem.local ? ` · ${bem.local}` : ''}
-                      </span>
-                    </p>
-
-                    {/* Faixa de Mapas de Tombamento do Município (quando disponível) */}
-                    {mapasTombamentoMun.length > 0 && (
-                      <div className="mt-3 flex flex-wrap items-center gap-2 pt-2.5 border-t border-slate-100">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mr-1">
-                          Cartografia ({bem.municipio}):
-                        </span>
-                        {mapasTombamentoMun.map((mapaMun) => (
-                          <a
-                            key={mapaMun.id}
-                            href={mapaMun.downloadUrl}
-                            download
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-xl border border-brand-terracotta/35 bg-brand-terracotta/10 px-3 py-1.5 text-xs font-bold text-brand-terracotta hover:bg-brand-terracotta hover:text-white transition-colors"
-                            title={`Baixar ${mapaMun.titulo} (${mapaMun.formatoDownload})`}
-                          >
-                            <Download size={12} />
-                            <span>
-                              {mapasTombamentoMun.length > 1
-                                ? `Baixar: ${mapaMun.ano}`
-                                : `Baixar Mapa de Tombamento`}
-                            </span>
-                          </a>
-                        ))}
-                        <Link
-                          to={`/mapa?mapa=${encodeURIComponent(mapasTombamentoMun[0].id)}`}
-                          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-xl border border-brand-blue/30 bg-brand-blue/10 px-3 py-1.5 text-xs font-bold text-brand-blue-dark hover:bg-brand-blue hover:text-white transition-colors"
-                          title={`Abrir mapa interativo de ${bem.municipio}`}
+                    {/* Ações Primárias Limpas */}
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      {pdfDecreto && (
+                        <a
+                          href={pdfDecreto.url}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl bg-brand-navy px-3.5 py-2 text-xs font-bold text-white hover:bg-brand-blue transition-colors"
                         >
-                          <Compass size={12} />
-                          <span>Explorar no Visor</span>
-                        </Link>
-                      </div>
-                    )}
-
-                    {/* Grade de Metadados Didáticos */}
-                    <div className="mt-3.5 grid grid-cols-2 gap-2 sm:grid-cols-3 rounded-xl bg-brand-light/70 p-3 text-xs border border-slate-200/50">
-                      <div>
-                        <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                          Decreto Estadual
-                        </span>
-                        <span className="font-semibold text-brand-navy">
-                          Nº {bem.decreto.numero}
-                        </span>
-                        <span className="block text-[11px] text-slate-600">
-                          {dataDecreto ? `Data: ${dataDecreto}` : bem.decreto.ano ? `Ano: ${bem.decreto.ano}` : 'Data do ato'}
-                        </span>
-                      </div>
-
-                      <div>
-                        <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                          Livro do Tombo
-                        </span>
-                        <span className="font-semibold text-brand-navy">
-                          Folha {bem.livro.folha}
-                        </span>
-                        <span className="block text-[11px] text-slate-600">
-                          {dataLivro ? `Inscrito: ${dataLivro}` : 'Registro DPHAP'}
-                        </span>
-                      </div>
-
-                      <div className="col-span-2 sm:col-span-1">
-                        <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                          Diário Oficial
-                        </span>
-                        <span className="font-semibold text-brand-navy truncate block">
-                          {bem.diario ?? 'Publicado em ato oficial'}
-                        </span>
-                        <span className="block text-[11px] text-slate-600">
-                          Vigência plena no Maranhão
-                        </span>
-                      </div>
+                          <Download size={13} aria-hidden="true" />
+                          <span>Decreto (PDF)</span>
+                        </a>
+                      )}
+                      {mapasMun.length > 0 && (
+                        <a
+                          href={mapasMun[0].downloadUrl}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="min-h-[40px] inline-flex items-center gap-1.5 rounded-xl border border-[#E5DDD5] bg-brand-surface px-3.5 py-2 text-xs font-bold text-brand-navy hover:border-brand-terracotta hover:text-brand-terracotta transition-colors"
+                          title={`Baixar ${mapasMun[0].titulo}`}
+                        >
+                          <Download size={13} aria-hidden="true" />
+                          <span>Mapa ({bem.municipio})</span>
+                        </a>
+                      )}
                     </div>
+                  </div>
 
-                    {/* Barra de Ações Inferior: Expandir e Copiar Citação */}
-                    <div className="mt-3 flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                  {/* Rodapé discreto */}
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-4">
                       <button
                         type="button"
                         onClick={() => toggleExpand(bem.id)}
-                        className="inline-flex items-center gap-1.5 font-bold text-brand-blue-dark hover:text-brand-navy transition-colors py-1 focus:outline-none"
+                        className="inline-flex items-center gap-1 font-bold text-brand-blue-dark hover:text-brand-navy py-1"
                       >
-                        {isExpanded ? (
-                          <>
-                            <ChevronUp size={14} /> Recolher ficha completa
-                          </>
-                        ) : (
-                          <>
-                            <ChevronDown size={14} /> Ver ficha completa e citação técnica
-                          </>
-                        )}
+                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        <span>{isExpanded ? 'Ocultar ficha técnica' : 'Ver ficha técnica e mapas'}</span>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => copiarCitacao(bem)}
-                        className="inline-flex items-center gap-1.5 text-slate-600 hover:text-brand-navy font-semibold px-2.5 py-1 rounded-md hover:bg-slate-100 transition-colors"
-                        title="Copiar citação formatada para pesquisa ou processo administrativo"
-                      >
-                        {copiadoId === bem.id ? (
-                          <>
-                            <Check size={13} className="text-green-600" />
-                            <span className="text-green-700 font-bold">Copiado!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={13} />
-                            <span>Copiar citação</span>
-                          </>
-                        )}
-                      </button>
+                      {mapasMun.length > 0 && (
+                        <Link
+                          to={`/mapa?mapa=${encodeURIComponent(mapasMun[0].id)}`}
+                          className="inline-flex items-center gap-1 font-semibold text-slate-500 hover:text-brand-terracotta"
+                        >
+                          <Compass size={13} aria-hidden="true" />
+                          <span>Abrir no visor</span>
+                        </Link>
+                      )}
                     </div>
 
-                    {/* Seção Expandida: Detalhes Didáticos e Legais */}
-                    {isExpanded && (
-                      <div className="mt-3.5 space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-xs text-slate-700">
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <div>
-                            <span className="font-bold text-brand-navy block mb-1">📜 Detalhes do Ato Legal</span>
-                            <ul className="space-y-1 list-disc pl-4 text-slate-600">
-                              <li><strong>Decreto:</strong> Nº {bem.decreto.numero}</li>
-                              <li><strong>Data de expedição:</strong> {dataDecreto ?? (bem.decreto.ano ? `Ano de ${bem.decreto.ano}` : 'Registrada no acervo')}</li>
-                              <li><strong>Publicação no Diário Oficial:</strong> {bem.diario ?? 'Consta nos arquivos do DOE'}</li>
-                            </ul>
-                          </div>
+                    <button
+                      type="button"
+                      onClick={() => copiarCitacao(bem)}
+                      className="inline-flex items-center gap-1.5 text-slate-500 hover:text-brand-navy font-semibold px-2.5 py-1 rounded-lg hover:bg-brand-surface transition-colors"
+                    >
+                      {copiadoId === bem.id ? (
+                        <>
+                          <Check size={13} className="text-brand-sage-dark" />
+                          <span className="text-brand-sage-dark font-bold">Copiado</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={13} />
+                          <span>Copiar citação</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
 
-                          <div>
-                            <span className="font-bold text-brand-navy block mb-1">📖 Assentamento no Livro do Tombo</span>
-                            <ul className="space-y-1 list-disc pl-4 text-slate-600">
-                              <li><strong>Livro físico:</strong> Tombo Histórico e Artístico (DPHAP)</li>
-                              <li><strong>Folha de registro:</strong> {bem.livro.folha}</li>
-                              <li><strong>Data da inscrição:</strong> {dataLivro ?? 'Registrada no termo oficial'}</li>
-                            </ul>
-                          </div>
+                  {/* Ficha Técnica Expandida sob Demanda */}
+                  {isExpanded && (
+                    <div className="mt-4 rounded-xl bg-brand-surface border border-[#E5DDD5] p-4 space-y-3 text-xs text-slate-700">
+                      <div className="grid sm:grid-cols-3 gap-3">
+                        <div>
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Decreto Estadual</span>
+                          <p className="font-bold text-brand-navy mt-0.5">Nº {bem.decreto.numero}</p>
+                          <p className="text-slate-600">{dataDecreto ?? (bem.decreto.ano ? `Ano ${bem.decreto.ano}` : 'Data a confirmar')}</p>
                         </div>
-
-                        {pdf?.nota && (
-                          <div className="rounded-lg bg-amber-50/80 p-2.5 border border-amber-200 text-amber-900 text-[11px] leading-relaxed">
-                            <strong>Nota sobre o documento:</strong> {pdf.nota}
-                          </div>
-                        )}
-
-                        <div className="rounded-lg bg-white p-2.5 border border-slate-200 text-slate-600 flex items-start gap-2">
-                          <ShieldCheck size={16} className="text-brand-sage-dark flex-shrink-0 mt-0.5" />
-                          <div className="leading-relaxed">
-                            <strong className="text-brand-navy">Proteção Jurídica:</strong> Este bem possui proteção permanente garantida pelo Estado do Maranhão (Lei Estadual nº 5.561/1992). Intervenções físicas, restaurações ou demolições no bem ou em seu entorno exigem consulta e autorização prévia da SPC.
-                          </div>
+                        <div>
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Livro do Tombo</span>
+                          <p className="font-bold text-brand-navy mt-0.5">Folha {bem.livro.folha}</p>
+                          <p className="text-slate-600">{dataLivro ? `Inscrito em ${dataLivro}` : 'Registro DPHAP'}</p>
+                        </div>
+                        <div>
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Diário Oficial</span>
+                          <p className="font-bold text-brand-navy mt-0.5">{bem.diario ?? 'Publicado no DOE/MA'}</p>
+                          <p className="text-slate-600">{pdfDecreto ? 'Cópia digital disponível' : 'Cópia física no acervo'}</p>
                         </div>
                       </div>
-                    )}
-                  </div>
+
+                      {mapasMun.length > 1 && (
+                        <div className="pt-2.5 border-t border-[#E5DDD5] flex flex-wrap items-center gap-2">
+                          <span className="font-bold text-brand-navy">Todos os mapas de {bem.municipio}:</span>
+                          {mapasMun.map((m) => (
+                            <a
+                              key={m.id}
+                              href={m.downloadUrl}
+                              download
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 rounded-lg bg-white border border-[#E5DDD5] px-2.5 py-1 font-bold text-brand-navy hover:border-brand-terracotta hover:text-brand-terracotta"
+                            >
+                              <Download size={11} /> {m.ano}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="pt-2.5 border-t border-[#E5DDD5] flex items-start gap-2 text-slate-600">
+                        <ShieldCheck size={15} className="text-brand-sage-dark shrink-0 mt-0.5" aria-hidden="true" />
+                        <span>
+                          Proteção estadual permanente (Lei nº 5.561/1992). Obras ou intervenções exigem autorização prévia em{' '}
+                          <Link to="/servicos" className="font-bold text-brand-blue-dark underline">Serviços</Link>.
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </article>
               );
             })}
           </div>
         ) : (
-          /* MODO TABELA TÉCNICA */
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+          <div className="overflow-hidden rounded-2xl border border-[#E5DDD5] bg-white shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-brand-navy text-white font-bold tracking-wide">
+                <thead className="bg-brand-navy text-white font-bold">
                   <tr>
-                    <th className="py-3 px-3.5 w-16">Insc.</th>
-                    <th className="py-3 px-4">Nome do Bem & Localização</th>
-                    <th className="py-3 px-3">Categoria</th>
-                    <th className="py-3 px-3.5">Decreto</th>
-                    <th className="py-3 px-3.5">Livro</th>
-                    <th className="py-3 px-3 text-right">Ações</th>
+                    <th className="py-3 px-4">Insc.</th>
+                    <th className="py-3 px-4">Bem & Município</th>
+                    <th className="py-3 px-4">Decreto</th>
+                    <th className="py-3 px-4 text-right">Downloads</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {resultadosOrdenados.map((bem) => {
-                    const dataDecreto = fmtData(bem.decreto.data);
-                    const pdf = DECRETOS_PDF[bem.decreto.numero];
-                    const tipoBem = TIPO_POR_INSCRICAO[bem.id] ?? 'Patrimônio';
-                    const mapasTombamentoRow = getMapasTombamentoPorMunicipio(bem.municipio);
-
+                    const pdfDecreto = DECRETOS_PDF[bem.decreto.numero];
+                    const mapasRow = getMapasTombamentoPorMunicipio(bem.municipio);
                     return (
-                      <tr key={bem.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="py-3 px-3.5 font-mono font-bold text-brand-navy whitespace-nowrap">
-                          #{bem.id}
-                        </td>
+                      <tr key={bem.id} className="hover:bg-brand-surface/70">
+                        <td className="py-3 px-4 font-mono font-bold text-brand-navy whitespace-nowrap">#{bem.id}</td>
                         <td className="py-3 px-4">
-                          <div className="font-bold text-brand-navy leading-snug">{bem.nome}</div>
-                          <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
-                            <MapPin size={11} className="text-brand-terracotta flex-shrink-0" />
-                            <span>{bem.municipio}{bem.local ? ` · ${bem.local}` : ''}</span>
-                          </div>
+                          <div className="font-bold text-brand-navy">{bem.nome}</div>
+                          <div className="text-[11px] text-slate-500">{bem.municipio}{bem.local ? ` · ${bem.local}` : ''}</div>
                         </td>
-                        <td className="py-3 px-3 whitespace-nowrap">
-                          <span className="inline-block rounded bg-brand-blue/10 px-2 py-0.5 text-[11px] font-semibold text-brand-blue-dark">
-                            {tipoBem}
-                          </span>
+                        <td className="py-3 px-4 whitespace-nowrap text-slate-700">
+                          Nº {bem.decreto.numero} {bem.decreto.ano ? `(${bem.decreto.ano})` : ''}
                         </td>
-                        <td className="py-3 px-3.5 whitespace-nowrap">
-                          <div className="font-semibold text-brand-navy">Nº {bem.decreto.numero}</div>
-                          <div className="text-[11px] text-slate-500">
-                            {dataDecreto ?? (bem.decreto.ano ? `Ano ${bem.decreto.ano}` : '—')}
-                          </div>
-                        </td>
-                        <td className="py-3 px-3.5 whitespace-nowrap">
-                          <div className="font-semibold text-slate-700">Fl. {bem.livro.folha}</div>
-                          <div className="text-[11px] text-slate-500">
-                            {fmtData(bem.livro.data) ?? 'DPHAP'}
-                          </div>
-                        </td>
-                        <td className="py-3 px-3 text-right whitespace-nowrap">
-                          <div className="inline-flex items-center gap-1.5 justify-end">
-                            <button
-                              type="button"
-                              onClick={() => copiarCitacao(bem)}
-                              className="rounded p-1.5 text-slate-500 hover:bg-slate-200/70 hover:text-brand-navy transition-colors"
-                              title="Copiar citação técnica"
-                              aria-label={`Copiar citação da inscrição ${bem.id}`}
-                            >
-                              {copiadoId === bem.id ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
-                            </button>
-                            {mapasTombamentoRow.map((mRow) => (
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1.5">
+                            {mapasRow[0] && (
                               <a
-                                key={mRow.id}
-                                href={mRow.downloadUrl}
+                                href={mapasRow[0].downloadUrl}
                                 download
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 rounded bg-brand-terracotta px-2 py-1 text-[11px] font-bold text-white hover:bg-brand-navy transition-colors"
-                                title={`Baixar ${mRow.titulo}`}
+                                className="inline-flex items-center gap-1 rounded-lg border border-[#E5DDD5] bg-brand-surface px-2.5 py-1 font-bold text-brand-navy hover:border-brand-terracotta"
                               >
                                 <Download size={11} /> Mapa
                               </a>
-                            ))}
-                            {pdf ? (
+                            )}
+                            {pdfDecreto ? (
                               <a
-                                href={pdf.url}
+                                href={pdfDecreto.url}
                                 download
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 rounded bg-brand-sage-dark px-2.5 py-1 text-[11px] font-bold text-white hover:bg-brand-navy transition-colors"
-                                aria-label={`Baixar PDF do decreto nº ${bem.decreto.numero}`}
+                                className="inline-flex items-center gap-1 rounded-lg bg-brand-navy px-2.5 py-1 font-bold text-white hover:bg-brand-blue"
                               >
-                                <Download size={11} /> PDF
+                                <Download size={11} /> Decreto
                               </a>
                             ) : (
-                              <span className="text-[11px] text-slate-400 italic">Físico</span>
+                              <span className="text-[11px] text-slate-400">Físico</span>
                             )}
                           </div>
                         </td>
@@ -1060,33 +760,18 @@ const BensTombadosPage: React.FC = () => {
           </div>
         )}
 
-        {/* Seção Explicativa e Rodapé Legal */}
-        <section className="mt-14 space-y-3 text-slate-700 leading-relaxed border-t border-slate-200 pt-8">
-          <H2>Como ler esta lista</H2>
-          <ul className="list-disc space-y-2 pl-6 text-sm">
-            <li>Ela cobre os tombamentos estaduais feitos de 1979 a 1993. A SPC informa que não há tombamentos estaduais posteriores a 1993.</li>
-            <li>
-              Estar aqui significa proteção estadual. Qualquer obra, reforma ou pintura em bem tombado, ou em seu entorno, precisa de autorização prévia. Veja como pedir em{' '}
-              <Link className="font-bold text-brand-blue-dark underline" to="/servicos">Serviços</Link>.
-            </li>
-            <li>
-              Nas fichas com o botão "PDF do Decreto", a SPC já tem o decreto digitalizado. As demais cópias são incluídas à medida que os arquivos físicos forem localizados no acervo do Estado. Leis e decretos gerais estão na{' '}
-              <Link className="font-bold text-brand-blue-dark underline" to="/legislacao">biblioteca de legislação</Link>.
-            </li>
-            <li>O filtro "Categorias de Patrimônio" agrupa os bens pelo nome e pelo uso, para facilitar a busca e a didática visual.</li>
-            <li>As inscrições 020 e 021 aparecem como canceladas no Livro do Tombo e por isso não constam da lista. Nomes de proprietários particulares não são publicados em conformidade com a LGPD e o padrão do patrimônio.</li>
-          </ul>
-          <p className="mt-4 flex items-start gap-2 text-sm text-slate-600">
-            <FileText size={16} className="mt-0.5 flex-shrink-0" aria-hidden="true" />
-            <span>
-              Fonte: Relação de Bens Tombados pelo Estado do Maranhão e Livro de Tombo, Departamento de Proteção do Patrimônio Histórico, Artístico, Arqueológico e Paisagístico (DPHAP). Em caso de divergência, prevalece o texto do decreto original. Viu alguma divergência?{' '}
-              <a className="font-bold text-brand-blue-dark underline" href={`mailto:${SITE_CONTACT.email}?subject=Correção%20na%20lista%20de%20bens%20tombados`}>Avise a SPC</a>.
-            </span>
+        {/* Nota de Fonte Discreta */}
+        <footer className="pt-6 border-t border-[#E5DDD5] text-xs text-slate-600 flex items-start gap-2 leading-relaxed">
+          <FileText size={15} className="shrink-0 mt-0.5 text-slate-400" aria-hidden="true" />
+          <p>
+            Fonte: Relação de Bens Tombados e Livro do Tombo Histórico (DPHAP/SPC). Inscrições 020 e 021 canceladas no Livro do Tombo. Dúvidas ou retificações:{' '}
+            <a href={`mailto:${SITE_CONTACT.email}`} className="font-bold text-brand-blue-dark underline">
+              {SITE_CONTACT.email}
+            </a>.
           </p>
-
-        </section>
+        </footer>
       </div>
-    </>
+    </div>
   );
 };
 
