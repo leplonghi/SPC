@@ -149,31 +149,23 @@ export const DepartamentoOficialPage: React.FC<DepartamentoOficialPageProps> = (
   const totalDecretosPdf = BENS_TOMBADOS.filter((b) => DECRETOS_PDF[b.decreto.numero]).length;
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-slate-800">
+    <div className="min-h-screen bg-brand-surface text-slate-800">
       {/* Cabeçalho Institucional do Departamento */}
-      <header className="bg-brand-navy text-white py-12 md:py-16 border-b border-brand-sand/20 relative overflow-hidden">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-cover bg-center opacity-15 mix-blend-luminosity"
-          style={{ backgroundImage: "url('/imagens/CH 01.jpg')" }}
-        />
-        <div className="relative max-w-[1200px] mx-auto px-6">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#E9B44C] mb-3">
-            <Icon size={15} aria-hidden="true" />
-            <span>Departamento Técnico da SPC/SECMA · {cfg.badge}</span>
-          </div>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white">
+      <header className="bg-brand-navy text-white py-10 sm:py-14">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-gold flex items-center gap-2">
+            <Icon size={14} aria-hidden="true" />
+            <span>SPC/SECMA · {cfg.badge}</span>
+          </p>
+          <h1 className="mt-2 font-serif text-3xl sm:text-4xl font-medium tracking-tight text-white">
             {dept.code} — {dept.name}
           </h1>
-          <p className="mt-4 max-w-3xl text-base text-slate-200 leading-relaxed">
+          <p className="mt-3 max-w-[65ch] text-sm sm:text-base text-slate-200 leading-relaxed">
             {dept.summary}
           </p>
 
           {/* Navegação Rápida entre os 3 Departamentos */}
-          <div className="mt-8 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-300 mr-2">
-              Departamentos da SPC:
-            </span>
+          <div className="mt-6 flex flex-wrap items-center gap-2">
             {DEPARTMENTS.map((d) => {
               const active = d.code === code;
               return (
@@ -181,9 +173,9 @@ export const DepartamentoOficialPage: React.FC<DepartamentoOficialPageProps> = (
                   key={d.code}
                   to={`/${d.code.toLowerCase()}`}
                   aria-current={active ? 'page' : undefined}
-                  className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${
+                  className={`min-h-[38px] inline-flex items-center px-4 py-1.5 rounded-xl text-xs font-bold transition-colors ${
                     active
-                      ? 'bg-[#E9B44C] text-brand-navy shadow-sm'
+                      ? 'bg-brand-gold text-brand-navy'
                       : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
                   }`}
                 >
@@ -195,103 +187,98 @@ export const DepartamentoOficialPage: React.FC<DepartamentoOficialPageProps> = (
         </div>
       </header>
 
-      <div className="max-w-[1200px] mx-auto px-6 py-12 space-y-12">
-        {/* Indicadores de Acervo Público (para DPHAP) ou Instrumentos de Salvaguarda (para DPI / DPE) */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8">
+        {/* Indicadores de Acervo Público (para DPHAP) */}
         {code === 'DPHAP' && (
-          <section aria-label="Indicadores do Patrimônio Material" className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-              <span className="text-3xl font-black text-brand-navy block">{totalBens}</span>
-              <span className="text-xs font-bold text-slate-600 mt-1 block">Bens tombados pelo Estado (1979–1993)</span>
+          <section aria-label="Indicadores do Patrimônio Material" className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+            <div className="bg-white rounded-2xl border border-[#E5DDD5] p-5 shadow-sm">
+              <span className="text-2xl sm:text-3xl font-black text-brand-navy block">{totalBens}</span>
+              <span className="text-xs font-semibold text-slate-600 mt-1 block">Bens tombados (1979–1993)</span>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-              <span className="text-3xl font-black text-brand-navy block">{totalMunicipios}</span>
-              <span className="text-xs font-bold text-slate-600 mt-1 block">Municípios maranhenses com bens tombados</span>
+            <div className="bg-white rounded-2xl border border-[#E5DDD5] p-5 shadow-sm">
+              <span className="text-2xl sm:text-3xl font-black text-brand-navy block">{totalMunicipios}</span>
+              <span className="text-xs font-semibold text-slate-600 mt-1 block">Municípios abrangidos</span>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-              <span className="text-3xl font-black text-brand-sage-dark block">{totalDecretosPdf}</span>
-              <span className="text-xs font-bold text-slate-600 mt-1 block">Decretos de tombamento digitalizados em PDF</span>
+            <div className="bg-white rounded-2xl border border-[#E5DDD5] p-5 shadow-sm">
+              <span className="text-2xl sm:text-3xl font-black text-brand-sage-dark block">{totalDecretosPdf}</span>
+              <span className="text-xs font-semibold text-slate-600 mt-1 block">Decretos em PDF</span>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-              <span className="text-3xl font-black text-brand-terracotta block">{MAPAS_HISTORICOS.length}</span>
-              <span className="text-xs font-bold text-slate-600 mt-1 block">Plantas históricas interativas (1698–1912)</span>
+            <div className="bg-white rounded-2xl border border-[#E5DDD5] p-5 shadow-sm">
+              <span className="text-2xl sm:text-3xl font-black text-brand-terracotta block">{MAPAS_HISTORICOS.length}</span>
+              <span className="text-xs font-semibold text-slate-600 mt-1 block">Mapas e poligonais</span>
             </div>
           </section>
         )}
 
         {/* Grade Principal: Atribuições + Serviços do Departamento */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <section className="lg:col-span-7 bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-xs space-y-5">
-            <div className="flex items-center gap-3">
-              <div className={`w-11 h-11 rounded-2xl ${cfg.accentBg} text-white flex items-center justify-center shrink-0`}>
-                <Icon size={22} aria-hidden="true" />
-              </div>
-              <div>
-                <span className="text-xs font-black uppercase tracking-widest text-brand-terracotta">
-                  Competências Regimentais
-                </span>
-                <h2 className="text-xl md:text-2xl font-black text-brand-navy">
-                  Atribuições Técnicas do {dept.code}
-                </h2>
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <section className="lg:col-span-7 bg-white rounded-2xl border border-[#E5DDD5] p-6 shadow-sm space-y-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-brand-terracotta">
+                Competências Regimentais
+              </p>
+              <h2 className="font-serif text-xl sm:text-2xl font-medium text-brand-navy mt-1">
+                Atribuições do {dept.code}
+              </h2>
             </div>
 
-            <ul className="space-y-3 pt-2">
+            <ul className="space-y-2.5">
               {cfg.atribuicoes.map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#FAF8F5] border border-slate-200/80 text-sm text-slate-700 leading-relaxed"
+                  className="flex items-start gap-3 p-3.5 rounded-xl bg-brand-surface border border-[#E5DDD5] text-sm text-slate-700 leading-relaxed"
                 >
-                  <CheckCircle2 size={18} className="text-brand-sage-dark shrink-0 mt-0.5" aria-hidden="true" />
+                  <CheckCircle2 size={17} className="text-brand-sage-dark shrink-0 mt-0.5" aria-hidden="true" />
                   <span>{item}</span>
                 </li>
               ))}
             </ul>
 
             {code === 'DPHAP' && (
-              <div className="pt-3 flex flex-wrap gap-3">
+              <div className="pt-2 flex flex-wrap gap-2.5">
                 <Link
                   to="/bens-tombados"
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand-navy text-white text-xs font-black uppercase tracking-wider hover:bg-brand-navy/90 transition"
+                  className="min-h-[42px] inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-navy text-white text-xs font-bold hover:bg-brand-blue transition-colors"
                 >
                   <Landmark size={15} aria-hidden="true" />
-                  <span>Consultar Livro do Tombo ({totalBens} bens)</span>
+                  <span>Livro do Tombo ({totalBens} bens)</span>
                 </Link>
                 <Link
                   to="/mapa"
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-brand-navy border-2 border-brand-navy text-xs font-black uppercase tracking-wider hover:bg-slate-50 transition"
+                  className="min-h-[42px] inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-surface text-brand-navy border border-[#E5DDD5] text-xs font-bold hover:border-brand-navy transition-colors"
                 >
                   <Compass size={15} aria-hidden="true" />
-                  <span>Ver Cartografia Histórica</span>
+                  <span>Cartografia e Poligonais</span>
                 </Link>
               </div>
             )}
           </section>
 
-          <section className="lg:col-span-5 bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-xs flex flex-col justify-between space-y-6">
+          <section className="lg:col-span-5 bg-white rounded-2xl border border-[#E5DDD5] p-6 shadow-sm flex flex-col justify-between space-y-5">
             <div className="space-y-4">
               <div>
-                <span className="text-xs font-black uppercase tracking-widest text-brand-terracotta">
+                <p className="text-xs font-bold uppercase tracking-widest text-brand-terracotta">
                   Atendimento ao Cidadão
-                </span>
-                <h2 className="text-xl font-black text-brand-navy mt-0.5">
-                  Serviços prestados pelo {dept.code}
+                </p>
+                <h2 className="font-serif text-xl font-medium text-brand-navy mt-1">
+                  Serviços do {dept.code}
                 </h2>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {cfg.servicos.map((srv) => (
-                  <div key={srv.titulo} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-                    <h3 className="text-sm font-black text-brand-navy">{srv.titulo}</h3>
+                  <div key={srv.titulo} className="p-4 rounded-xl bg-brand-surface border border-[#E5DDD5] space-y-1">
+                    <h3 className="text-sm font-bold text-brand-navy">{srv.titulo}</h3>
                     <p className="text-xs text-slate-600 leading-relaxed">{srv.desc}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-200 space-y-2.5">
+            <div className="pt-4 border-t border-slate-100 space-y-2">
               <Link
                 to="/servicos"
-                className="w-full py-3.5 px-5 rounded-xl bg-brand-terracotta hover:bg-brand-terracotta/90 text-white text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-sm"
+                className="w-full min-h-[44px] px-4 py-2.5 rounded-xl bg-brand-navy hover:bg-brand-blue text-white text-xs font-bold transition-colors flex items-center justify-center gap-2"
               >
                 <FileText size={15} aria-hidden="true" />
                 <span>Abrir Assistente de Requerimento</span>
@@ -299,10 +286,10 @@ export const DepartamentoOficialPage: React.FC<DepartamentoOficialPageProps> = (
               {code === 'DPHAP' && (
                 <Link
                   to="/denuncia"
-                  className="w-full py-3 px-5 rounded-xl bg-red-50 hover:bg-red-100 text-red-900 border border-red-200 text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2"
+                  className="w-full min-h-[42px] px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-brand-red-dark border border-red-200 text-xs font-bold transition-colors flex items-center justify-center gap-2"
                 >
                   <ShieldAlert size={15} aria-hidden="true" />
-                  <span>Comunicar Obra Irregular / Denúncia</span>
+                  <span>Comunicar Obra Irregular</span>
                 </Link>
               )}
             </div>

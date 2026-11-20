@@ -314,67 +314,58 @@ Assinatura do(a) Requerente / Responsável Técnico`;
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-slate-800">
-      {/* HERO INSTITUCIONAL */}
-      <section className="bg-brand-navy text-white py-14 border-b border-brand-sand/20 relative overflow-hidden">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-cover bg-center opacity-20 mix-blend-luminosity"
-          style={{ backgroundImage: "url('/imagens/CH 01.jpg')" }}
-        />
-        <div className="relative max-w-[1240px] mx-auto px-6">
-          <div className="max-w-3xl space-y-4">
-            <span className="px-3 py-1 rounded-full bg-white/10 text-[#E9B44C] text-xs font-bold uppercase tracking-widest inline-block border border-white/20">
-              Atendimento e Protocolo Oficial
-            </span>
-            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">
-              Carta de Serviços ao Cidadão
-            </h1>
-            <p className="text-slate-200 text-sm md:text-base leading-relaxed">
-              Consulte os serviços prestados pela Superintendência do Patrimônio Cultural, documentação exigida, prazos de análise e utilize o Assistente de Requerimento para protocolar seu pedido.
-            </p>
+    <div className="min-h-screen bg-brand-surface text-slate-800">
+      {/* HERO INSTITUCIONAL CLEAN */}
+      <header className="bg-brand-navy text-white py-9 sm:py-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">
+            Atendimento e Protocolo · SPC/SECMA
+          </p>
+          <h1 className="mt-2 font-serif text-3xl sm:text-4xl font-medium tracking-tight text-white">
+            Carta de Serviços ao Cidadão
+          </h1>
+          <p className="mt-2 max-w-[62ch] text-sm sm:text-base text-slate-200 leading-relaxed">
+            Consulte documentação exigida, etapas de análise e gere a minuta formal de requerimento para protocolo na SPC.
+          </p>
 
-            {/* Barra de busca de serviços */}
-            <div className="pt-2 max-w-xl">
-              <div className="relative">
-                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="search"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Filtrar por reforma, autorização, certidão, engenho ou imaterial..."
-                  className="w-full pl-11 pr-4 py-3 bg-white text-slate-900 rounded-xl text-sm font-medium border border-white/20 focus:outline-none focus:ring-4 focus:ring-[#E9B44C]/30 shadow-md"
-                />
-              </div>
-            </div>
+          <div className="mt-6 max-w-2xl relative">
+            <label htmlFor="servicos-busca" className="sr-only">
+              Filtrar serviço por palavra-chave
+            </label>
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+            <input
+              id="servicos-busca"
+              type="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por reforma, certidão, engenho publicitário, imaterial ou restauro..."
+              className="w-full min-h-[48px] pl-11 pr-4 py-3 bg-white text-brand-navy rounded-xl text-sm font-medium placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-gold shadow-lg"
+            />
           </div>
         </div>
-      </section>
+      </header>
 
       {/* ÁREA PRINCIPAL: CATÁLOGO + ASSISTENTE INTERATIVO */}
-      <div className="max-w-[1240px] mx-auto px-6 py-12 md:py-16 space-y-16">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-10">
         {/* SEÇÃO 1: CATÁLOGO DE SERVIÇOS */}
-        <section aria-labelledby="catalogo-servicos-titulo" className="space-y-6">
+        <section aria-labelledby="catalogo-servicos-titulo" className="space-y-4">
           <div>
-            <p className="text-xs font-black uppercase tracking-widest text-brand-terracotta">
-              Catálogo Oficial
+            <p className="text-xs font-bold uppercase tracking-widest text-brand-terracotta">
+              Catálogo Oficial ({filteredServices.length})
             </p>
-            <h2 id="catalogo-servicos-titulo" className="text-2xl md:text-3xl font-black text-brand-navy">
+            <h2 id="catalogo-servicos-titulo" className="font-serif text-2xl font-medium text-brand-navy mt-0.5">
               Serviços Disponíveis
             </h2>
-            <p className="text-slate-600 text-sm mt-1">
-              Clique em qualquer serviço para expandir a relação de documentos exigidos, etapas e setor responsável.
-            </p>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {filteredServices.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-2xl border border-slate-200 p-8">
-                <Info className="mx-auto text-slate-400 mb-3" size={36} />
-                <p className="font-bold text-slate-700">Nenhum serviço encontrado com esse termo.</p>
-                <p className="text-sm text-slate-500 mt-1">
-                  Dúvidas gerais podem ser encaminhadas para{' '}
-                  <a className="font-bold text-brand-navy underline" href={`mailto:${DPHAP_EMAIL}`}>
+              <div className="text-center py-10 bg-white rounded-2xl border border-[#E5DDD5] p-6">
+                <Info className="mx-auto text-slate-400 mb-3" size={28} />
+                <p className="font-bold text-brand-navy">Nenhum serviço encontrado com esse termo.</p>
+                <p className="text-xs text-slate-600 mt-1">
+                  Dúvidas gerais:{' '}
+                  <a className="font-bold text-brand-blue-dark underline" href={`mailto:${DPHAP_EMAIL}`}>
                     {DPHAP_EMAIL}
                   </a>.
                 </p>
@@ -387,8 +378,8 @@ Assinatura do(a) Requerente / Responsável Técnico`;
                     key={service.id}
                     className={`bg-white rounded-2xl border transition-all ${
                       isOpen
-                        ? 'border-brand-navy shadow-md ring-1 ring-brand-navy/10'
-                        : 'border-slate-200 hover:border-slate-300 shadow-sm'
+                        ? 'border-brand-navy shadow-md'
+                        : 'border-[#E5DDD5] hover:border-brand-navy/35 shadow-sm'
                     }`}
                   >
                     <button
@@ -396,31 +387,30 @@ Assinatura do(a) Requerente / Responsável Técnico`;
                       aria-expanded={isOpen}
                       aria-controls={`detalhe-${service.id}`}
                       onClick={() => setActiveService(isOpen ? null : service.id)}
-                      className="w-full p-5 md:p-6 text-left flex items-start justify-between gap-4"
+                      className="w-full p-5 sm:p-6 text-left flex items-start justify-between gap-4"
                     >
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[11px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-md">
-                            {service.category}
-                          </span>
-                          <span className="text-[11px] font-black uppercase tracking-wider bg-brand-navy text-white px-2.5 py-0.5 rounded-md">
-                            Setor: {service.department_responsible}
-                          </span>
-                        </div>
-                        <h3 className="text-lg md:text-xl font-black text-brand-navy">
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                          <span className="text-brand-blue-dark">{service.department_responsible}</span>
+                          <span aria-hidden="true">·</span>
+                          <span>{service.category}</span>
+                        </p>
+                        <h3 className="font-display text-base sm:text-lg font-bold text-brand-navy leading-snug">
                           {service.title}
                         </h3>
-                        <p className="text-sm text-slate-600 max-w-3xl leading-relaxed">
+                        <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">
                           {service.description}
                         </p>
                       </div>
 
                       <div
-                        className={`p-2.5 rounded-xl border flex-shrink-0 transition-transform ${
-                          isOpen ? 'rotate-180 bg-brand-navy text-white border-brand-navy' : 'bg-slate-50 text-slate-600 border-slate-200'
+                        className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 transition-transform ${
+                          isOpen
+                            ? 'rotate-180 bg-brand-navy text-white border-brand-navy'
+                            : 'bg-brand-surface text-brand-navy border-[#E5DDD5]'
                         }`}
                       >
-                        <ChevronDown size={18} />
+                        <ChevronDown size={16} />
                       </div>
                     </button>
 
