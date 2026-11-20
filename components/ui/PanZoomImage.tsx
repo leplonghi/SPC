@@ -82,8 +82,9 @@ export const PanZoomImage: React.FC<Props> = ({ src, srcFull, alt, width, height
     setFull(false);
     setFullReady(false);
     setActive(null);
-    setView({ s: 1, x: 0, y: 0 });
-  }, [src]);
+    setAnimate(false);
+    setView(limit({ s: 1, x: 0, y: 0 }));
+  }, [src, limit]);
 
   useEffect(() => {
     if (!srcFull || !full) return;

@@ -75,7 +75,7 @@ export const HomePage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Link
             to="/bens-tombados"
-            className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all flex flex-col"
+            className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all flex flex-col"
           >
             <div className="h-44 overflow-hidden bg-brand-navy relative">
               <img
@@ -105,7 +105,7 @@ export const HomePage: React.FC = () => {
 
           <Link
             to="/mapa"
-            className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all flex flex-col"
+            className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all flex flex-col"
           >
             <div className="h-44 overflow-hidden bg-brand-navy relative">
               <img
@@ -135,7 +135,7 @@ export const HomePage: React.FC = () => {
 
           <Link
             to="/servicos"
-            className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all flex flex-col"
+            className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all flex flex-col"
           >
             <div className="h-44 overflow-hidden bg-brand-navy relative">
               <img

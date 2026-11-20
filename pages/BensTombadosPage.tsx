@@ -520,7 +520,7 @@ const BensTombadosPage: React.FC = () => {
             : MAPAS_HISTORICOS.filter((m) => m.categoria === 'Mapa de Tombamento');
           if (mapasMunicipio.length === 0) return null;
           return (
-            <div className="mb-6 rounded-2xl border border-brand-terracotta/30 bg-white p-4 sm:p-5 shadow-xs">
+            <div className="mb-6 rounded-2xl border border-brand-terracotta/30 bg-white p-4 sm:p-5 shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                 <div>
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-brand-terracotta">
@@ -750,71 +750,43 @@ const BensTombadosPage: React.FC = () => {
               return (
                 <article
                   key={bem.id}
-                  className={`rounded-2xl border border-slate-200/90 bg-white shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden border-l-4 ${bordaPeriodo(
+                  className={`rounded-2xl border border-slate-200/90 bg-white shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden border-l-4 ${bordaPeriodo(
                     bem
                   )}`}
                 >
                   <div className="p-4 sm:p-5">
-                    {/* Linha Superior: Tags e Metadados Rápidos */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    {/* Linha Superior: Identificação e PDF do Decreto */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center rounded-md bg-brand-navy px-2 py-0.5 text-xs font-mono font-bold text-white tracking-wide">
+                        <span className="inline-flex items-center rounded-md bg-brand-navy px-2.5 py-1 text-xs font-mono font-bold text-white tracking-wide">
                           Inscrição #{bem.id}
                         </span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-blue/10 px-2.5 py-0.5 text-xs font-semibold text-brand-blue-dark">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-blue-dark">
                           <Landmark size={12} className="opacity-70" />
                           {tipoBem}
                         </span>
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${pBadge.bg}`}>
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${pBadge.bg}`}>
                           <Calendar size={11} className="opacity-70" />
                           {pBadge.label}
                         </span>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2">
-                        {mapasTombamentoMun.map((mapaMun) => (
-                          <a
-                            key={mapaMun.id}
-                            href={mapaMun.downloadUrl}
-                            download
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded-lg border border-brand-terracotta/40 bg-brand-terracotta/10 px-2.5 py-1 text-xs font-bold text-brand-terracotta hover:bg-brand-terracotta hover:text-white transition-colors"
-                            title={`Baixar ${mapaMun.titulo} (${mapaMun.formatoDownload})`}
-                          >
-                            <Download size={12} />
-                            <span>
-                              {mapasTombamentoMun.length > 1
-                                ? `Mapa: ${mapaMun.ano}`
-                                : `Mapa de Tombamento (${bem.municipio})`}
-                            </span>
-                          </a>
-                        ))}
-                        {mapasTombamentoMun.length > 0 && (
-                          <Link
-                            to={`/mapa?mapa=${encodeURIComponent(mapasTombamentoMun[0].id)}`}
-                            className="inline-flex items-center gap-1 rounded-lg border border-brand-blue/30 bg-brand-blue/10 px-2.5 py-1 text-xs font-bold text-brand-blue-dark hover:bg-brand-blue hover:text-white transition-colors"
-                            title={`Abrir mapa interativo de ${bem.municipio}`}
-                          >
-                            <Compass size={12} />
-                            <span>Ver no Mapa</span>
-                          </Link>
-                        )}
+                      <div className="flex items-center gap-2">
                         {pdf ? (
                           <a
                             href={pdf.url}
                             download
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded-lg border border-brand-sage-dark/40 bg-brand-sage-dark/10 px-2.5 py-1 text-xs font-bold text-brand-sage-dark hover:bg-brand-sage-dark hover:text-white transition-colors"
+                            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-brand-sage-dark/40 bg-brand-sage-dark/10 px-3 py-1.5 text-xs font-bold text-brand-sage-dark hover:bg-brand-sage-dark hover:text-white transition-colors"
                             aria-label={`Baixar o decreto nº ${bem.decreto.numero} em PDF`}
                           >
-                            <Download size={12} />
+                            <Download size={13} />
                             <span>PDF do Decreto</span>
                           </a>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-500">
-                            <FileText size={11} /> Cópia física no acervo
+                          <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-medium text-slate-500">
+                            <FileText size={12} /> Cópia física no acervo
                           </span>
                         )}
                       </div>
@@ -833,6 +805,41 @@ const BensTombadosPage: React.FC = () => {
                         {bem.local ? ` · ${bem.local}` : ''}
                       </span>
                     </p>
+
+                    {/* Faixa de Mapas de Tombamento do Município (quando disponível) */}
+                    {mapasTombamentoMun.length > 0 && (
+                      <div className="mt-3 flex flex-wrap items-center gap-2 pt-2.5 border-t border-slate-100">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mr-1">
+                          Cartografia ({bem.municipio}):
+                        </span>
+                        {mapasTombamentoMun.map((mapaMun) => (
+                          <a
+                            key={mapaMun.id}
+                            href={mapaMun.downloadUrl}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-xl border border-brand-terracotta/35 bg-brand-terracotta/10 px-3 py-1.5 text-xs font-bold text-brand-terracotta hover:bg-brand-terracotta hover:text-white transition-colors"
+                            title={`Baixar ${mapaMun.titulo} (${mapaMun.formatoDownload})`}
+                          >
+                            <Download size={12} />
+                            <span>
+                              {mapasTombamentoMun.length > 1
+                                ? `Baixar: ${mapaMun.ano}`
+                                : `Baixar Mapa de Tombamento`}
+                            </span>
+                          </a>
+                        ))}
+                        <Link
+                          to={`/mapa?mapa=${encodeURIComponent(mapasTombamentoMun[0].id)}`}
+                          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-xl border border-brand-blue/30 bg-brand-blue/10 px-3 py-1.5 text-xs font-bold text-brand-blue-dark hover:bg-brand-blue hover:text-white transition-colors"
+                          title={`Abrir mapa interativo de ${bem.municipio}`}
+                        >
+                          <Compass size={12} />
+                          <span>Explorar no Visor</span>
+                        </Link>
+                      </div>
+                    )}
 
                     {/* Grade de Metadados Didáticos */}
                     <div className="mt-3.5 grid grid-cols-2 gap-2 sm:grid-cols-3 rounded-xl bg-brand-light/70 p-3 text-xs border border-slate-200/50">

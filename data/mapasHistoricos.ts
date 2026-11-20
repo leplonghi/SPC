@@ -180,8 +180,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'isola-maranhon-1698',
         label: 'S. Luis · Isola de Maranhon',
         nomeAtual: 'Ilha do Maranhão e Cidade de São Luís',
-        x: 0.492,
-        y: 0.62,
+        x: 0.495,
+        y: 0.622,
         descricao:
           'Representação insular de São Luís no centro do Golfão Maranhense, núcleo político e militar da Província do Maranhão.',
         bemIds: ['037', '050'],
@@ -189,10 +189,10 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
       },
       {
         id: 'baia-alcantara-1698',
-        label: 'R. Maracu / Costa de Tapuitapera',
+        label: 'R. Maradu / Costa de Tapuitapera',
         nomeAtual: 'Território de Alcântara e Baía de São Marcos',
-        x: 0.425,
-        y: 0.605,
+        x: 0.405,
+        y: 0.628,
         descricao:
           'Margem ocidental da Baía de São Marcos, frente à Ilha do Maranhão, onde se consolidou a vila colonial de Santo Antônio de Alcântara.',
         bemIds: ['013', '060'],
@@ -200,10 +200,10 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
       },
       {
         id: 'rio-itapecuru-1698',
-        label: 'R. Tapucuru / Fort de S. Maria',
+        label: 'Fort de S. Maria / R. Tapociaru',
         nomeAtual: 'Foz do Rio Itapecuru e Forte do Calvário (Rosário)',
-        x: 0.445,
-        y: 0.675,
+        x: 0.432,
+        y: 0.678,
         descricao:
           'Entrada estratégica do Rio Itapecuru, defendida no período seiscentista pelo Forte do Calvário (atual município de Rosário, tombado sob a inscrição nº 047).',
         bemIds: ['047', '015', '064'],
@@ -213,7 +213,7 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'rio-preguicas-1698',
         label: 'R. de Perguicas',
         nomeAtual: 'Rio Preguiças e Litoral Oriental (Barreirinhas)',
-        x: 0.475,
+        x: 0.460,
         y: 0.785,
         descricao:
           'Região costeira do Rio Preguiças ("R. de Perguicas"), onde se localiza o patrimônio paisagístico e arqueológico de Barreirinhas.',
@@ -248,8 +248,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'ilha-maranham-1819',
         label: 'I. do Maranham / Cid. de S. Luis',
         nomeAtual: 'Ilha do Maranhão (São Luís e Paço do Lumiar)',
-        x: 0.568,
-        y: 0.195,
+        x: 0.562,
+        y: 0.196,
         descricao:
           'Ilha do Maranhão na foz dos rios Mearim, Pindaré e Itapecuru, centro exportador algodoeiro e arrozeiro da Capitania em 1819.',
         bemIds: ['037', '050', '035'],
@@ -257,10 +257,10 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
       },
       {
         id: 'freguesias-alcantara-viana-1819',
-        label: 'Freg.as de Guim.es, Vianna, Alcânt.a e Lagos de Vianna',
+        label: 'Lagos de Vianna · Freg.as de Vianna e Alcânt.a',
         nomeAtual: 'Baixada Maranhense e Litoral Ocidental (Alcântara e Viana)',
-        x: 0.435,
-        y: 0.225,
+        x: 0.422,
+        y: 0.242,
         descricao:
           'A inscrição histórica registra: "Terreno muito Povoado, que pertence ás Freg.as de Guim.es, Vianna, Cajapió, Alcânt.a e outras", destacando logo abaixo os "Lagos de Vianna".',
         bemIds: ['040', '060', '061', '013'],
@@ -270,8 +270,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'freguesia-itapecuru-1819',
         label: 'Freg.a de Itapucurú / Rosário',
         nomeAtual: 'Vale do Rio Itapecuru (Rosário e Itapecuru-Mirim)',
-        x: 0.59,
-        y: 0.305,
+        x: 0.586,
+        y: 0.345,
         descricao:
           'Eixo fluvial do Rio Itapecuru, principal artéria de penetração econômica e localização da antiga Cadeia Pública de Itapecuru-Mirim e do Sítio Paleontológico.',
         bemIds: ['015', '047', '064'],
@@ -279,10 +279,10 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
       },
       {
         id: 'caxias-aldeias-altas-1819',
-        label: 'Freg.a das Aldêas Altas / Caxias',
+        label: 'V. de Caxias (Aldêas Altas)',
         nomeAtual: 'Centro Histórico de Caxias e Região de Buriti',
-        x: 0.725,
-        y: 0.405,
+        x: 0.728,
+        y: 0.404,
         descricao:
           'Polo mercantil e algodoeiro do leste maranhense entre os rios Itapecuru e Parnaíba, abrangendo Caxias e as fazendas históricas de Buriti.',
         bemIds: ['004', '054', '059', '058'],
@@ -290,10 +290,10 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
       },
       {
         id: 'sertoes-tocantins-carolina-1819',
-        label: 'Rio Tocantins / Sertão de Pastos Bons e Carolina',
+        label: 'Rio Tocantins / Sertão de Carolina',
         nomeAtual: 'Médio Tocantins e Chapada das Mesas (Carolina)',
-        x: 0.165,
-        y: 0.505,
+        x: 0.220,
+        y: 0.550,
         descricao:
           'Vale do Rio Tocantins no extremo oeste da carta, frente às terras altas onde floresceu o núcleo oitocentista de São Pedro de Alcântara (Carolina).',
         bemIds: ['063', '065'],
@@ -327,8 +327,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'palacio-praca-1858',
         label: 'Baluarte / Largo do Palácio e Sé',
         nomeAtual: 'Avenida Pedro II, Catedral da Sé e Palácio Episcopal',
-        x: 0.305,
-        y: 0.905,
+        x: 0.312,
+        y: 0.875,
         descricao:
           'Ponta sudoeste do promontório sobre a rampa do Palácio e o cais da Sagração, reunindo a Catedral da Sé e o Palácio Episcopal.',
         bemIds: ['044', '057', '037'],
@@ -338,8 +338,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'praia-grande-1858',
         label: 'Quadras Comerciais da Praia Grande',
         nomeAtual: 'Rua Portugal, Rua do Trapiche e Rua da Estrela',
-        x: 0.395,
-        y: 0.855,
+        x: 0.410,
+        y: 0.850,
         descricao:
           'Setor mercantil portuário voltado para a Baía de São Marcos e o Rio Bacanga, onde se concentram os sobrados comerciais tombados.',
         bemIds: ['008', '009', '010', '031', '032'],
@@ -347,10 +347,10 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
       },
       {
         id: 'panteon-passeio-1858',
-        label: 'Praça do Panteon e Passeio',
+        label: 'Praça do Panteon e Núcleo Central',
         nomeAtual: 'Praça do Panteon e Biblioteca Pública Benedito Leite',
-        x: 0.492,
-        y: 0.398,
+        x: 0.490,
+        y: 0.400,
         descricao:
           'Setor central da malha imperial, articulando os largos públicos e o eixo da Rua Grande.',
         bemIds: ['001', '003'],
@@ -361,7 +361,7 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         label: 'Cemitério do Gavião',
         nomeAtual: 'Cemitério do Gavião e Entorno da Madre Deus',
         x: 0.895,
-        y: 0.315,
+        y: 0.305,
         descricao:
           'Necrópole oitocentista implantada a leste do núcleo urbano em 1855, assinalada no extremo direito superior da planta de 1858.',
         bemIds: ['050'],
@@ -599,8 +599,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'slz-unesco-1990',
         label: 'Núcleo Praia Grande e Pedro II (Amarelo + Laranja)',
         nomeAtual: 'Conjunto Arquitetônico e Paisagístico (Dec. 11.591/1990 · Insc. #050)',
-        x: 0.185,
-        y: 0.355,
+        x: 0.165,
+        y: 0.340,
         descricao:
           'Setor ocidental voltado para os rios Anil e Bacanga: reúne a área inscrita na Lista do Patrimônio Mundial (UNESCO) e a proteção estadual do Decreto nº 11.591, de 12/10/1990.',
         bemIds: ['050', '044', '057', '031', '032'],
@@ -610,8 +610,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'slz-estadual-1986',
         label: 'Expansão Central, Santana e Madre Deus (Rosa)',
         nomeAtual: 'Centro Histórico de São Luís — ZE/2 (Dec. 10.089/1986 · Insc. #037)',
-        x: 0.415,
-        y: 0.445,
+        x: 0.430,
+        y: 0.450,
         descricao:
           'Ampla poligonal tombada pelo Governo do Estado do Maranhão por meio do Decreto nº 10.089/1986, cobrindo o Centro, Santo Antônio, Ribeirão, Santana, Fonte do Bispo e Madre Deus.',
         bemIds: ['037', '001', '002', '005', '025', '045', '055', '056'],
@@ -621,8 +621,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'slz-area-verde-quinta',
         label: 'Setor Paisagístico Leste (Verde)',
         nomeAtual: 'Área Verde Integrante do Perímetro Estadual (Dec. 10.089/1986)',
-        x: 0.655,
-        y: 0.505,
+        x: 0.658,
+        y: 0.515,
         descricao:
           'Faixa paisagística e ambiental de amortecimento leste integrante da poligonal estadual estabelecida pelo Decreto nº 10.089/1986.',
         bemIds: ['037', '052'],
@@ -656,8 +656,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'alc-praca-matriz-19',
         label: '17 e 19. Praça da Matriz, Pelourinho e Prefeitura (Câmara e Cadeia)',
         nomeAtual: 'Praça Gomes de Castro, Casa de Câmara e Cadeia (Insc. #013) e Conjunto Histórico (#060)',
-        x: 0.625,
-        y: 0.735,
+        x: 0.622,
+        y: 0.730,
         descricao:
           'Coração cívico e religioso de Alcântara: reúne a antiga Casa de Câmara e Cadeia (nº 17, tombada individualmente sob a Inscrição nº 013 pelo Decreto nº 7.662/1980), o Pelourinho e as ruínas da Matriz de São Matias (nº 19).',
         bemIds: ['013', '060'],
@@ -667,8 +667,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'alc-rua-grande-20',
         label: '20 a 22. Eixo da Rua Grande',
         nomeAtual: 'Casa do Divino e Sobrados da Rua Grande (Insc. #017 e #060)',
-        x: 0.665,
-        y: 0.655,
+        x: 0.675,
+        y: 0.660,
         descricao:
           'Principal artéria senhorial de Alcântara, ligando a Praça da Matriz ao Largo do Carmo, onde se localiza a Casa do Divino (Rua Grande, 88 — Inscrição nº 017).',
         bemIds: ['017', '060'],
@@ -678,8 +678,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'alc-igreja-carmo-25',
         label: '24 e 25. Igreja e Ruínas do Convento do Carmo',
         nomeAtual: 'Igreja de Nossa Senhora do Carmo e Largo do Carmo',
-        x: 0.785,
-        y: 0.585,
+        x: 0.795,
+        y: 0.575,
         descricao:
           'Conjunto carmelita de Alcântara e sobrados vizinhos na confluência da Rua Grande com a Rua do Sossego.',
         bemIds: ['060'],
@@ -689,7 +689,7 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'alc-fonte-pedras-12',
         label: '12. Fonte das Pedras',
         nomeAtual: 'Fonte das Pedras e Galeria Colonial',
-        x: 0.54,
+        x: 0.538,
         y: 0.638,
         descricao:
           'Fonte colonial oitocentista situada na baixada entre a Rua das Mercês e a Rua da Requieira.',
@@ -711,8 +711,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'alc-porto-1',
         label: '1 a 7. Porto, Ladeira do Jacaré e Rua da Amargura',
         nomeAtual: 'Cais do Porto, Avenida Getúlio Vargas e Ruínas da Rua da Amargura',
-        x: 0.165,
-        y: 0.495,
+        x: 0.185,
+        y: 0.515,
         descricao:
           'Porta de entrada marítima do Sítio Histórico de Alcântara e conjunto de ruínas de palacetes coloniais na Rua Bela Vista / Amargura.',
         bemIds: ['060'],
@@ -746,8 +746,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'viana-perimetro-hachurado-1988',
         label: 'Mancha Hachurada — Perímetro de Tombamento (1988)',
         nomeAtual: 'Centro Histórico, Arquitetônico e Paisagístico de Viana (Insc. #040)',
-        x: 0.255,
-        y: 0.258,
+        x: 0.340,
+        y: 0.305,
         descricao:
           'Poligonal hachurada de proteção rigorosa definida pelo DPHAP em abril de 1988 e homologada pelo Decreto Estadual nº 10.899/1988.',
         bemIds: ['040', '061'],
@@ -757,8 +757,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'viana-matriz-caxias-1988',
         label: 'Praça Duque de Caxias e Igreja Matriz',
         nomeAtual: 'Igreja Matriz de Nossa Senhora da Conceição e Sinos Tombados (Insc. #061)',
-        x: 0.205,
-        y: 0.225,
+        x: 0.200,
+        y: 0.222,
         descricao:
           'Coração fundacional da antiga missão jesuítica de Maracu (elevada a vila de Viana em 1757), onde se situam a Igreja Matriz e seus sinos históricos tombados pelo Decreto nº 12.456/1992.',
         bemIds: ['061', '040'],
@@ -768,8 +768,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'viana-porto-honorio-1988',
         label: 'Porto Honório Belo e Lagos de Viana',
         nomeAtual: 'Orla Lacustre Norte e Rampa Celso Magalhães',
-        x: 0.245,
-        y: 0.135,
+        x: 0.242,
+        y: 0.130,
         descricao:
           'Conexão histórica entre o núcleo urbano de Viana e o sistema lacustre da Baixada Maranhense.',
         bemIds: ['040'],
@@ -779,8 +779,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'viana-carimbo-dphap-1988',
         label: 'Selo Oficial: Secretaria da Cultura / DPHAP (Abril/1988)',
         nomeAtual: 'Carimbo Técnico da Delimitação do Perímetro de Tombamento (Escala 1:2000)',
-        x: 0.895,
-        y: 0.725,
+        x: 0.885,
+        y: 0.665,
         descricao:
           'Carimbo oficial da prancha 01/01 do DPHAP datado de abril de 1988, atestando a base cartográfica SESP/IBGE na escala 1:2000.',
         bemIds: ['040'],
@@ -812,12 +812,12 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
     points: [
       {
         id: 'viana-cad-matriz-prefeitura',
-        label: 'Praça da Matriz, Prefeitura e Correio (QD. 30 a 33)',
+        label: 'Praça, Prefeitura e Correio (QD. 26 a 30)',
         nomeAtual: 'Núcleo Cívico-Religioso de Viana (Insc. #040 e #061)',
-        x: 0.405,
-        y: 0.455,
+        x: 0.415,
+        y: 0.468,
         descricao:
-          'Conjunto central formado pela Igreja Matriz de Nossa Senhora da Conceição, Prefeitura e agência histórica dos Correios.',
+          'Conjunto central formado pela Praça, Prefeitura e agência histórica dos Correios, próximo à Praça Duque de Caxias e Igreja Matriz.',
         bemIds: ['040', '061'],
         buscaTombamento: 'Viana'
       },
@@ -825,8 +825,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'viana-cad-sobrado-ousado',
         label: 'Sobrado Ousado Carvalho e Rua Antônio Lopes',
         nomeAtual: 'Eixo Arquitetônico da Rua Antônio Lopes (QD. 04 a 19)',
-        x: 0.258,
-        y: 0.535,
+        x: 0.254,
+        y: 0.525,
         descricao:
           'Alinhamento de sobrados e casas térreas coloniais e oitocentistas ao longo da Rua Antônio Lopes.',
         bemIds: ['040'],
@@ -834,12 +834,23 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
       },
       {
         id: 'viana-cad-sao-benedito',
-        label: 'Igreja e Portão de São Benedito / Seminário',
-        nomeAtual: 'Setor Leste — Rua São Benedito, Rua Cel. Campelo e Seminário',
-        x: 0.805,
-        y: 0.655,
+        label: 'Praça e Igreja de São Benedito (QD. 14)',
+        nomeAtual: 'Setor Leste — Rua São Benedito e Rua Cel. Campelo',
+        x: 0.795,
+        y: 0.675,
         descricao:
-          'Extremo leste do mapa cadastral, assinalando a Igreja e Portão de São Benedito (QD. 14) e a quadra do Seminário (Tombamento Isolado).',
+          'Setor leste do mapa cadastral, assinalando a Praça e Igreja de São Benedito (QD. 14).',
+        bemIds: ['040'],
+        buscaTombamento: 'Viana'
+      },
+      {
+        id: 'viana-cad-seminario',
+        label: 'Seminário (Tombamento Isolado)',
+        nomeAtual: 'Quadra do Seminário — Extremo Leste',
+        x: 0.915,
+        y: 0.768,
+        descricao:
+          'Área demarcada no extremo leste da planta cadastral como Seminário (Tombamento Isolado).',
         bemIds: ['040'],
         buscaTombamento: 'Viana'
       }
@@ -872,7 +883,7 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         label: 'Centro de Cultura e Praça Dias Carneiro (Panteon)',
         nomeAtual: 'Praça do Panteon e Antiga Indústria Têxtil do Século XIX (Insc. #004 e #059)',
         x: 0.665,
-        y: 0.285,
+        y: 0.295,
         descricao:
           'Setor norte do Centro Histórico de Caxias, próximo ao Rio Itapecuru e à ferrovia, onde se localizam o Centro de Cultura e a Praça do Panteon (Inscrição nº 004, Decreto nº 7.660/1980).',
         bemIds: ['004', '059'],
@@ -880,10 +891,10 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
       },
       {
         id: 'caxias-centro-vespasiano',
-        label: 'Núcleo Central — Rua Aarão Reis, Rua 1º de Agosto e Praça Vespasiano Ramos',
+        label: 'Núcleo Central — Centro, Rua Aarão Reis e Praça Vespasiano Ramos',
         nomeAtual: 'Casa de Vespasiano Ramos (Insc. #054) e Conjunto Urbano Central (#059)',
-        x: 0.495,
-        y: 0.425,
+        x: 0.560,
+        y: 0.400,
         descricao:
           'Coração comercial e literário de Caxias, abrangendo a Casa de Vespasiano Ramos (tombada pelo Decreto nº 11.595/1990, Inscrição nº 054) e o casario oitocentista.',
         bemIds: ['054', '059'],
@@ -891,10 +902,10 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
       },
       {
         id: 'caxias-magalhaes-almeida',
-        label: 'Praça Magalhães de Almeida e Igreja',
+        label: 'Praça Magalhães de Almeida e Av. General Sampaio',
         nomeAtual: 'Setor Oeste — Av. General Sampaio e Praça Magalhães de Almeida',
-        x: 0.275,
-        y: 0.445,
+        x: 0.285,
+        y: 0.450,
         descricao:
           'Largo histórico situado na porção oeste da poligonal de tombamento estadual de Caxias.',
         bemIds: ['059'],
@@ -902,10 +913,10 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
       },
       {
         id: 'caxias-cemiterio-remedios',
-        label: 'Igreja e Cemitério dos Remédios',
+        label: 'Largo e Cemitério dos Remédios',
         nomeAtual: 'Extremo Sul da Poligonal — Travessa Santa Isabel',
-        x: 0.285,
-        y: 0.795,
+        x: 0.295,
+        y: 0.785,
         descricao:
           'Vértice meridional da poligonal tracejada vermelha de Caxias, protegendo o conjunto histórico do Cemitério e Capela dos Remédios.',
         bemIds: ['059'],
@@ -937,12 +948,12 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
     points: [
       {
         id: 'carolina-praca-santo-antonio',
-        label: 'Praça Santo Antônio e Rua Imperatriz (Marcos 17 a 20)',
+        label: 'Praça Santo Antônio e Rua Imperatriz (Marcos 3, 10, 11, 13 e 20)',
         nomeAtual: 'Núcleo Fundacional Norte — Praça Santo Antônio (Insc. #063)',
-        x: 0.365,
-        y: 0.165,
+        x: 0.385,
+        y: 0.168,
         descricao:
-          'Setor norte da poligonal de tombamento de Carolina, reunindo os imóveis históricos nº 17, 18, 19 e 20 no entorno da Praça Santo Antônio e Rua Imperatriz.',
+          'Setor norte da poligonal de tombamento de Carolina, reunindo os imóveis históricos nº 3, 10, 11, 13 e 20 no entorno da Praça Santo Antônio e Rua Imperatriz.',
         bemIds: ['063'],
         buscaTombamento: 'Carolina'
       },
@@ -950,8 +961,8 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         id: 'carolina-getulio-vargas',
         label: 'Eixo da Avenida Getúlio Vargas e Travessa 15 de Novembro',
         nomeAtual: 'Corredor Histórico Central de Carolina (Insc. #063)',
-        x: 0.385,
-        y: 0.395,
+        x: 0.382,
+        y: 0.370,
         descricao:
           'Principal eixo urbano protegido pela poligonal traço-ponto do Decreto Estadual nº 12.954/1993.',
         bemIds: ['063'],
@@ -959,21 +970,21 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
       },
       {
         id: 'carolina-praca-alipio-carvalho',
-        label: 'Praça Alípio Carvalho e Rua Diógenes Gonçalves (Marcos 1 a 3)',
+        label: 'Praça Alípio Carvalho e Rua Diógenes Gonçalves (Marcos 1 e 9)',
         nomeAtual: 'Conjunto Cívico da Praça Alípio Carvalho (Insc. #063)',
-        x: 0.315,
+        x: 0.345,
         y: 0.635,
         descricao:
-          'Largo histórico no segmento sul da Avenida Getúlio Vargas, rodeado pelas edificações de destaque nº 1, 2 e 3.',
+          'Largo histórico no segmento sul da Avenida Getúlio Vargas, ladeado pelos marcos arquitetônicos nº 1 e 9.',
         bemIds: ['063'],
         buscaTombamento: 'Carolina'
       },
       {
         id: 'carolina-elias-barros-praca',
-        label: 'Avenida Elias Barros e Praça Sul (Marcos 9 a 13)',
+        label: 'Praça Sul e Avenida Elias Barros (Marcos 8, 14, 16 e 19)',
         nomeAtual: 'Setor Sudeste da Poligonal de Carolina (Insc. #063 e #065)',
         x: 0.635,
-        y: 0.805,
+        y: 0.812,
         descricao:
           'Extensão sudeste do perímetro tombado de Carolina. O município também abriga os Sítios Arqueológicos do Morro das Araras e Morro das Figuras (Decreto nº 12.956/1993, Inscrição nº 065).',
         bemIds: ['063', '065'],

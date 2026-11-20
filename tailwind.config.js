@@ -30,6 +30,9 @@ export default {
                     sage: '#2E7D68',
                     'sage-dark': '#256B58', // variante só para texto pequeno sobre fundo claro (contraste AA)
                     light: '#F3F6FA',
+                    surface: '#FAF8F5',
+                    gold: '#E9B44C',
+                    'gold-dark': '#9A6B12',
                 }
             },
             animation: {

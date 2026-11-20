@@ -226,20 +226,12 @@ const Navigation = () => {
   return (
     <>
       {/* Barra de acessibilidade: faixa fina, rola junto com a página */}
-      <div className="bg-brand-navy text-white font-sans px-6 py-0.5 hidden md:block">
+      <div className="bg-brand-navy text-white font-sans px-6 py-1 hidden md:block">
         <div className="max-w-[1440px] mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-4 text-[11px] leading-none uppercase font-bold tracking-wider text-slate-200">
             <L to="/transparencia" className="hover:text-white transition-colors">Acesso à Informação</L>
             <span className="text-white/20" aria-hidden="true">|</span>
             <a href="https://cultura.ma.gov.br" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">SECMA<span className="sr-only"> (abre em nova aba)</span></a>
-            <span className="text-white/20" aria-hidden="true">|</span>
-            <L
-              to="/denuncia"
-              className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-brand-red text-white text-[10px] font-black uppercase tracking-wider hover:bg-brand-red-dark transition-all shadow-xs"
-            >
-              <ShieldAlert size={12} aria-hidden="true" />
-              <span>Denúncias</span>
-            </L>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -360,10 +352,10 @@ const Navigation = () => {
               {user && (
                 <button
                   onClick={logout}
-                  className="px-4.5 py-2 bg-slate-100 hover:bg-brand-terracotta/10 hover:text-brand-terracotta text-slate-600 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5"
+                  className="px-4 py-2 bg-slate-100 hover:bg-brand-terracotta/10 hover:text-brand-terracotta text-slate-700 rounded-full text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5"
                   title={`Logado como ${user.name}`}
                 >
-                  <LogOut size={12} aria-hidden="true" /> Sair
+                  <LogOut size={13} aria-hidden="true" /> Sair
                 </button>
               )}
 
