@@ -34,25 +34,25 @@ export const HomePage: React.FC = () => {
     <div className="bg-[#FAF8F5] text-slate-800 min-h-screen">
       <OrigamiMenu />
 
-      <section className="border-y border-brand-sand/30 bg-[#071D33] text-white" aria-label="Números">
+      <section className="border-y border-[#E5DDD5] bg-white text-[#071D33]" aria-label="Números">
         <dl className="max-w-[1240px] mx-auto px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
           <div>
-            <dd className="text-2xl font-black">{totalBens}</dd>
-            <dt className="text-xs text-slate-300">bens tombados</dt>
+            <dd className="text-xl sm:text-2xl font-black text-[#071D33]">{totalBens}</dd>
+            <dt className="text-xs text-slate-600">bens tombados</dt>
           </div>
           <div>
-            <dd className="text-2xl font-black">{totalMunicipios}</dd>
-            <dt className="text-xs text-slate-300">municípios com bens tombados</dt>
+            <dd className="text-xl sm:text-2xl font-black text-[#071D33]">{totalMunicipios}</dd>
+            <dt className="text-xs text-slate-600">municípios</dt>
           </div>
           <div>
-            <dd className="text-2xl font-black">{totalPdf}</dd>
-            <dt className="text-xs text-slate-300">decretos digitalizados</dt>
+            <dd className="text-xl sm:text-2xl font-black text-[#256B58]">{totalPdf}</dd>
+            <dt className="text-xs text-slate-600">decretos em PDF</dt>
           </div>
           <div>
-            <dd className="text-2xl font-black">{MAPAS_HISTORICOS.length}</dd>
-            <dt className="text-xs text-slate-300">
-              <Link to="/mapa" className="underline hover:text-[#E9B44C]">
-                plantas históricas interativas
+            <dd className="text-xl sm:text-2xl font-black text-[#B94734]">{MAPAS_HISTORICOS.length}</dd>
+            <dt className="text-xs text-slate-600">
+              <Link to="/mapa" className="underline hover:text-[#B94734]">
+                mapas e poligonais
               </Link>
             </dt>
           </div>

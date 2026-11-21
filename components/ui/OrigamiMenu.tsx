@@ -2,7 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
-  ArrowRight,
   BookOpen,
   Compass,
   FileText,
@@ -13,179 +12,141 @@ import { PUBLIC_LEGAL_DOCUMENTS } from '../../data/publicLegalDocuments';
 import { MAPAS_HISTORICOS } from '../../data/mapasHistoricos';
 import { GlobalSearchBar } from './GlobalSearchBar';
 
-interface PortalCard {
+interface PortalShortcut {
   id: string;
-  kicker: string;
   title: string;
-  subtitle: string;
+  meta: string;
   to: string;
-  photo: string;
-  barColor: string;
-  iconBg: string;
+  accentBar: string;
+  iconStyle: string;
   icon: React.ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean }>;
 }
 
 /**
- * Hero Vivo e Imersivo da Home (Opção 1A):
- * - Arte /cena-fotos/fundo-hero.webp luminosa e em plena saturação (sem véu escuro apagado)
- * - Busca Global Instantânea centralizada (Bens + Mapas + Legislações + Serviços)
- * - 5 Portais Fotográficos com identidade cromática própria ancorados na base
+ * Hero Limpo e Equilibrado + Barra de Portais sobre fundo neutro (#FAF8F5)
+ * Elimina completamente a sobreposição de fotos sobre ilustração (zero poluição visual).
  */
 export const OrigamiMenu: React.FC = () => {
   const totalMunicipios = new Set(BENS_TOMBADOS.map((b) => b.municipio)).size;
 
-  const cards: PortalCard[] = [
+  const shortcuts: PortalShortcut[] = [
     {
       id: 'bens',
-      kicker: 'Livro do Tombo',
       title: 'Bens Tombados',
-      subtitle: `${BENS_TOMBADOS.length} inscrições · ${totalMunicipios} municípios`,
+      meta: `${BENS_TOMBADOS.length} bens · ${totalMunicipios} cidades`,
       to: '/bens-tombados',
-      photo: '/cena-fotos/casarao.webp',
-      barColor: 'bg-[#3F7893]',
-      iconBg: 'bg-[#3F7893]',
+      accentBar: 'bg-[#2F5F78]',
+      iconStyle: 'bg-[#2F5F78]/10 text-[#2F5F78]',
       icon: Landmark
     },
     {
       id: 'mapas',
-      kicker: 'Cartografia',
       title: 'Mapas e Poligonais',
-      subtitle: `${MAPAS_HISTORICOS.length} pranchas interativas e PDFs`,
+      meta: `${MAPAS_HISTORICOS.length} pranchas e PDFs`,
       to: '/mapa',
-      photo: '/cena-fotos/aerea.webp',
-      barColor: 'bg-[#E9B44C]',
-      iconBg: 'bg-[#071D33]',
+      accentBar: 'bg-[#071D33]',
+      iconStyle: 'bg-[#071D33]/10 text-[#071D33]',
       icon: Compass
     },
     {
       id: 'legislacao',
-      kicker: 'Normas',
       title: 'Legislação',
-      subtitle: `${PUBLIC_LEGAL_DOCUMENTS.length} leis, decretos e diretrizes`,
+      meta: `${PUBLIC_LEGAL_DOCUMENTS.length} leis e decretos`,
       to: '/legislacao',
-      photo: '/cena-fotos/azulejos.webp',
-      barColor: 'bg-[#2E7D68]',
-      iconBg: 'bg-[#2E7D68]',
+      accentBar: 'bg-[#256B58]',
+      iconStyle: 'bg-[#256B58]/10 text-[#256B58]',
       icon: BookOpen
     },
     {
       id: 'servicos',
-      kicker: 'Atendimento',
-      title: 'Serviços e Formulários',
-      subtitle: 'Obras, certidões e requerimento',
+      title: 'Serviços e Obras',
+      meta: 'Requerimento em 2 passos',
       to: '/servicos',
-      photo: '/cena-fotos/telhados.webp',
-      barColor: 'bg-[#B94734]',
-      iconBg: 'bg-[#B94734]',
+      accentBar: 'bg-[#B94734]',
+      iconStyle: 'bg-[#B94734]/10 text-[#B94734]',
       icon: FileText
     },
     {
       id: 'denuncia',
-      kicker: 'Fiscalização',
       title: 'Denúncias',
-      subtitle: 'Obra irregular ou dano ao bem',
+      meta: 'Obra irregular ou dano',
       to: '/denuncia',
-      photo: '/cena-fotos/rua-noite.webp',
-      barColor: 'bg-[#E63343]',
-      iconBg: 'bg-[#C01B29]',
+      accentBar: 'bg-[#C01B29]',
+      iconStyle: 'bg-[#C01B29]/10 text-[#C01B29]',
       icon: AlertTriangle
     }
   ];
 
   return (
-    <section
-      aria-label="Abertura do Portal do Patrimônio Cultural do Maranhão"
-      className="relative overflow-x-clip bg-[#102E46] text-white"
-    >
-      {/* Arte de fundo equilibrada e suave — presente sem poluir a leitura */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-cover bg-center saturate-[0.82] brightness-[0.82] blur-[1.5px] scale-[1.03]"
-        style={{ backgroundImage: "url('/cena-fotos/fundo-hero.webp')" }}
-      />
-      {/* Véu editorial equilibrado: preserva o clima da arte com foco total na busca e tipografia */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-b from-[#071D33]/72 via-[#071D33]/65 to-[#071D33]/92"
-      />
+    <div className="bg-brand-surface">
+      {/* 1. HERO ENQUADRADO: Apenas ilustração suavizada + Título + Busca Global */}
+      <section
+        aria-label="Abertura do Portal do Patrimônio Cultural do Maranhão"
+        className="relative bg-[#071D33] text-white"
+      >
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: "url('/cena-fotos/fundo-hero.webp')",
+            filter: 'saturate(0.75) brightness(0.78)'
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(180deg, rgba(7, 29, 51, 0.72) 0%, rgba(7, 29, 51, 0.68) 55%, rgba(7, 29, 51, 0.90) 100%)'
+          }}
+        />
 
-      <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 pt-10 pb-8 sm:pt-14 sm:pb-10">
-        {/* Bloco Central: Título Editorial + Busca Global Instantânea */}
-        <div className="max-w-3xl mx-auto text-center">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#071D33]/75 backdrop-blur-md border border-[#E9B44C]/50 text-[11px] font-bold uppercase tracking-[0.2em] text-[#E9B44C] shadow-md">
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pt-10 pb-12 sm:pt-16 sm:pb-16 text-center">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#E9B44C]">
             Governo do Maranhão · SECMA · SPC
-          </span>
+          </p>
 
-          <h1
-            className="mt-4 font-serif text-3xl sm:text-5xl lg:text-[56px] font-medium tracking-tight leading-[1.08] text-white"
-            style={{ textShadow: '0 4px 24px rgba(7, 29, 51, 0.72)' }}
-          >
+          <h1 className="mt-3 font-serif text-3xl sm:text-5xl font-medium tracking-tight leading-[1.1] text-white">
             Patrimônio Cultural do Maranhão
           </h1>
 
-          <p
-            className="mt-3.5 mx-auto max-w-[56ch] text-sm sm:text-base text-white/95 font-medium leading-relaxed"
-            style={{ textShadow: '0 2px 14px rgba(7, 29, 51, 0.85)' }}
-          >
-            Encontre em segundos bens tombados, mapas de poligonal, leis de proteção e formulários de atendimento.
+          <p className="mt-3 mx-auto max-w-[52ch] text-sm sm:text-base text-slate-100/95 leading-relaxed">
+            Consulte bens tombados, mapas de poligonal, legislação de proteção e serviços oficiais.
           </p>
 
-          {/* Busca Global Instantânea Centralizada */}
           <div className="mt-7 max-w-2xl mx-auto">
             <GlobalSearchBar />
           </div>
         </div>
+      </section>
 
-        {/* 5 Portais Fotográficos com Identidade Cromática Própria */}
-        <div className="mt-8 sm:mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {cards.map((card) => {
-            const Icon = card.icon;
+      {/* 2. ATALHOS LIMPOS SOBRE FUNDO NEUTRO (#FAF8F5) — Zero foto sobre foto */}
+      <section aria-label="Acesso rápido às áreas do portal" className="max-w-[1240px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {shortcuts.map((item, idx) => {
+            const Icon = item.icon;
+            const spanLastOnMobile = idx === shortcuts.length - 1 ? 'col-span-2 sm:col-span-1' : '';
             return (
               <Link
-                key={card.id}
-                to={card.to}
-                className="group relative h-[132px] sm:h-[180px] lg:h-[200px] rounded-2xl overflow-hidden border border-white/20 hover:border-white/75 transition-all duration-300 shadow-lg hover:shadow-2xl hover:-translate-y-1 flex flex-col justify-between p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E9B44C]"
+                key={item.id}
+                to={item.to}
+                className={`group relative overflow-hidden rounded-2xl bg-white border border-[#E5DDD5] hover:border-[#071D33]/40 p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-3 ${spanLastOnMobile}`}
               >
-                <img
-                  src={card.photo}
-                  alt=""
-                  loading="lazy"
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                {/* Gradiente apenas na parte inferior para preservar a fotografia viva no topo */}
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-0 bg-gradient-to-t from-[#071D33]/95 via-[#071D33]/45 to-transparent"
-                />
-                {/* Faixa de cor identitária no topo do card */}
-                <span aria-hidden="true" className={`absolute top-0 left-0 right-0 h-1.5 ${card.barColor}`} />
-
-                <div className="relative z-10 flex justify-end">
-                  <span className={`w-9 h-9 rounded-xl ${card.iconBg} text-white shadow-lg border border-white/25 flex items-center justify-center group-hover:scale-105 transition-transform`}>
-                    <Icon size={16} aria-hidden={true} />
-                  </span>
-                </div>
-
-                <div className="relative z-10 space-y-0.5 text-left">
-                  <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-[#E9B44C]">
-                    {card.kicker}
-                  </span>
-                  <h2 className="font-serif text-lg sm:text-xl font-medium text-white leading-tight">
-                    {card.title}
+                <span aria-hidden="true" className={`absolute top-0 left-0 right-0 h-1 ${item.accentBar}`} />
+                <span className={`w-9 h-9 rounded-xl flex items-center justify-center ${item.iconStyle}`}>
+                  <Icon size={18} aria-hidden={true} />
+                </span>
+                <div>
+                  <h2 className="font-display text-sm sm:text-base font-bold text-[#071D33] group-hover:text-[#B94734] transition-colors leading-snug">
+                    {item.title}
                   </h2>
-                  <p className="text-xs text-slate-200 leading-snug line-clamp-1">
-                    {card.subtitle}
-                  </p>
-                  <span className="inline-flex items-center gap-1 pt-1 text-[11px] font-bold text-white group-hover:text-[#E9B44C] transition-colors">
-                    Explorar
-                    <ArrowRight size={12} className="transition-transform group-hover:translate-x-1" aria-hidden="true" />
-                  </span>
+                  <p className="text-xs text-slate-500 mt-0.5">{item.meta}</p>
                 </div>
               </Link>
             );
           })}
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 };
