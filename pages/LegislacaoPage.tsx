@@ -1,12 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  BookOpen,
   Check,
-  ChevronDown,
-  ChevronUp,
   Copy,
   Download,
   ExternalLink,
-  Info,
   Search,
   Sparkles,
   X
@@ -21,8 +19,6 @@ import {
   PUBLIC_LEGAL_DOCUMENTS,
   PublicLegalDocument
 } from '../data/publicLegalDocuments';
-
-type SortMode = 'criacao-asc' | 'criacao-desc' | 'titulo';
 
 const SCOPES: LegalDocumentScope[] = ['Estadual', 'Federal', 'Municipal', 'SPC'];
 const CATEGORIES: LegalDocumentCategory[] = [
@@ -46,41 +42,23 @@ const formatDate = (date: string) => {
 };
 
 const parseYear = (date: string) => (date ? date.slice(0, 4) : '—');
-
 const parseDateNum = (d: string) => {
   if (!d) return 99999999;
   const parts = d.split('-').map(Number);
   return parts.length === 3 ? parts[0] * 10000 + parts[1] * 100 + parts[2] : Number(d) || 99999999;
 };
 
-const isCategory = (value: unknown): value is LegalDocumentCategory =>
-  typeof value === 'string' && [...CATEGORIES, 'Outro'].includes(value as LegalDocumentCategory);
-
-const isScope = (value: unknown): value is LegalDocumentScope =>
-  typeof value === 'string' && SCOPES.includes(value as LegalDocumentScope);
+const isCategory = (v: unknown): v is LegalDocumentCategory =>
+  typeof v === 'string' && [...CATEGORIES, 'Outro'].includes(v as LegalDocumentCategory);
+const isScope = (v: unknown): v is LegalDocumentScope =>
+  typeof v === 'string' && SCOPES.includes(v as LegalDocumentScope);
 
 const mapPublishedDocument = (id: string, raw: Record<string, unknown>): PublicLegalDocument | null => {
   const title = typeof raw.title === 'string' ? raw.title.trim() : '';
   const sourceUrl =
-    typeof raw.sourceUrl === 'string'
-      ? raw.sourceUrl.trim()
-      : typeof raw.url === 'string'
-      ? raw.url.trim()
-      : '';
+    typeof raw.sourceUrl === 'string' ? raw.sourceUrl.trim() : typeof raw.url === 'string' ? raw.url.trim() : '';
   const category = isCategory(raw.category) ? raw.category : null;
   if (!title || !sourceUrl || !category) return null;
-
-  const rawTags = Array.isArray(raw.tags)
-    ? raw.tags.filter((tag): tag is string => typeof tag === 'string')
-    : [];
-
-  const format =
-    raw.format === 'PDF' || raw.format === 'HTML' || raw.format === 'Imagem' || raw.format === 'Outro'
-      ? raw.format
-      : sourceUrl.toLowerCase().includes('.pdf')
-      ? 'PDF'
-      : 'HTML';
-
   return {
     id,
     title,
@@ -94,8 +72,8 @@ const mapPublishedDocument = (id: string, raw: Record<string, unknown>): PublicL
     sourceLabel: typeof raw.sourceLabel === 'string' ? raw.sourceLabel : 'SPC Maranhão',
     sourceUrl,
     sourceKind: sourceUrl.startsWith('https://') ? 'official-online' : 'institutional-copy',
-    format,
-    tags: rawTags,
+    format: sourceUrl.toLowerCase().includes('.pdf') ? 'PDF' : 'HTML',
+    tags: Array.isArray(raw.tags) ? raw.tags.filter((t): t is string => typeof t === 'string') : [],
     officialPublication: typeof raw.officialPublication === 'string' ? raw.officialPublication : undefined,
     validationNote: typeof raw.validationNote === 'string' ? raw.validationNote : undefined,
     verifiedAt: typeof raw.verifiedAt === 'string' ? raw.verifiedAt : '',
@@ -116,26 +94,26 @@ const LegislacaoPage: React.FC = () => {
 
   const [activeScope, setActiveScope] = useState<'Todos' | LegalDocumentScope>('Todos');
   const [activeCategory, setActiveCategory] = useState<'Todos' | LegalDocumentCategory>('Todos');
-  const [sortMode, setSortMode] = useState<SortMode>('criacao-asc');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [publishedDocuments, setPublishedDocuments] = useState<PublicLegalDocument[]>([]);
+  const [selectedId, setSelectedId] = useState<string>(PUBLIC_LEGAL_DOCUMENTS[0].id);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
-    const publicDocumentsQuery = query(collection(db, 'legislation'), where('status', '==', 'published'));
-    const unsubscribe = onSnapshot(
-      publicDocumentsQuery,
-      (snapshot) => {
+    const qRef = query(collection(db, 'legislation'), where('status', '==', 'published'));
+    const unsub = onSnapshot(
+      qRef,
+      (snap) => {
         const docs: PublicLegalDocument[] = [];
-        snapshot.forEach((docSnap) => {
-          const mapped = mapPublishedDocument(docSnap.id, docSnap.data() as Record<string, unknown>);
-          if (mapped) docs.push(mapped);
+        snap.forEach((d) => {
+          const m = mapPublishedDocument(d.id, d.data() as Record<string, unknown>);
+          if (m) docs.push(m);
         });
         setPublishedDocuments(docs);
       },
       () => setPublishedDocuments([])
     );
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
   const allDocuments = useMemo(() => {
@@ -147,114 +125,215 @@ const LegislacaoPage: React.FC = () => {
 
   const filteredDocuments = useMemo(() => {
     const q = normalizeText(searchTerm);
-    const list = allDocuments.filter((doc) => {
-      if (activeScope !== 'Todos' && doc.scope !== activeScope) return false;
-      if (activeCategory !== 'Todos' && doc.category !== activeCategory) return false;
-      if (q) {
-        const hay = normalizeText(
-          `${doc.title} ${doc.description} ${doc.didacticExplanation ?? ''} ${doc.tags.join(' ')} ${doc.scope} ${doc.category} ${doc.date}`
-        );
-        if (!hay.includes(q)) return false;
-      }
-      return true;
-    });
+    return allDocuments
+      .filter((doc) => {
+        if (activeScope !== 'Todos' && doc.scope !== activeScope) return false;
+        if (activeCategory !== 'Todos' && doc.category !== activeCategory) return false;
+        if (q) {
+          const hay = normalizeText(
+            `${doc.title} ${doc.description} ${doc.didacticExplanation ?? ''} ${doc.tags.join(' ')} ${doc.scope} ${doc.category} ${doc.date}`
+          );
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => parseDateNum(a.date) - parseDateNum(b.date));
+  }, [allDocuments, searchTerm, activeScope, activeCategory]);
 
-    return [...list].sort((a, b) => {
-      if (sortMode === 'criacao-desc') return parseDateNum(b.date) - parseDateNum(a.date);
-      if (sortMode === 'titulo') return a.title.localeCompare(b.title, 'pt-BR');
-      return parseDateNum(a.date) - parseDateNum(b.date);
-    });
-  }, [allDocuments, searchTerm, activeScope, activeCategory, sortMode]);
+  const activeDoc = useMemo(
+    () => filteredDocuments.find((d) => d.id === selectedId) || filteredDocuments[0] || null,
+    [filteredDocuments, selectedId]
+  );
 
-  const hasActiveFilters = searchTerm.trim() !== '' || activeScope !== 'Todos' || activeCategory !== 'Todos';
+  const hasFilters = Boolean(searchTerm.trim() || activeScope !== 'Todos' || activeCategory !== 'Todos');
   const clearFilters = () => {
     setSearchTerm('');
     setActiveScope('Todos');
     setActiveCategory('Todos');
   };
 
-  const copyLegalCitation = (doc: PublicLegalDocument) => {
-    const citation = `${doc.title} (${doc.scope}, ${parseYear(doc.date)}). ${doc.issuer}. Fonte: ${doc.sourceLabel}.`;
-    navigator.clipboard.writeText(citation);
+  const copyCitation = (doc: PublicLegalDocument) => {
+    navigator.clipboard.writeText(`${doc.title} (${doc.scope}, ${parseYear(doc.date)}). ${doc.issuer}. Fonte: ${doc.sourceLabel}.`);
     setCopiedId(doc.id);
     setTimeout(() => setCopiedId(null), 2200);
   };
 
+  const renderDocDetail = (doc: PublicLegalDocument) => {
+    const isPdf = doc.format === 'PDF';
+    return (
+      <div className="space-y-5">
+        <div className="space-y-2 pb-4 border-b border-[#E5DDD5]">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
+            <span className="px-2.5 py-0.5 rounded-md bg-[#256B58] text-white font-mono">{parseYear(doc.date)}</span>
+            <span className="text-[#256B58]">{doc.scope}</span>
+            <span className="text-slate-400">·</span>
+            <span className="text-slate-600">{doc.category}</span>
+          </div>
+          <h2 className="font-serif text-xl sm:text-2xl font-medium text-[#071D33] leading-snug">
+            {doc.title}
+          </h2>
+          <p className="text-sm text-slate-600 leading-relaxed">{doc.description}</p>
+        </div>
+
+        {/* Botão Primário de Leitura / Download */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <a
+            href={doc.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="min-h-[44px] inline-flex items-center gap-2 rounded-xl bg-[#256B58] hover:bg-[#071D33] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-colors"
+          >
+            {isPdf ? <Download size={15} aria-hidden="true" /> : <ExternalLink size={15} aria-hidden="true" />}
+            <span>{isPdf ? 'Baixar Texto Oficial (PDF)' : 'Abrir Texto Oficial'}</span>
+          </a>
+
+          <button
+            type="button"
+            onClick={() => copyCitation(doc)}
+            className="min-h-[44px] inline-flex items-center gap-1.5 rounded-xl border border-[#E5DDD5] bg-[#FAF8F5] hover:border-[#256B58] px-4 py-2.5 text-xs font-bold text-[#071D33] transition-colors"
+          >
+            {copiedId === doc.id ? (
+              <>
+                <Check size={14} className="text-[#256B58]" />
+                <span className="text-[#256B58]">Citação copiada</span>
+              </>
+            ) : (
+              <>
+                <Copy size={14} />
+                <span>Copiar referência</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Explicação Didática e Aplicação Prática */}
+        {(doc.didacticExplanation || doc.practicalApplication) && (
+          <div className="rounded-2xl bg-[#FAF8F5] border border-[#E5DDD5] p-5 space-y-4 text-sm text-slate-700 leading-relaxed">
+            {doc.didacticExplanation && (
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider text-[#256B58] flex items-center gap-1.5 mb-1.5">
+                  <Sparkles size={13} aria-hidden="true" />
+                  O que determina esta norma
+                </p>
+                <p>{doc.didacticExplanation}</p>
+              </div>
+            )}
+            {doc.practicalApplication && (
+              <div className="pt-3.5 border-t border-[#E5DDD5]">
+                <p className="text-xs font-black uppercase tracking-wider text-[#071D33] mb-1.5">
+                  Aplicação prática no Maranhão
+                </p>
+                <p>{doc.practicalApplication}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Metadados da Publicação */}
+        <div className="grid sm:grid-cols-2 gap-3 text-xs text-slate-600 pt-1">
+          {doc.date && (
+            <div className="rounded-xl bg-white border border-[#E5DDD5] p-3">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Data do Ato</span>
+              <p className="font-bold text-[#071D33] mt-0.5">{formatDate(doc.date)}</p>
+            </div>
+          )}
+          <div className="rounded-xl bg-white border border-[#E5DDD5] p-3">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Órgão / Fonte</span>
+            <p className="font-bold text-[#071D33] mt-0.5">{doc.issuer}</p>
+          </div>
+          {doc.officialPublication && (
+            <div className="sm:col-span-2 rounded-xl bg-white border border-[#E5DDD5] p-3">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Publicação Oficial</span>
+              <p className="font-semibold text-[#071D33] mt-0.5">{doc.officialPublication}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="bg-brand-surface text-slate-800 min-h-screen">
-      {/* Cabeçalho Clean de Alto Contraste */}
-      <header className="bg-brand-navy text-white py-9 sm:py-12">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">
-            Biblioteca Normativa · SPC/SECMA
+      {/* Cabeçalho com Identidade Própria: Verde Sálvia (#256B58) + Azulejos */}
+      <header className="relative overflow-hidden bg-[#17483B] text-white py-9 sm:py-12">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-cover bg-center opacity-25 saturate-110"
+          style={{ backgroundImage: "url('/cena-fotos/azulejos.webp')" }}
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-r from-[#0F3128]/95 via-[#17483B]/85 to-[#256B58]/70"
+        />
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#E9B44C] flex items-center gap-1.5">
+            <BookOpen size={14} aria-hidden="true" />
+            <span>Biblioteca Normativa · {allDocuments.length} atos oficiais</span>
           </p>
           <h1 className="mt-2 font-serif text-3xl sm:text-4xl font-medium tracking-tight text-white">
-            Legislação do Patrimônio Cultural
+            Explorador de Legislação Patrimonial
           </h1>
-          <p className="mt-2 max-w-[62ch] text-sm sm:text-base text-slate-200 leading-relaxed">
-            Leis, decretos e portarias federais, estaduais e municipais com acesso direto ao texto oficial e explicação prática.
+          <p className="mt-2 max-w-[60ch] text-sm sm:text-base text-slate-100 leading-relaxed">
+            Selecione qualquer lei, decreto ou diretriz à esquerda para ler a explicação prática e baixar o texto oficial na mesma tela.
           </p>
 
-          <div className="mt-6 max-w-2xl relative">
-            <label htmlFor="legislacao-busca" className="sr-only">
-              Buscar norma por número, ano ou assunto
-            </label>
+          <div className="mt-5 max-w-2xl relative">
+            <label htmlFor="legislacao-busca" className="sr-only">Buscar norma</label>
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             <input
               id="legislacao-busca"
               type="search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por número, ano ou tema (ex.: 10.089, tombamento, obras)..."
-              className="w-full min-h-[48px] rounded-xl bg-white pl-11 pr-4 py-3 text-sm font-medium text-brand-navy placeholder:text-slate-500 shadow-lg focus:outline-none focus:ring-2 focus:ring-brand-gold"
+              placeholder="Buscar por número, ano ou tema (ex.: 10.089, obras, engenhos, imaterial)..."
+              className="w-full min-h-[48px] rounded-xl bg-white pl-11 pr-4 py-3 text-sm font-medium text-[#071D33] placeholder:text-slate-500 shadow-lg focus:outline-none focus:ring-2 focus:ring-[#E9B44C]"
             />
           </div>
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-        {/* Barra Única e Intuitiva de Filtros */}
-        <div className="rounded-2xl bg-white border border-[#E5DDD5] p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+        {/* Filtros em 1 Clique (Esfera + Tipo) */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
             <button
               type="button"
               onClick={() => setActiveScope('Todos')}
-              className={`min-h-[38px] shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+              className={`min-h-[38px] shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
                 activeScope === 'Todos'
-                  ? 'bg-brand-navy text-white'
-                  : 'bg-brand-surface text-slate-700 hover:bg-brand-sand/60'
+                  ? 'bg-[#256B58] text-white shadow-sm'
+                  : 'bg-white border border-[#E5DDD5] text-[#071D33] hover:border-[#256B58]'
               }`}
             >
               Todas ({allDocuments.length})
             </button>
-            {SCOPES.map((scope) => {
-              const count = allDocuments.filter((d) => d.scope === scope).length;
-              if (count === 0) return null;
-              const selected = activeScope === scope;
+            {SCOPES.map((s) => {
+              const count = allDocuments.filter((d) => d.scope === s).length;
+              if (!count) return null;
+              const selected = activeScope === s;
               return (
                 <button
-                  key={scope}
+                  key={s}
                   type="button"
-                  onClick={() => setActiveScope(selected ? 'Todos' : scope)}
-                  className={`min-h-[38px] shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                  onClick={() => setActiveScope(selected ? 'Todos' : s)}
+                  className={`min-h-[38px] shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
                     selected
-                      ? 'bg-brand-navy text-white'
-                      : 'bg-brand-surface text-slate-700 hover:bg-brand-sand/60'
+                      ? 'bg-[#256B58] text-white shadow-sm'
+                      : 'bg-white border border-[#E5DDD5] text-[#071D33] hover:border-[#256B58]'
                   }`}
                 >
-                  {scope} ({count})
+                  {s} ({count})
                 </button>
               );
             })}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <label htmlFor="filtro-tipo" className="sr-only">Tipo de ato</label>
+          <div className="flex items-center gap-2">
             <select
-              id="filtro-tipo"
+              aria-label="Filtrar por tipo de ato"
               value={activeCategory}
               onChange={(e) => setActiveCategory(e.target.value as 'Todos' | LegalDocumentCategory)}
-              className="min-h-[38px] rounded-xl border border-[#E5DDD5] bg-brand-surface px-3 py-1.5 text-xs font-semibold text-brand-navy focus:outline-none focus:border-brand-blue"
+              className="min-h-[38px] rounded-xl border border-[#E5DDD5] bg-white px-3 py-1.5 text-xs font-semibold text-[#071D33]"
             >
               <option value="Todos">Todos os tipos</option>
               <option value="Lei">Leis</option>
@@ -262,162 +341,113 @@ const LegislacaoPage: React.FC = () => {
               <option value="Portaria">Portarias</option>
               <option value="Diretriz">Diretrizes</option>
             </select>
-
-            <label htmlFor="filtro-ordem" className="sr-only">Ordenação</label>
-            <select
-              id="filtro-ordem"
-              value={sortMode}
-              onChange={(e) => setSortMode(e.target.value as SortMode)}
-              className="min-h-[38px] rounded-xl border border-[#E5DDD5] bg-brand-surface px-3 py-1.5 text-xs font-semibold text-brand-navy focus:outline-none focus:border-brand-blue"
-            >
-              <option value="criacao-asc">Cronológica (antigas → recentes)</option>
-              <option value="criacao-desc">Mais recentes primeiro</option>
-              <option value="titulo">Título (A–Z)</option>
-            </select>
-
-            {hasActiveFilters && (
+            {hasFilters && (
               <button
                 type="button"
                 onClick={clearFilters}
-                className="min-h-[38px] inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-terracotta hover:bg-brand-terracotta/10 transition-colors"
+                className="min-h-[38px] inline-flex items-center gap-1 px-2.5 text-xs font-bold text-[#B94734] hover:underline"
               >
-                <X size={13} aria-hidden="true" />
-                Limpar
+                <X size={13} /> Limpar
               </button>
             )}
           </div>
         </div>
 
-        {/* Contagem limpa */}
-        <p className="text-xs font-semibold text-slate-600 px-1" role="status" aria-live="polite">
-          <strong className="text-brand-navy">{filteredDocuments.length}</strong>{' '}
-          {filteredDocuments.length === 1 ? 'norma encontrada' : 'normas encontradas'}
-        </p>
-
-        {/* Lista de Cards Ultra-Clean (Sem poluição visual; explicação didática sob demanda) */}
+        {/* LAYOUT EXPLORADOR (Split Master-Detail) */}
         {filteredDocuments.length === 0 ? (
           <div className="rounded-2xl border border-[#E5DDD5] bg-white p-10 text-center space-y-3">
-            <Info size={28} className="mx-auto text-slate-400" />
-            <p className="font-bold text-brand-navy">Nenhuma norma encontrada para esta busca.</p>
+            <p className="font-bold text-[#071D33]">Nenhuma norma encontrada para esta busca.</p>
             <button
               type="button"
               onClick={clearFilters}
-              className="min-h-[40px] px-4 py-2 rounded-xl bg-brand-navy text-white text-xs font-bold hover:bg-brand-blue transition-colors"
+              className="min-h-[40px] px-4 py-2 rounded-xl bg-[#256B58] text-white text-xs font-bold"
             >
               Mostrar todas as normas
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredDocuments.map((doc) => {
-              const isExpanded = expandedId === doc.id;
-              const year = parseYear(doc.date);
-              const isPdf = doc.format === 'PDF';
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            <div className="lg:col-span-5 bg-white rounded-2xl border border-[#E5DDD5] shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-100 bg-[#FAF8F5] flex items-center justify-between text-xs">
+                <span className="font-bold text-[#071D33]" role="status" aria-live="polite">
+                  {filteredDocuments.length} {filteredDocuments.length === 1 ? 'norma' : 'normas'}
+                </span>
+                <span className="text-slate-500">Toque para ler</span>
+              </div>
 
-              return (
-                <article
-                  key={doc.id}
-                  className="rounded-2xl border border-[#E5DDD5] bg-white p-5 sm:p-6 shadow-sm hover:border-brand-navy/30 transition-all"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                    <div className="space-y-1.5 max-w-2xl">
-                      <p className="text-xs font-bold text-slate-500 flex flex-wrap items-center gap-1.5">
-                        <span className="font-mono text-brand-navy">{year}</span>
-                        <span aria-hidden="true">·</span>
-                        <span className="text-brand-blue-dark">{doc.scope}</span>
-                        <span aria-hidden="true">·</span>
-                        <span>{doc.category}</span>
-                      </p>
-
-                      <h2 className="font-display text-base sm:text-lg font-bold text-brand-navy leading-snug">
-                        {doc.title}
-                      </h2>
-
-                      <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">
-                        {doc.description}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0 sm:pt-1">
-                      <a
-                        href={doc.sourceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`min-h-[42px] inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-colors ${
-                          isPdf
-                            ? 'bg-brand-navy text-white hover:bg-brand-blue'
-                            : 'border border-brand-navy text-brand-navy hover:bg-brand-navy hover:text-white'
+              <ul className="divide-y divide-slate-100 max-h-[68vh] lg:max-h-[72vh] overflow-y-auto">
+                {filteredDocuments.map((doc) => {
+                  const isSelected = activeDoc?.id === doc.id;
+                  return (
+                    <li key={doc.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedId(doc.id);
+                          setMobileDrawerOpen(true);
+                        }}
+                        className={`w-full text-left px-4 py-3.5 transition-colors flex items-start justify-between gap-3 border-l-4 ${
+                          isSelected
+                            ? 'bg-[#256B58]/10 border-l-[#256B58]'
+                            : 'bg-white border-l-transparent hover:bg-[#FAF8F5]'
                         }`}
                       >
-                        {isPdf ? <Download size={14} aria-hidden="true" /> : <ExternalLink size={14} aria-hidden="true" />}
-                        <span>{isPdf ? 'Baixar PDF' : 'Ler texto oficial'}</span>
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Rodapé discreto */}
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setExpandedId(isExpanded ? null : doc.id)}
-                      className="inline-flex items-center gap-1.5 font-bold text-brand-blue-dark hover:text-brand-navy py-1"
-                    >
-                      {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                      <span>{isExpanded ? 'Ocultar explicação e fonte' : 'Explicação prática e dados da fonte'}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => copyLegalCitation(doc)}
-                      className="inline-flex items-center gap-1.5 text-slate-500 hover:text-brand-navy font-semibold px-2.5 py-1 rounded-lg hover:bg-brand-surface transition-colors"
-                    >
-                      {copiedId === doc.id ? (
-                        <>
-                          <Check size={13} className="text-brand-sage-dark" />
-                          <span className="text-brand-sage-dark font-bold">Copiado</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={13} />
-                          <span>Copiar citação</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Explicação didática + metadados sob demanda */}
-                  {isExpanded && (
-                    <div className="mt-4 rounded-xl bg-brand-surface border border-[#E5DDD5] p-4 space-y-3 text-xs sm:text-sm text-slate-700 leading-relaxed">
-                      {doc.didacticExplanation && (
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-wider text-brand-navy flex items-center gap-1.5 mb-1">
-                            <Sparkles size={13} className="text-brand-terracotta" aria-hidden="true" />
-                            O que determina esta norma
+                        <div className="min-w-0 space-y-0.5">
+                          <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                            <span className="font-mono text-[#256B58]">{parseYear(doc.date)}</span>
+                            <span className="text-slate-300">·</span>
+                            <span className="text-slate-600">{doc.scope}</span>
+                            <span className="text-slate-300">·</span>
+                            <span className="text-slate-500 font-normal">{doc.category}</span>
+                          </div>
+                          <p className="text-sm font-bold text-[#071D33] leading-snug line-clamp-2">
+                            {doc.title}
                           </p>
-                          <p>{doc.didacticExplanation}</p>
                         </div>
-                      )}
-                      {doc.practicalApplication && (
-                        <div className="pt-2.5 border-t border-[#E5DDD5]">
-                          <p className="text-xs font-bold uppercase tracking-wider text-brand-blue-dark mb-1">
-                            Aplicação prática no Maranhão
-                          </p>
-                          <p>{doc.practicalApplication}</p>
-                        </div>
-                      )}
-                      <div className="pt-2.5 border-t border-[#E5DDD5] grid sm:grid-cols-2 gap-2 text-xs text-slate-600">
-                        {doc.date && <p><strong className="text-brand-navy">Data do ato:</strong> {formatDate(doc.date)}</p>}
-                        {doc.issuer && <p><strong className="text-brand-navy">Órgão emissor:</strong> {doc.issuer}</p>}
-                        {doc.officialPublication && <p className="sm:col-span-2"><strong className="text-brand-navy">Publicação oficial:</strong> {doc.officialPublication}</p>}
-                      </div>
-                    </div>
-                  )}
-                </article>
-              );
-            })}
+                        <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                          {doc.format}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            <aside className="hidden lg:block lg:col-span-7 sticky top-20 bg-white rounded-2xl border border-[#E5DDD5] p-6 sm:p-7 shadow-sm">
+              {activeDoc && renderDocDetail(activeDoc)}
+            </aside>
           </div>
         )}
       </div>
+
+      {/* Gaveta Deslizante Mobile */}
+      {mobileDrawerOpen && activeDoc && (
+        <div
+          className="lg:hidden fixed inset-0 z-[180] bg-[#071D33]/60 backdrop-blur-xs flex items-end"
+          onClick={() => setMobileDrawerOpen(false)}
+        >
+          <div
+            className="w-full max-h-[86vh] overflow-y-auto rounded-t-3xl bg-white p-5 pb-8 shadow-2xl animate-slide-in-bottom"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Leitura da Norma
+              </span>
+              <button
+                type="button"
+                onClick={() => setMobileDrawerOpen(false)}
+                className="min-h-[36px] min-w-[36px] rounded-full bg-slate-100 text-[#071D33] flex items-center justify-center"
+                aria-label="Fechar leitura"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            {renderDocDetail(activeDoc)}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
