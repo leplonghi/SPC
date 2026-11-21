@@ -366,110 +366,191 @@ const Navigation = () => {
               />
             </div>
 
-            <button
-              className="lg:hidden p-2 rounded-xl bg-slate-50 text-brand-navy border border-slate-200/50 hover:bg-slate-100 transition-colors"
-              onClick={() => setIsOpen(!isOpen)}
-              aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
-              aria-expanded={isOpen}
+            {/* Mobile: botão compacto de Denúncia no topo (navegação principal na barra inferior fixa) */}
+            <L
+              to="/denuncia"
+              className="lg:hidden inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-brand-red text-white text-[11px] font-black uppercase tracking-wider shadow-sm"
             >
-              {isOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
+              <ShieldAlert size={13} aria-hidden="true" />
+              <span>Denunciar</span>
+            </L>
           </div>
         </div>
+      </nav>
 
-        {/* Mobile Menu */}
-        {isOpen && (
-          <div className="lg:hidden fixed top-[53px] sm:top-[57px] left-0 right-0 max-h-[calc(100dvh-53px)] sm:max-h-[calc(100dvh-57px)] overflow-y-auto overscroll-contain bg-white/98 backdrop-blur-xl border-t border-slate-100 shadow-2xl animate-fade-in z-[140]">
-            <div className="p-4 space-y-2">
-              {navItems.map((item) => (
+      {/* Espaçador para compensar o header fixo no mobile/tablet (<lg) */}
+      <div className="h-[46px] sm:h-[50px] lg:hidden shrink-0" aria-hidden="true" />
+
+      {/* Gaveta "Mais" aberta pela barra inferior mobile */}
+      {isOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-[155] bg-[#071D33]/50 backdrop-blur-xs flex items-end"
+          onClick={() => setIsOpen(false)}
+        >
+          <div
+            className="w-full max-h-[80dvh] overflow-y-auto rounded-t-3xl bg-white p-5 pb-24 shadow-2xl animate-slide-in-bottom space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <span className="text-xs font-black uppercase tracking-wider text-brand-navy">
+                Mais opções do Portal
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="p-1.5 rounded-full bg-slate-100 text-brand-navy"
+                aria-label="Fechar menu"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <L
+                to="/"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-brand-surface border border-[#E5DDD5] text-xs font-bold text-brand-navy"
+              >
+                <Home size={16} className="text-brand-blue-dark" aria-hidden="true" />
+                <span>Início</span>
+              </L>
+              <L
+                to="/institucional"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-brand-surface border border-[#E5DDD5] text-xs font-bold text-brand-navy"
+              >
+                <Info size={16} className="text-brand-blue-dark" aria-hidden="true" />
+                <span>A SPC</span>
+              </L>
+              <L
+                to="/contato"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-brand-surface border border-[#E5DDD5] text-xs font-bold text-brand-navy"
+              >
+                <Mail size={16} className="text-brand-terracotta" aria-hidden="true" />
+                <span>Contato</span>
+              </L>
+              <L
+                to="/transparencia"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-brand-surface border border-[#E5DDD5] text-xs font-bold text-brand-navy"
+              >
+                <ShieldCheck size={16} className="text-brand-sage-dark" aria-hidden="true" />
+                <span>Transparência</span>
+              </L>
+              {isColaborador && (
                 <L
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center space-x-3 p-4 rounded-2xl font-bold transition-all ${location.pathname === item.path
-                    ? 'bg-brand-navy text-white shadow-lg'
-                    : 'text-slate-700 bg-brand-cream hover:bg-brand-sand'
-                    }`}
+                  to="/ingestao"
                   onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-brand-surface border border-[#E5DDD5] text-xs font-bold text-brand-navy"
                 >
-                  <span className="text-sm">{item.label}</span>
+                  <Upload size={16} className="text-brand-navy" aria-hidden="true" />
+                  <span>Ingestão</span>
                 </L>
-              ))}
-
+              )}
               {adminItem && (
                 <L
                   to={adminItem.path}
-                  className={`flex items-center space-x-3 p-4 rounded-2xl font-bold transition-all ${location.pathname === adminItem.path
-                    ? 'bg-brand-navy text-white shadow-lg'
-                    : 'text-brand-navy hover:bg-slate-50'
-                    }`}
                   onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-brand-navy text-xs font-bold text-white"
                 >
-                  <span className="text-sm">{adminItem.label}</span>
+                  <Settings size={16} aria-hidden="true" />
+                  <span>Painel Admin</span>
                 </L>
               )}
+            </div>
 
-              <div className="border-t border-slate-100 my-2 pt-2 space-y-1">
-                <L to="/transparencia" className="flex items-center p-4 rounded-2xl font-bold text-slate-600 hover:bg-slate-50" onClick={() => setIsOpen(false)}>
-                  <span className="text-sm">Acesso à Informação</span>
-                </L>
-                {/* Denúncias em destaque no menu mobile */}
-                <L
-                  to="/denuncia"
-                  className="flex items-center gap-3 p-4 rounded-2xl font-black text-white bg-brand-red hover:bg-[#B94734] transition-all shadow-sm"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <ShieldAlert size={18} aria-hidden="true" className="flex-shrink-0" />
-                  <div>
-                    <span className="text-sm block">Denunciar Obra Irregular</span>
-                    <span className="text-[11px] font-normal opacity-80">Canal oficial de fiscalização</span>
-                  </div>
-                </L>
+            <div className="pt-2 border-t border-slate-100 space-y-2">
+              <div className="flex items-center justify-between gap-2">
                 <button
                   type="button"
                   aria-pressed={highContrast.enabled}
                   onClick={highContrast.toggle}
-                  className="w-full flex items-center space-x-3 p-4 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 text-left"
+                  className="flex-1 min-h-[40px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-brand-surface border border-[#E5DDD5] text-xs font-bold text-brand-navy"
                 >
-                  <Accessibility size={18} aria-hidden="true" />
-                  <span className="text-sm">Alto contraste</span>
+                  <Accessibility size={15} aria-hidden="true" />
+                  <span>Alto contraste</span>
                 </button>
-                <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-slate-50 text-xs font-bold text-slate-600">
-                  <span>Tamanho do texto:</span>
-                  <div className="flex items-center gap-1.5" role="group" aria-label="Tamanho da fonte">
-                    {(['sm', 'md', 'lg'] as FontScale[]).map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => fontScale.setScale(s)}
-                        aria-pressed={fontScale.scale === s}
-                        className={`px-2.5 py-1 rounded-lg font-black ${
-                          fontScale.scale === s ? 'bg-brand-navy text-white' : 'bg-white text-brand-navy border border-slate-200'
-                        }`}
-                      >
-                        {s === 'sm' ? 'A-' : s === 'md' ? 'A' : 'A+'}
-                      </button>
-                    ))}
-                  </div>
+                <div className="flex items-center gap-1" role="group" aria-label="Tamanho da fonte">
+                  {(['sm', 'md', 'lg'] as FontScale[]).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => fontScale.setScale(s)}
+                      aria-pressed={fontScale.scale === s}
+                      className={`min-h-[40px] px-3 py-1 rounded-xl text-xs font-black ${
+                        fontScale.scale === s ? 'bg-brand-navy text-white' : 'bg-brand-surface text-brand-navy border border-[#E5DDD5]'
+                      }`}
+                    >
+                      {s === 'sm' ? 'A-' : s === 'md' ? 'A' : 'A+'}
+                    </button>
+                  ))}
                 </div>
-                <div className="p-2 bg-brand-navy rounded-2xl">
-                  <SiteSearch compact />
-                </div>
-                {user && (
-                  <button
-                    onClick={() => { logout(); setIsOpen(false); }}
-                    className="w-full flex items-center space-x-3 p-4 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 transition-all"
-                  >
-                    <LogOut size={18} aria-hidden="true" />
-                    <span className="text-sm">Sair</span>
-                  </button>
-                )}
               </div>
+
+              {user && (
+                <button
+                  type="button"
+                  onClick={() => { logout(); setIsOpen(false); }}
+                  className="w-full min-h-[40px] flex items-center justify-center gap-2 rounded-xl bg-slate-100 text-xs font-bold text-slate-600"
+                >
+                  <LogOut size={15} aria-hidden="true" />
+                  <span>Sair ({user.name})</span>
+                </button>
+              )}
             </div>
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Barra Inferior Fixa com Ícones (Mobile/Tablet < lg) — Navegação na zona do polegar */}
+      <nav
+        aria-label="Navegação principal mobile"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-[160] bg-white/95 backdrop-blur-md border-t border-[#E5DDD5] shadow-[0_-4px_20px_rgba(7,29,51,0.08)] print:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        <div className="grid grid-cols-5 h-16 max-w-md mx-auto">
+          {[
+            { label: 'Bens', path: '/bens-tombados', icon: Landmark },
+            { label: 'Mapas', path: '/mapa', icon: MapIcon },
+            { label: 'Leis', path: '/legislacao', icon: Gavel },
+            { label: 'Serviços', path: '/servicos', icon: FileText }
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const active = location.pathname === tab.path;
+            return (
+              <L
+                key={tab.path}
+                to={tab.path}
+                onClick={() => setIsOpen(false)}
+                aria-current={active ? 'page' : undefined}
+                className={`flex flex-col items-center justify-center gap-1 transition-colors relative ${
+                  active ? 'text-brand-navy font-extrabold' : 'text-slate-500 font-semibold hover:text-brand-navy'
+                }`}
+              >
+                {active && (
+                  <span aria-hidden="true" className="absolute top-0 left-3 right-3 h-0.5 rounded-full bg-brand-terracotta" />
+                )}
+                <Icon size={20} strokeWidth={active ? 2.4 : 1.9} aria-hidden="true" />
+                <span className="text-[10px] leading-none">{tab.label}</span>
+              </L>
+            );
+          })}
+
+          <button
+            type="button"
+            onClick={() => setIsOpen((v) => !v)}
+            aria-expanded={isOpen}
+            aria-label={isOpen ? 'Fechar mais opções' : 'Abrir mais opções'}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors relative ${
+              isOpen ? 'text-brand-terracotta font-extrabold' : 'text-slate-500 font-semibold hover:text-brand-navy'
+            }`}
+          >
+            {isOpen ? <X size={20} strokeWidth={2.4} aria-hidden="true" /> : <Menu size={20} strokeWidth={1.9} aria-hidden="true" />}
+            <span className="text-[10px] leading-none">Mais</span>
+          </button>
+        </div>
       </nav>
-      {/* Espaçador para compensar o header fixo no mobile/tablet (<lg) */}
-      <div className="h-[46px] sm:h-[50px] lg:hidden shrink-0" aria-hidden="true" />
     </>
   );
 };
@@ -624,7 +705,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <HashRouter>
-        <div className="min-h-screen flex flex-col font-sans selection:bg-brand-blue selection:text-white max-w-full overflow-x-clip">
+        <div className="min-h-screen flex flex-col font-sans selection:bg-brand-blue selection:text-white max-w-full overflow-x-clip pb-16 lg:pb-0">
           <button
             type="button"
             onClick={() => document.getElementById('conteudo')?.focus()}
