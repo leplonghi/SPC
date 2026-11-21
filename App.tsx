@@ -290,18 +290,18 @@ const Navigation = () => {
         </div>
       </div>
 
-      {/* Main Navigation Header (Fixo no topo em dispositivos móveis e tablets; sticky no desktop) */}
+      {/* Main Navigation Header (Compacto e elegante no desktop e mobile) */}
       <nav
-        className={`fixed top-0 left-0 right-0 lg:sticky lg:top-0 z-[150] border-b bg-white/95 backdrop-blur-md py-1.5 transition-shadow duration-300
+        className={`fixed top-0 left-0 right-0 lg:sticky lg:top-0 z-[150] border-b bg-white/95 backdrop-blur-md py-1 transition-shadow duration-300
         ${scrolled ? 'border-slate-200/80 shadow-md' : 'border-slate-200/70 shadow-sm'}`}
       >
-        <div className="max-w-[1440px] mx-auto px-6">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6">
           <div className="flex justify-between items-center relative">
-            <L to="/" className="flex items-center space-x-3.5 group relative z-10 text-decoration-none">
+            <L to="/" className="flex items-center space-x-3 group relative z-10 text-decoration-none">
               <img
                 src="/spc-logo-horizontal.png"
                 alt="Superintendência do Patrimônio Cultural"
-                className="h-10 w-auto sm:h-11"
+                className="h-8 w-auto sm:h-9"
               />
             </L>
 
@@ -362,7 +362,7 @@ const Navigation = () => {
               <img
                 src="/imagens/logo_governo.png"
                 alt="Governo do Maranhão"
-                className="h-10 w-auto object-contain ml-3"
+                className="h-8 w-auto object-contain ml-2"
               />
             </div>
 
@@ -469,7 +469,7 @@ const Navigation = () => {
         )}
       </nav>
       {/* Espaçador para compensar o header fixo no mobile/tablet (<lg) */}
-      <div className="h-[53px] sm:h-[57px] lg:hidden shrink-0" aria-hidden="true" />
+      <div className="h-[46px] sm:h-[50px] lg:hidden shrink-0" aria-hidden="true" />
     </>
   );
 };
@@ -481,67 +481,49 @@ const Footer = () => {
 
   return (
     <footer className="bg-brand-navy text-slate-200 font-sans relative overflow-hidden">
-      <AzulejoBand large />
-      <div className="max-w-[1200px] mx-auto px-6 pt-14 pb-10 grid grid-cols-1 md:grid-cols-3 gap-12 relative z-10">
-        <div className="space-y-5">
-          <h3 className="text-white font-black text-xl flex items-center gap-3 tracking-tight">
-            SPC Maranhão
-          </h3>
-          <p className="text-sm leading-relaxed text-slate-200 max-w-sm">
-            Superintendência do Patrimônio Cultural do Maranhão, órgão vinculado à Secretaria de Estado da Cultura (SECMA).
-          </p>
-          <div className="inline-flex flex-wrap items-center gap-5 rounded-2xl bg-white px-5 py-4 shadow-lg">
-            <img src="/spc-logo-completa.png" alt="Superintendência do Patrimônio Cultural" className="h-16 w-auto" />
-            <span aria-hidden="true" className="h-12 w-px bg-slate-200" />
-            <img src="/imagens/logo_governo.png" alt="Governo do Maranhão" className="h-16 w-auto" />
+      <AzulejoBand />
+      <div className="max-w-[1200px] mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-3 gap-7 relative z-10 items-start">
+        <div className="space-y-3">
+          <div className="inline-flex items-center gap-4 rounded-xl bg-white px-3.5 py-2.5 shadow-sm">
+            <img src="/spc-logo-completa.png" alt="Superintendência do Patrimônio Cultural" className="h-10 w-auto" />
+            <span aria-hidden="true" className="h-7 w-px bg-slate-200" />
+            <img src="/imagens/logo_governo.png" alt="Governo do Maranhão" className="h-10 w-auto" />
           </div>
+          <p className="text-xs leading-relaxed text-slate-300 max-w-xs">
+            Superintendência do Patrimônio Cultural do Maranhão — vinculada à SECMA.
+          </p>
         </div>
 
         <div>
-          <h4 className="text-white font-bold mb-4 text-sm">Institucional</h4>
-          <ul className="space-y-3 text-sm font-medium">
-            <li><L to="/institucional" className="hover:text-white hover:underline">Quem somos</L></li>
-            <li><L to="/servicos" className="hover:text-white hover:underline">Serviços ao cidadão</L></li>
+          <h4 className="text-white font-bold mb-2.5 text-xs uppercase tracking-wider">Acesso Rápido</h4>
+          <ul className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs font-medium text-slate-300">
+            <li><L to="/institucional" className="hover:text-white hover:underline">A SPC</L></li>
+            <li><L to="/servicos" className="hover:text-white hover:underline">Serviços</L></li>
             <li><L to="/bens-tombados" className="hover:text-white hover:underline">Bens tombados</L></li>
             <li><L to="/legislacao" className="hover:text-white hover:underline">Legislação</L></li>
-            <li><L to="/transparencia" className="hover:text-white hover:underline">Transparência e acesso à informação</L></li>
+            <li><L to="/transparencia" className="hover:text-white hover:underline">Transparência</L></li>
             <li><L to="/denuncia" className="hover:text-white hover:underline">Denúncias</L></li>
           </ul>
         </div>
 
         <div>
-          <h4 className="text-white font-bold mb-4 text-sm">Contato</h4>
-          <address className="not-italic text-sm leading-relaxed space-y-3">
+          <h4 className="text-white font-bold mb-2.5 text-xs uppercase tracking-wider">Atendimento</h4>
+          <address className="not-italic text-xs leading-relaxed space-y-1.5 text-slate-300">
+            <p>{SITE_CONTACT.buildingName} · {SITE_CONTACT.addressLine}, {SITE_CONTACT.city}</p>
             <p>
-              {SITE_CONTACT.buildingName}
-              <br />
-              {SITE_CONTACT.addressLine}
-              <br />
-              {SITE_CONTACT.city}
-            </p>
-            <p>
-              <a href={`mailto:${SITE_CONTACT.email}`} className="hover:text-white underline break-all">{SITE_CONTACT.email}</a>
-            </p>
-            <p>
-              Denúncias:{' '}
-              <a href={`mailto:${SITE_CONTACT.denunciaEmail}`} className="hover:text-white underline break-all">{SITE_CONTACT.denunciaEmail}</a>
-            </p>
-            <p>
-              Ouvidoria da SECMA:{' '}
-              <a href={`mailto:${SITE_CONTACT.ouvidoriaEmail}`} className="hover:text-white underline break-all">{SITE_CONTACT.ouvidoriaEmail}</a>
-            </p>
-            <p>
-              <L to="/contato" className="hover:text-white underline">Todos os canais de atendimento</L>
+              <a href={`mailto:${SITE_CONTACT.email}`} className="hover:text-white underline">{SITE_CONTACT.email}</a>
+              {' · '}
+              <L to="/contato" className="hover:text-white underline">Canais</L>
             </p>
           </address>
         </div>
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-6 pb-8 relative z-10">
-        <div className="pt-8 border-t border-white/15 text-xs flex flex-col md:flex-row justify-between items-center gap-4 text-slate-200">
+      <div className="max-w-[1200px] mx-auto px-6 pb-5 relative z-10">
+        <div className="pt-4 border-t border-white/10 text-[11px] flex flex-col sm:flex-row justify-between items-center gap-3 text-slate-300">
           <p>© {new Date().getFullYear()} Governo do Estado do Maranhão</p>
-          <div className="flex flex-wrap gap-x-8 gap-y-2 items-center justify-center">
-            <L to="/privacidade" className="hover:text-white hover:underline">Política de Privacidade</L>
+          <div className="flex flex-wrap gap-x-6 gap-y-1.5 items-center justify-center">
+            <L to="/privacidade" className="hover:text-white hover:underline">Privacidade</L>
             <L to="/termos" className="hover:text-white hover:underline">Termos de Uso</L>
             <L to="/login" className="hover:text-white hover:underline">Área restrita</L>
           </div>

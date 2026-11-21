@@ -97,19 +97,19 @@ export const OrigamiMenu: React.FC = () => {
       aria-label="Abertura do Portal do Patrimônio Cultural do Maranhão"
       className="relative overflow-x-clip bg-[#102E46] text-white"
     >
-      {/* Arte de fundo VIVA e LUMINOSA — sem abafar as cores do Maranhão */}
+      {/* Arte de fundo equilibrada e suave — presente sem poluir a leitura */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-cover bg-center saturate-[1.12] brightness-[0.95]"
+        className="absolute inset-0 bg-cover bg-center saturate-[0.82] brightness-[0.82] blur-[1.5px] scale-[1.03]"
         style={{ backgroundImage: "url('/cena-fotos/fundo-hero.webp')" }}
       />
-      {/* Vinheta suave apenas nas bordas/atrás do texto para contraste nítido mantendo a ilustração vibrante */}
+      {/* Véu editorial equilibrado: preserva o clima da arte com foco total na busca e tipografia */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-b from-[#071D33]/65 via-[#071D33]/35 to-[#071D33]/92"
+        className="absolute inset-0 bg-gradient-to-b from-[#071D33]/72 via-[#071D33]/65 to-[#071D33]/92"
       />
 
-      <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 pt-12 pb-10 sm:pt-20 sm:pb-14">
+      <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 pt-10 pb-8 sm:pt-14 sm:pb-10">
         {/* Bloco Central: Título Editorial + Busca Global Instantânea */}
         <div className="max-w-3xl mx-auto text-center">
           <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#071D33]/75 backdrop-blur-md border border-[#E9B44C]/50 text-[11px] font-bold uppercase tracking-[0.2em] text-[#E9B44C] shadow-md">
@@ -137,14 +137,14 @@ export const OrigamiMenu: React.FC = () => {
         </div>
 
         {/* 5 Portais Fotográficos com Identidade Cromática Própria */}
-        <div className="mt-10 sm:mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        <div className="mt-8 sm:mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {cards.map((card) => {
             const Icon = card.icon;
             return (
               <Link
                 key={card.id}
                 to={card.to}
-                className="group relative h-[144px] sm:h-[205px] lg:h-[235px] rounded-2xl overflow-hidden border border-white/25 hover:border-white/80 transition-all duration-300 shadow-xl hover:shadow-2xl hover:-translate-y-1 flex flex-col justify-between p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E9B44C]"
+                className="group relative h-[132px] sm:h-[180px] lg:h-[200px] rounded-2xl overflow-hidden border border-white/20 hover:border-white/75 transition-all duration-300 shadow-lg hover:shadow-2xl hover:-translate-y-1 flex flex-col justify-between p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E9B44C]"
               >
                 <img
                   src={card.photo}

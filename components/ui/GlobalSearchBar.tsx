@@ -323,3 +323,4 @@ export const GlobalSearchBar: React.FC<GlobalSearchBarProps> = ({
     </div>
   );
 };
+
