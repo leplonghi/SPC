@@ -2,76 +2,163 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper functions
+
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+
+    function userDocPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
     }
-    
+
+    function hasUserDoc() {
+      return isAuthenticated() && exists(userDocPath());
+    }
+
+    function getUserRole() {
+      return hasUserDoc() ? get(userDocPath()).data.role : null;
+    }
+
     function hasRole(role) {
-      return isAuthenticated() && getUserData().role == role;
+      return isAuthenticated() && getUserRole() == role;
     }
-    
-    // Administrador total do portal (definido pelo Eduardo em 11/10/2026).
-    // Exige o e-mail verificado pelo provedor (Google). Se trocar o e-mail, troque também em storage.rules e data/adminConfig.ts.
+
+    // Administrador total do portal (definido em 11/10/2026).
+    // Exige e-mail verificado pelo provedor (Google). Se trocar o e-mail, atualize também storage.rules e data/adminConfig.ts.
     function isSuperAdminEmail() {
       return isAuthenticated()
         && request.auth.token.email_verified == true
         && request.auth.token.email == 'leplonghi@gmail.com';
     }
 
-    function isAdmin() {
-      return isSuperAdminEmail() || hasRole('SuperAdmin') || hasRole('AdminSPC');
-    }
-    
-    function isEditor() {
-      return isAdmin() || hasRole('EditorDPE') || hasRole('EditorDPHAP') || hasRole('EditorDPI');
+    function isSuperAdmin() {
+      return isSuperAdminEmail() || hasRole('SuperAdmin');
     }
 
-    // Heritage Assets and Areas
-    // Allow public read access
-    // Allow write access only to Editors and Admins
+    function isAdmin() {
+      return isSuperAdmin() || hasRole('AdminSPC');
+    }
+
+    function isEditor() {
+      return isAdmin()
+        || hasRole('EditorDPE')
+        || hasRole('EditorDPHAP')
+        || hasRole('EditorDPI');
+    }
+
+    function isColaborador() {
+      return isEditor() || hasRole('Colaborador');
+    }
+
+    // Bens Tombados, Poligonais e Áreas de Proteção (leitura pública, escrita restrita a Editores/Admins)
     match /heritage_assets/{document} {
       allow read: if true;
       allow write: if isEditor();
     }
-    
+
     match /heritage_areas/{document} {
       allow read: if true;
       allow write: if isEditor();
     }
 
-    // Public legislation library
-    // Visitors can read only records that completed the editorial workflow.
-    // Editors and administrators retain control over drafts and publication.
-    match /legislation/{document} {
-      allow read: if resource.data.status == 'published';
-      allow create, update, delete: if isEditor();
-    }
-    
-    // Users Collection
-    // Authenticated users can read their own profile
-    // Admins can read all profiles
-    // Admins can write to any profile (to manage roles)
-    // Users can create their own profile ONLY if setting role to 'Viewer' (for initial signup)
-    match /users/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isEditor());
-      allow write: if isAdmin();
-      allow create: if isAuthenticated() && request.auth.uid == userId && request.resource.data.role == 'Viewer';
-    }
-    
-    match /enrichment_queue/{document} {
-      allow create: if isEditor();
-      allow read, update, delete: if isEditor();
+    match /tombamento_polygons/{document} {
+      allow read: if true;
+      allow write: if isEditor();
     }
 
-    // Default deny
+    // Biblioteca de Legislação: visitantes leem apenas registros publicados;
+    // editores e administradores podem ler rascunhos e gerenciar publicações.
+    match /legislation/{document} {
+      allow read: if resource.data.status == 'published' || isEditor();
+      allow create, update, delete: if isEditor();
+    }
+
+    match /legislation_documents/{document} {
+      allow read: if resource.data.status == 'published' || isEditor();
+      allow create, update, delete: if isEditor();
+    }
+
+    // Gestão de Usuários e Perfis (RBAC com prevenção de escalonamento de privilégios)
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isEditor());
+      // Auto-cadastro inicial permitido apenas com perfil 'Viewer'
+      allow create: if (isAuthenticated() && request.auth.uid == userId && request.resource.data.role == 'Viewer')
+        || isSuperAdmin()
+        || (isAdmin() && request.resource.data.role != 'SuperAdmin');
+      // AdminSPC não pode promover usuários a SuperAdmin nem alterar contas SuperAdmin existentes
+      allow update: if isSuperAdmin()
+        || (isAdmin() && resource.data.role != 'SuperAdmin' && request.resource.data.role != 'SuperAdmin');
+      allow delete: if isSuperAdmin();
+    }
+
+    // Fila de Ingestão e Curadoria Documental (documentos internos/não publicados)
+    match /ingestion_queue/{document} {
+      allow read: if isEditor() || (isAuthenticated() && resource.data.uploadedBy == request.auth.uid);
+      allow create: if isColaborador()
+        && request.resource.data.uploadedBy == request.auth.uid
+        && request.resource.data.status == 'submitted';
+      allow update: if isEditor()
+        && (request.resource.data.status != 'published' || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Lotes de Upload
+    match /upload_batches/{document} {
+      allow read: if isEditor() || (isAuthenticated() && resource.data.uploadedBy == request.auth.uid);
+      allow create: if isColaborador() && request.resource.data.uploadedBy == request.auth.uid;
+      allow update, delete: if isEditor();
+    }
+
+    // Trilha de Auditoria Imutável (append-only)
+    match /audit_logs/{document} {
+      allow read: if isEditor();
+      allow create: if isColaborador() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Fila de Enriquecimento
+    match /enrichment_queue/{document} {
+      allow read, write: if isEditor();
+    }
+
+    // Telemetria Anônima de Acessos e Visitantes (LGPD-compliant):
+    // Visitantes podem registrar/atualizar apenas sua própria sessão anônima (sem IP bruto);
+    // Somente Administradores (ex.: leplonghi@gmail.com) podem ler os relatórios e sessões.
+    match /analytics_sessions/{sessionId} {
+      allow read: if isAdmin();
+      allow create, update: if request.resource.data.sessionId == sessionId
+        && request.resource.data.keys().hasOnly([
+          'sessionId',
+          'dateKey',
+          'startedAt',
+          'lastActiveAt',
+          'durationSeconds',
+          'city',
+          'region',
+          'country',
+          'device',
+          'browser',
+          'referrer',
+          'pagesVisited',
+          'pageViews'
+        ])
+        && request.resource.data.durationSeconds is int
+        && request.resource.data.durationSeconds >= 0
+        && request.resource.data.durationSeconds <= 86400
+        && request.resource.data.pageViews is int
+        && request.resource.data.pageViews >= 1
+        && request.resource.data.pageViews <= 500;
+      allow delete: if isSuperAdmin();
+    }
+
+    // Configuração de Relatórios de Acesso (exclusivo SuperAdmin / Admin)
+    match /analytics_config/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Bloqueio padrão para quaisquer outras coleções não declaradas
     match /{document=**} {
-      allow read, write: if false; 
+      allow read, write: if false;
     }
   }
 }

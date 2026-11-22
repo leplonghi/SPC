@@ -4,6 +4,7 @@ export type LegalDocumentCategory =
   | 'Portaria'
   | 'Instrução Normativa'
   | 'Resolução'
+  | 'Certidão'
   | 'Diretriz'
   | 'Manual'
   | 'Outro';
@@ -63,6 +64,46 @@ export const PUBLIC_LEGAL_DOCUMENTS: PublicLegalDocument[] = [
     officialPublication: 'DOU de 06/12/1937; republicado em 11/12/1937',
     verifiedAt: '2026-08-28',
     featured: true,
+    status: 'published'
+  },
+  {
+    id: 'iphan-certidao-rerratificacao-slz',
+    title: 'Certidão de Tombamento e Rerratificação IPHAN — São Luís (Proc. nº 454-T-51)',
+    category: 'Certidão',
+    scope: 'Federal',
+    date: '1974-03-13',
+    description: 'Certidão oficial do Arquivo Central do IPHAN referente à inscrição nº 64 e à rerratificação da poligonal federal do Conjunto Arquitetônico, Urbanístico e Paisagístico da Cidade de São Luís.',
+    didacticExplanation: 'Documento registral do IPHAN que descreve textualmente toda a poligonal federal de tombamento de São Luís, corrigindo a numeração do processo para 454-T-51 e consolidando os parâmetros da inscrição nº 64 no Livro do Tombo Arqueológico, Etnográfico e Paisagístico.',
+    practicalApplication: 'Serve como referência jurídica e cartográfica para conferir se um imóvel de São Luís está inserido na área de tombamento federal (IPHAN), que se sobrepõe parcialmente à poligonal estadual da SPC.',
+    issuer: 'Instituto do Patrimônio Histórico e Artístico Nacional (IPHAN)',
+    sourceLabel: 'Acervo SPC — Certidão Oficial IPHAN (4 págs., PDF)',
+    sourceUrl: '/documentos/legislacao/certidao-tombamento-rerratificacao-iphan-slz.pdf',
+    sourceKind: 'institutional-copy',
+    format: 'PDF',
+    tags: ['IPHAN', 'Certidão de Tombamento', 'Rerratificação', 'São Luís', 'Poligonal Federal'],
+    officialPublication: 'Livro do Tombo Arqueológico, Etnográfico e Paisagístico — Vol. 1 (fl. 15) e Vol. 2 (fls. 98–100)',
+    validationNote: 'Cópia integral de 4 páginas digitalizada do acervo do DPHAP/SPC.',
+    verifiedAt: '2026-11-22',
+    status: 'published'
+  },
+  {
+    id: 'ma-lei-3999-1978',
+    title: 'Lei Estadual nº 3.999, de 5 de dezembro de 1978',
+    category: 'Lei',
+    scope: 'Estadual',
+    date: '1978-12-05',
+    description: 'Dispõe sobre a organização e proteção do patrimônio histórico e artístico estadual do Maranhão (marco legislativo anterior à Lei nº 5.082/1990).',
+    didacticExplanation: 'Primeira lei estadual de tombamento do Maranhão, que fundamentou os primeiros decretos estaduais de preservação emitidos entre 1979 e 1990 (como a Biblioteca Pública Benedito Leite e o Centro Histórico de São Luís em 1986).',
+    practicalApplication: 'Importante referência histórica e jurídica para a interpretação dos processos e decretos de tombamento lavrados no Livro do Tombo antes da edição da Lei Estadual nº 5.082/1990.',
+    issuer: 'Estado do Maranhão',
+    sourceLabel: 'Acervo SPC — Diário Oficial do Estado do Maranhão (PDF)',
+    sourceUrl: '/documentos/legislacao/lei-estadual-3999-1978-doe.pdf',
+    sourceKind: 'official-gazette-copy',
+    format: 'PDF',
+    tags: ['Tombamento estadual', 'Marco histórico', 'Legislação anterior', 'Maranhão'],
+    officialPublication: 'DOE/MA nº 240, de 20/12/1978',
+    validationNote: 'Digitalização oficial do Diário Oficial do Estado constante no acervo do DPHAP/SPC.',
+    verifiedAt: '2026-11-22',
     status: 'published'
   },
   {
@@ -192,6 +233,46 @@ export const PUBLIC_LEGAL_DOCUMENTS: PublicLegalDocument[] = [
     status: 'published'
   },
   {
+    id: 'slz-lei-3253-1992',
+    title: 'Lei Municipal nº 3.253, de 29 de dezembro de 1992 (Plano Diretor de São Luís)',
+    category: 'Lei',
+    scope: 'Municipal',
+    date: '1992-12-29',
+    description: 'Dispõe sobre o zoneamento, parcelamento, uso e ocupação do solo urbano e a política de desenvolvimento urbano de São Luís, com parâmetros específicos para a Zona de Preservação Histórica.',
+    didacticExplanation: 'Lei municipal que estruturou o ordenamento urbano de São Luís na década de 1990, estabelecendo zonas de proteção histórica, gabaritos e restrições construtivas no entorno do Centro Histórico.',
+    practicalApplication: 'Referência normativa municipal para consulta de zoneamento, usos permitidos e parâmetros urbanísticos nas áreas históricas e de entorno imediato da capital.',
+    issuer: 'Município de São Luís',
+    sourceLabel: 'Acervo SPC — Diário Oficial do Município de São Luís (PDF)',
+    sourceUrl: '/documentos/legislacao/lei-municipal-slz-3253-1992-plano-diretor.pdf',
+    sourceKind: 'official-gazette-copy',
+    format: 'PDF',
+    tags: ['Plano Diretor', 'Zoneamento', 'São Luís', 'Uso do solo', 'Zona de Preservação Histórica'],
+    officialPublication: 'Diário Oficial do Município de São Luís nº 88, de 15/04/1993',
+    validationNote: 'Edição digitalizada de 32 páginas do DOM de São Luís, acervo DPHAP/SPC.',
+    verifiedAt: '2026-11-22',
+    status: 'published'
+  },
+  {
+    id: 'slz-lei-3350-1994',
+    title: 'Lei Municipal nº 3.350, de 15 de agosto de 1994 (Telhas Cerâmicas)',
+    category: 'Lei',
+    scope: 'Municipal',
+    date: '1994-08-15',
+    description: 'Torna obrigatória a utilização de telhas cerâmicas nas construções, reformas, adaptações e ampliações de edificações realizadas na Zona de Preservação Histórica de São Luís.',
+    didacticExplanation: 'Regra urbanística específica de São Luís criada para preservar a paisagem de telhados coloniais em cerâmica do Centro Histórico, evitando descaracterizações com telhas metálicas ou de fibrocimento.',
+    practicalApplication: 'Deve ser observada em projetos de reforma, troca de cobertura ou adaptação de imóveis localizados na Zona de Preservação Histórica de São Luís.',
+    issuer: 'Município de São Luís',
+    sourceLabel: 'Acervo SPC — Cópia institucional (PDF)',
+    sourceUrl: '/documentos/legislacao/lei-municipal-slz-3350-1994-telhas-ceramicas.pdf',
+    sourceKind: 'institutional-copy',
+    format: 'PDF',
+    tags: ['Telhas cerâmicas', 'Cobertura', 'São Luís', 'Zona de Preservação Histórica'],
+    officialPublication: 'Município de São Luís, 15/08/1994',
+    validationNote: 'Cópia textual integral arquivada na pasta de decretos do DPHAP/SPC.',
+    verifiedAt: '2026-11-22',
+    status: 'published'
+  },
+  {
     id: 'slz-lei-3392-1995',
     title: 'Lei Municipal nº 3.392, de 4 de julho de 1995',
     category: 'Lei',
@@ -201,14 +282,16 @@ export const PUBLIC_LEGAL_DOCUMENTS: PublicLegalDocument[] = [
     didacticExplanation: 'Marco fundamental da preservação no âmbito da Prefeitura de São Luís. Instituiu a política municipal de tombamento e conservação dos bens de interesse local.',
     practicalApplication: 'Complementa a legislação estadual e federal no território da capital, regulando licenças municipais, incentivos e regras de preservação para o parque imobiliário ludovicense.',
     issuer: 'Município de São Luís',
-    sourceLabel: 'GEPFS / UFMA — Texto da Lei nº 3.392 (PDF)',
-    sourceUrl: 'https://gepfs.ufma.br/wp-content/uploads/2022/01/LEI-3392.pdf',
-    sourceKind: 'official-online',
+    sourceLabel: 'Acervo SPC — Cópia local da Lei Municipal nº 3.392/1995 (PDF)',
+    sourceUrl: '/documentos/legislacao/lei-municipal-slz-3392-1995.pdf',
+    sourceKind: 'institutional-copy',
+    alternateSourceLabel: 'Consultar também repositório GEPFS/UFMA (PDF)',
+    alternateSourceUrl: 'https://gepfs.ufma.br/wp-content/uploads/2022/01/LEI-3392.pdf',
     format: 'PDF',
     tags: ['Proteção municipal', 'Tombamento', 'São Luís', 'Patrimônio cultural'],
     officialPublication: 'Diário Oficial do Município de São Luís, 10/07/1995',
-    validationNote: 'Texto completo disponibilizado pelo repositório acadêmico do Grupo de Estudos e Pesquisas em Filosofia e Sociedade (GEPFS/UFMA).',
-    verifiedAt: '2026-11-04',
+    validationNote: 'Cópia local hospedada no portal da SPC a partir do acervo do DPHAP, mantendo referência complementar acadêmica.',
+    verifiedAt: '2026-11-22',
     featured: true,
     status: 'published'
   },
@@ -230,6 +313,65 @@ export const PUBLIC_LEGAL_DOCUMENTS: PublicLegalDocument[] = [
     officialPublication: 'DOU de 07/08/2000',
     validationNote: 'Ementa, data e publicação conferidas no portal oficial do Planalto.',
     verifiedAt: '2026-10-13',
+    status: 'published'
+  },
+  {
+    id: 'carolina-lei-328-2006',
+    title: 'Lei Municipal nº 328, de 9 de outubro de 2006 (Plano Diretor de Carolina)',
+    category: 'Lei',
+    scope: 'Municipal',
+    date: '2006-10-09',
+    description: 'Dispõe sobre o Plano Diretor Municipal Participativo de Carolina, estabelecendo diretrizes urbanísticas, ambientais e de proteção ao Centro Histórico e ao patrimônio cultural local.',
+    didacticExplanation: 'Instrumento básico da política de desenvolvimento urbano de Carolina, articulando a tutela estadual do Centro Histórico (Decreto Estadual nº 12.954/1993) com as normas municipais de uso do solo.',
+    practicalApplication: 'Auxilia proprietários, arquitetos e gestores públicos na análise de intervenções urbanas e preservação de imóveis na área histórica de Carolina.',
+    issuer: 'Município de Carolina',
+    sourceLabel: 'Acervo SPC — Cópia institucional (PDF)',
+    sourceUrl: '/documentos/legislacao/lei-municipal-carolina-328-2006-plano-diretor.pdf',
+    sourceKind: 'institutional-copy',
+    format: 'PDF',
+    tags: ['Plano Diretor', 'Carolina', 'Centro Histórico', 'Uso do solo'],
+    officialPublication: 'Prefeitura Municipal de Carolina, 09/10/2006',
+    validationNote: 'Texto integral (37 páginas) arquivado na pasta municipal do DPHAP/SPC.',
+    verifiedAt: '2026-11-22',
+    status: 'published'
+  },
+  {
+    id: 'spc-manual-tipologias-preservacao',
+    title: 'Patrimônio Histórico: Tipologias e Preservação (Manual Técnico DPHAP)',
+    category: 'Manual',
+    scope: 'SPC',
+    date: '2019-03-20',
+    description: 'Manual técnico elaborado para leitura de tipologias construtivas, estilos arquitetônicos e análise de projetos de arquitetura em obras no Centro Histórico.',
+    didacticExplanation: 'Material didático ilustrado (25 páginas) utilizado pelo DPHAP/SPC para identificar características arquitetônicas coloniais, ecléticas, art déco e modernistas, além de critérios técnicos de preservação.',
+    practicalApplication: 'Excelente referência prática para arquitetos, engenheiros, estudantes e proprietários compreenderem os elementos protegidos de fachadas, vãos, beirais e azulejaria antes de propor reformas.',
+    issuer: 'DPHAP — Superintendência do Patrimônio Cultural do Maranhão',
+    sourceLabel: 'DPHAP/SPC — Manual técnico ilustrado (PDF)',
+    sourceUrl: '/documentos/legislacao/manual-dphap-patrimonio-tipologias-preservacao.pdf',
+    sourceKind: 'institutional-guidance',
+    format: 'PDF',
+    tags: ['Tipologias arquitetônicas', 'Manual técnico', 'Preservação', 'Análise de projetos'],
+    validationNote: 'Apostila técnica de capacitação e referência de análise arquitetônica do DPHAP/SPC.',
+    verifiedAt: '2026-11-22',
+    status: 'published'
+  },
+  {
+    id: 'spc-recomendacoes-pintura-fachadas',
+    title: 'Recomendações de Pintura em Fachadas Históricas (DPHAP)',
+    category: 'Diretriz',
+    scope: 'SPC',
+    date: '2024-10-07',
+    description: 'Diretrizes técnicas oficiais do DPHAP/SPC para escolha de cores, tintas compatíveis e execução de pintura em fachadas de imóveis situados em áreas tombadas.',
+    didacticExplanation: 'Guia objetivo de 2 páginas que orienta sobre o uso de tintas respiráveis, paletas históricas harmônicas e cuidados para não danificar rebocos antigos, cantarias e azulejos.',
+    practicalApplication: 'Deve ser consultado antes de solicitar autorização de pintura de fachada no DPHAP, evitando autuações por pintura irregular ou descaracterizadora.',
+    issuer: 'DPHAP — Superintendência do Patrimônio Cultural do Maranhão',
+    sourceLabel: 'DPHAP/SPC — Diretriz oficial (PDF)',
+    sourceUrl: '/documentos/legislacao/diretrizes-dphap-pintura-fachadas-historicas.pdf',
+    sourceKind: 'institutional-guidance',
+    format: 'PDF',
+    tags: ['Pintura de fachadas', 'Diretriz técnica', 'Cores históricas', 'DPHAP'],
+    validationNote: 'Diretriz oficial vigente disponibilizada pelo DPHAP/SPC para atendimento ao cidadão.',
+    verifiedAt: '2026-11-22',
+    featured: true,
     status: 'published'
   },
   {
@@ -270,5 +412,44 @@ export const PUBLIC_LEGAL_DOCUMENTS: PublicLegalDocument[] = [
     validationNote: 'Diretriz técnica em vigor aplicada pelos setores de fiscalização e projetos da SPC.',
     verifiedAt: '2026-08-28',
     status: 'published'
+  }
+];
+
+/**
+ * Documentos arquivados localmente em public/documentos/legislacao/ mantidos OCULTOS
+ * na página pública /legislacao por decisão editorial, porém catalogados para
+ * acompanhamento interno da SPC (espelhados no CATALOGO_MESTRE_PORTAL_SPC.md).
+ */
+export interface InternalCatalogLegalDocument {
+  id: string;
+  title: string;
+  scope: LegalDocumentScope;
+  category: LegalDocumentCategory;
+  date: string;
+  sourceUrl: string;
+  visibility: 'hidden-internal-only';
+  note: string;
+}
+
+export const INTERNAL_CATALOG_LEGAL_DOCUMENTS: InternalCatalogLegalDocument[] = [
+  {
+    id: 'ma-lei-5205-1991',
+    title: 'Lei Estadual nº 5.205, de 11 de outubro de 1991 (Multas ao Patrimônio)',
+    scope: 'Estadual',
+    category: 'Lei',
+    date: '1991-10-11',
+    sourceUrl: '/documentos/legislacao/lei-estadual-5205-1991-doe.pdf',
+    visibility: 'hidden-internal-only',
+    note: 'Mantido oculto na página pública /legislacao; visível apenas na lista interna de acompanhamento e catalogação.'
+  },
+  {
+    id: 'ma-decreto-38398-2023',
+    title: 'Decreto Estadual nº 38.398, de 2023 (Regimento Interno da SECMA)',
+    scope: 'Estadual',
+    category: 'Decreto',
+    date: '2023-01-01',
+    sourceUrl: '/documentos/legislacao/decreto-estadual-38398-2023-regimento-secma.pdf',
+    visibility: 'hidden-internal-only',
+    note: 'Mantido oculto na página pública /legislacao; visível apenas na lista interna de acompanhamento e catalogação.'
   }
 ];

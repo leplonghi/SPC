@@ -1,7 +1,15 @@
 /**
  * Administrador total do portal.
- * Definido pelo Eduardo em 11/10/2026: por enquanto, só esta conta tem acesso total.
- * Valem as duas camadas: este arquivo (apenas para a tela) e firestore.rules / storage.rules
- * (que de fato protegem os dados). Se trocar o e-mail aqui, troque também nas duas regras.
+ * Definido em 11/10/2026: por padrão, esta conta possui acesso administrativo total.
+ * Valem as duas camadas: este arquivo (interface) e firestore.rules / storage.rules
+ * (validação no servidor). Se trocar o e-mail para o ambiente institucional,
+ * atualize também firestore.rules e storage.rules.
  */
-export const SUPER_ADMIN_EMAIL = 'leplonghi@gmail.com';
+const envSuperAdminEmail =
+  typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_SUPER_ADMIN_EMAIL
+    ? (import.meta as any).env.VITE_SUPER_ADMIN_EMAIL
+    : typeof process !== 'undefined' && process.env?.VITE_SUPER_ADMIN_EMAIL
+      ? process.env.VITE_SUPER_ADMIN_EMAIL
+      : undefined;
+
+export const SUPER_ADMIN_EMAIL: string = envSuperAdminEmail || 'leplonghi@gmail.com';

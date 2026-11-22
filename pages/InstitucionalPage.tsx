@@ -12,7 +12,6 @@ import {
   Hammer,
   Palette
 } from 'lucide-react';
-import { PageHero } from '../components/ui/PageHero';
 import { DEPARTMENTS, SITE_CONTACT } from '../data/siteContact';
 import { usePageTitle } from '../hooks/usePageTitle';
 
@@ -20,25 +19,21 @@ type TabId = 'quem-somos' | 'estrutura' | 'competencias';
 
 const TABS: { id: TabId; title: string; icon: React.ElementType }[] = [
   { id: 'quem-somos', title: 'Quem somos', icon: Users },
-  { id: 'estrutura', title: 'Estrutura', icon: Building2 },
+  { id: 'estrutura', title: 'Departamentos', icon: Building2 },
   { id: 'competencias', title: 'Atuação', icon: Gavel }
 ];
 
-const DEPT_VISUAL: Record<string, { icon: React.ElementType; color: string; border: string; path: string }> = {
-  DPHAP: { icon: History, color: 'text-brand-blue-dark', border: 'border-l-brand-blue', path: '/dphap' },
-  DPE: { icon: Hammer, color: 'text-brand-dark', border: 'border-l-brand-dark', path: '/dpe' },
-  DPI: { icon: Sparkles, color: 'text-brand-terracotta', border: 'border-l-brand-terracotta', path: '/dpi' }
+const DEPT_VISUAL: Record<string, { icon: React.ElementType; color: string; path: string }> = {
+  DPHAP: { icon: History, color: 'text-brand-blue-dark', path: '/dphap' },
+  DPE: { icon: Hammer, color: 'text-brand-navy', path: '/dpe' },
+  DPI: { icon: Sparkles, color: 'text-brand-terracotta', path: '/dpi' }
 };
 
-/**
- * Atuação da SPC. Textos curtos, ligados ao que cada departamento faz.
- * Não publicar números, datas de criação, equipe ou citações sem fonte e aprovação.
- */
 const ATUACAO = [
-  { title: 'Proteger', desc: 'Tombamento de bens e acompanhamento das áreas protegidas.', icon: Shield, color: 'text-brand-terracotta bg-brand-red/10' },
-  { title: 'Orientar', desc: 'Análise e autorização de reformas e obras em imóveis tombados.', icon: Hammer, color: 'text-brand-blue-dark bg-brand-blue/10' },
-  { title: 'Valorizar', desc: 'Registro e salvaguarda de saberes, celebrações e formas de expressão.', icon: Palette, color: 'text-emerald-700 bg-emerald-50' },
-  { title: 'Fiscalizar', desc: 'Atuação diante de danos, obras irregulares e abandono de bens protegidos.', icon: MapPin, color: 'text-brand-dark bg-brand-dark/10' }
+  { title: 'Proteger', desc: 'Tombamento de bens e acompanhamento permanente das áreas protegidas.', icon: Shield },
+  { title: 'Orientar', desc: 'Análise técnica e autorização prévia de reformas e obras em imóveis tombados.', icon: Hammer },
+  { title: 'Valorizar', desc: 'Registro e salvaguarda de saberes, celebrações e formas de expressão cultural.', icon: Palette },
+  { title: 'Fiscalizar', desc: 'Atuação diante de danos, obras irregulares e abandono de bens protegidos.', icon: MapPin }
 ];
 
 const InstitucionalPage: React.FC = () => {
@@ -46,129 +41,143 @@ const InstitucionalPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('quem-somos');
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
-      <PageHero
-        tone="blue"
-        align="center"
-        backgroundImage="/imagens/CH 01.jpg"
-        badge={{ text: 'Institucional', variant: 'red' }}
-        title={<>Sobre a SPC</>}
-        description="Órgão do Governo do Estado do Maranhão, vinculado à Secretaria de Estado da Cultura (SECMA), responsável pela proteção do patrimônio cultural maranhense."
-      />
+    <div className="min-h-screen bg-brand-surface text-slate-800">
+      {/* Cabeçalho Editorial */}
+      <header className="bg-brand-navy text-white py-10 sm:py-14">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-gold">
+            Institucional · Governo do Maranhão · SECMA
+          </p>
+          <h1 className="mt-2 font-serif text-3xl sm:text-4xl font-medium tracking-tight text-white">
+            Superintendência do Patrimônio Cultural
+          </h1>
+          <p className="mt-2.5 max-w-[62ch] text-sm sm:text-base text-slate-200 leading-relaxed">
+            Órgão vinculado à Secretaria de Estado da Cultura (SECMA), responsável pela proteção, conservação e salvaguarda do patrimônio cultural maranhense.
+          </p>
+        </div>
+      </header>
 
-      <div className="sticky top-20 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4">
-          <div role="tablist" aria-label="Seções da página" className="flex flex-wrap justify-center p-2 gap-2">
-            {TABS.map((tab) => (
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        {/* Seletor Limpo de Abas */}
+        <div
+          role="tablist"
+          aria-label="Seções institucionais"
+          className="inline-flex flex-wrap gap-1.5 rounded-2xl bg-white border border-[#E5DDD5] p-1.5 shadow-sm"
+        >
+          {TABS.map((tab) => {
+            const active = activeTab === tab.id;
+            return (
               <button
                 key={tab.id}
+                type="button"
                 role="tab"
                 id={`tab-${tab.id}`}
-                aria-selected={activeTab === tab.id}
+                aria-selected={active}
                 aria-controls={`panel-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-5 py-2 rounded-full text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === tab.id
-                  ? 'bg-brand-navy text-white shadow-lg'
-                  : 'text-slate-600 hover:text-brand-dark hover:bg-slate-100'
-                  }`}
+                className={`min-h-[40px] inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+                  active ? 'bg-brand-navy text-white' : 'text-slate-600 hover:text-brand-navy hover:bg-brand-surface'
+                }`}
               >
                 <tab.icon size={14} aria-hidden="true" />
-                {tab.title}
+                <span>{tab.title}</span>
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
-      </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-10">
         {activeTab === 'quem-somos' && (
-          <div id="panel-quem-somos" role="tabpanel" aria-labelledby="tab-quem-somos" className="space-y-10">
-            <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 space-y-4 text-slate-700 leading-relaxed">
-              <h2 className="text-2xl font-black text-brand-navy">Quem somos</h2>
-              <p>
-                A Superintendência do Patrimônio Cultural do Maranhão (SPC) é o órgão do Governo do Estado, vinculado à SECMA, responsável por proteger o patrimônio cultural maranhense.
+          <div id="panel-quem-somos" role="tabpanel" aria-labelledby="tab-quem-somos" className="space-y-6">
+            <section className="bg-white p-6 sm:p-8 rounded-2xl border border-[#E5DDD5] shadow-sm space-y-4 text-slate-700 leading-relaxed text-sm sm:text-base">
+              <h2 className="font-serif text-2xl font-medium text-brand-navy">Quem somos</h2>
+              <p className="max-w-[68ch]">
+                A Superintendência do Patrimônio Cultural do Maranhão (SPC) é o órgão do Governo do Estado, vinculado à SECMA, responsável por proteger o patrimônio cultural material e imaterial maranhense.
               </p>
-              <p>
-                O trabalho é dividido em três departamentos: proteção do patrimônio histórico, artístico, arqueológico e paisagístico (DPHAP), projetos especiais (DPE) e patrimônio imaterial (DPI).
+              <p className="max-w-[68ch]">
+                Sua atuação organiza-se em três departamentos técnicos: Proteção do Patrimônio Histórico, Artístico, Arqueológico e Paisagístico (DPHAP), Projetos Especiais (DPE) e Patrimônio Imaterial (DPI).
               </p>
-              <p>
-                A sede fica no {SITE_CONTACT.buildingName}, {SITE_CONTACT.addressLine}, {SITE_CONTACT.city}.
+              <p className="max-w-[68ch] text-slate-600">
+                <strong className="text-brand-navy">Sede:</strong> {SITE_CONTACT.buildingName}, {SITE_CONTACT.addressLine}, {SITE_CONTACT.city}.
               </p>
             </section>
 
-            <section className="bg-white rounded-3xl border border-slate-100 p-6 md:p-8 flex flex-col md:flex-row gap-6 items-center">
+            <section className="bg-white rounded-2xl border border-[#E5DDD5] shadow-sm p-6 sm:p-8 flex flex-col sm:flex-row gap-6 items-center">
               <img
                 src="/imagens/superintendente.jpg"
-                className="w-48 h-60 object-cover rounded-2xl"
+                className="w-36 h-44 sm:w-40 sm:h-48 object-cover rounded-xl border border-[#E5DDD5]"
                 alt="Retrato de Eduardo Longhi, superintendente"
               />
-              <div className="space-y-2 text-center md:text-left">
-                <p className="text-[11px] font-black uppercase tracking-widest text-brand-terracotta">Superintendente</p>
-                <h2 className="text-2xl font-black text-brand-navy">Eduardo Longhi</h2>
-                <p className="text-slate-600">Superintendente do Patrimônio Cultural do Maranhão.</p>
+              <div className="space-y-1.5 text-center sm:text-left">
+                <p className="text-xs font-bold uppercase tracking-widest text-brand-terracotta">Superintendente</p>
+                <h2 className="font-serif text-2xl font-medium text-brand-navy">Eduardo Longhi</h2>
+                <p className="text-sm text-slate-600">Superintendente do Patrimônio Cultural do Maranhão (SPC/SECMA).</p>
               </div>
             </section>
           </div>
         )}
 
         {activeTab === 'estrutura' && (
-          <div id="panel-estrutura" role="tabpanel" aria-labelledby="tab-estrutura" className="space-y-8">
-            <div className="max-w-2xl space-y-2">
-              <h2 className="text-2xl font-black text-brand-navy">Departamentos</h2>
-              <p className="text-slate-600">Três departamentos dividem o trabalho da SPC.</p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-5">
-              {DEPARTMENTS.map((dept) => {
-                const v = DEPT_VISUAL[dept.code];
-                return (
-                  <Link
-                    to={v.path}
-                    key={dept.code}
-                    className={`bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col md:flex-row hover:shadow-xl transition-all border-l-[8px] ${v.border} group`}
-                  >
-                    <div className="md:w-48 p-6 flex flex-col items-center justify-center text-center bg-slate-50">
-                      <v.icon size={36} className={`${v.color} mb-2`} aria-hidden="true" />
-                      <h3 className={`text-2xl font-black ${v.color}`}>{dept.code}</h3>
+          <div id="panel-estrutura" role="tabpanel" aria-labelledby="tab-estrutura" className="space-y-4">
+            {DEPARTMENTS.map((dept) => {
+              const v = DEPT_VISUAL[dept.code];
+              return (
+                <Link
+                  to={v.path}
+                  key={dept.code}
+                  className="group bg-white rounded-2xl border border-[#E5DDD5] p-5 sm:p-6 shadow-sm hover:border-brand-navy/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-brand-surface border border-[#E5DDD5] flex items-center justify-center shrink-0">
+                      <v.icon size={22} className={v.color} aria-hidden="true" />
                     </div>
-                    <div className="p-6 md:p-8 flex-grow space-y-2">
-                      <h4 className="text-lg font-black text-brand-dark">{dept.name}</h4>
-                      <p className="text-slate-600 text-sm leading-relaxed max-w-2xl">{dept.summary}</p>
+                    <div className="space-y-1">
+                      <p className={`text-xs font-bold uppercase tracking-wider ${v.color}`}>{dept.code}</p>
+                      <h3 className="font-display text-base sm:text-lg font-bold text-brand-navy group-hover:text-brand-terracotta transition-colors">
+                        {dept.name}
+                      </h3>
+                      <p className="text-sm text-slate-600 leading-relaxed max-w-[60ch]">{dept.summary}</p>
                     </div>
-                  </Link>
-                );
-              })}
-            </div>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-brand-blue-dark shrink-0">
+                    Ver atribuições <ArrowRight size={14} aria-hidden="true" />
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         )}
 
         {activeTab === 'competencias' && (
-          <div id="panel-competencias" role="tabpanel" aria-labelledby="tab-competencias" className="space-y-10">
-            <div className="max-w-2xl space-y-2">
-              <h2 className="text-2xl font-black text-brand-navy">O que a SPC faz</h2>
-              <p className="text-slate-600">Atribuições da SPC em relação a imóveis históricos, manifestações culturais tradicionais e denúncias.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div id="panel-competencias" role="tabpanel" aria-labelledby="tab-competencias" className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {ATUACAO.map((item) => (
-                <div key={item.title} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${item.color}`}>
-                    <item.icon size={24} aria-hidden="true" />
+                <div key={item.title} className="bg-white p-6 rounded-2xl border border-[#E5DDD5] shadow-sm space-y-2">
+                  <div className="w-10 h-10 rounded-xl bg-brand-surface border border-[#E5DDD5] text-brand-navy flex items-center justify-center">
+                    <item.icon size={20} aria-hidden="true" />
                   </div>
-                  <h3 className="text-lg font-black text-brand-dark mb-1">{item.title}</h3>
-                  <p className="text-slate-600 text-sm leading-relaxed">{item.desc}</p>
+                  <h3 className="font-display text-base font-bold text-brand-navy">{item.title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{item.desc}</p>
                 </div>
               ))}
             </div>
 
-            <div className="bg-brand-navy rounded-3xl p-8 md:p-10 text-white space-y-5">
-              <h2 className="text-2xl md:text-3xl font-black leading-tight">Precisa falar com a SPC?</h2>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Link to="/contato" className="px-7 py-3 bg-white text-brand-navy rounded-xl font-black uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center gap-2 text-xs">
-                  Falar com a SPC <Users size={16} aria-hidden="true" />
+            <div className="bg-brand-navy rounded-2xl p-6 sm:p-8 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="font-serif text-xl sm:text-2xl font-medium">Precisa falar com a SPC?</h2>
+                <p className="text-sm text-slate-300 mt-1">Consulte serviços, horários de atendimento ou envie sua solicitação.</p>
+              </div>
+              <div className="flex flex-wrap gap-2.5 shrink-0">
+                <Link
+                  to="/contato"
+                  className="min-h-[44px] px-5 py-2.5 bg-brand-gold text-brand-navy rounded-xl font-bold hover:bg-[#F1C56A] transition-colors inline-flex items-center gap-2 text-xs"
+                >
+                  Falar com a SPC
                 </Link>
-                <Link to="/servicos" className="px-7 py-3 bg-white/10 text-white rounded-xl font-black uppercase tracking-widest border border-white/40 hover:bg-white/20 transition-all flex items-center justify-center gap-2 text-xs">
-                  Ver serviços <ArrowRight size={16} aria-hidden="true" />
+                <Link
+                  to="/servicos"
+                  className="min-h-[44px] px-5 py-2.5 bg-white/10 text-white rounded-xl font-bold border border-white/25 hover:bg-white/20 transition-colors inline-flex items-center gap-2 text-xs"
+                >
+                  Ver serviços <ArrowRight size={14} aria-hidden="true" />
                 </Link>
               </div>
             </div>

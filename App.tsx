@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Link as L, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import {
   Home,
@@ -15,6 +15,7 @@ import {
   HelpCircle,
   Users,
   Gavel,
+  Scale,
   BookOpen,
   Library,
   Database,
@@ -22,34 +23,34 @@ import {
 } from 'lucide-react';
 import HomePage from './pages/HomePage';
 import { ScrollProgress, PageTransition } from './components/ui/Motion';
-import MapaPage from './pages/MapaPage';
-import AdminDashboard from './pages/AdminDashboard';
 import InstitucionalPage from './pages/InstitucionalPage';
 import ServicosPage from './pages/ServicosPage';
-import LegislacaoPage from './pages/LegislacaoPage';
-import AcervoDigitalPage from './pages/AcervoDigitalPage';
-import AcervoPage from './pages/AcervoPage';
-import RepositorioPage from './pages/RepositorioPage';
-import DphapPage from './pages/DphapPage';
-import DpiPage from './pages/DpiPage';
-import DpePage from './pages/DpePage';
 import LoginPage from './pages/LoginPage';
-import IngestaoPage from './pages/IngestaoPage';
 import { UserRole, User as UserType } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LogOut, Accessibility, Clock, Compass, Landmark } from 'lucide-react';
-import BensTombadosPage from './pages/BensTombadosPage';
 import ContatoPage from './pages/ContatoPage';
 import DenunciaPage from './pages/DenunciaPage';
 import TransparenciaPage from './pages/TransparenciaPage';
 import PrivacidadePage from './pages/PrivacidadePage';
 import TermosPage from './pages/TermosPage';
-import { SITE_CONTACT, DEPARTMENTS } from './data/siteContact';
+import DepartamentoOficialPage from './pages/DepartamentoOficialPage';
+import { SITE_CONTACT } from './data/siteContact';
 import { usePageTitle } from './hooks/usePageTitle';
 import { AzulejoBand } from './components/ui/Reveal';
+import { recordPageVisit, recordSessionHeartbeat } from './services/analyticsService';
 
-/** Perfis que podem abrir as áreas internas. Administradores passam sempre. */
-const EDITOR_ROLES: UserRole[] = [UserRole.EDITOR_DPE, UserRole.EDITOR_DPHAP, UserRole.EDITOR_DPI, UserRole.COLABORADOR];
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const IngestaoPage = lazy(() => import('./pages/IngestaoPage'));
+const BensTombadosPage = lazy(() => import('./pages/BensTombadosPage'));
+const LegislacaoPage = lazy(() => import('./pages/LegislacaoPage'));
+const CartografiaPage = lazy(() => import('./pages/CartografiaPage'));
+
+/** Perfis que podem abrir o Painel Administrativo (/admin). Administradores passam sempre. */
+const ADMIN_PANEL_ROLES: UserRole[] = [UserRole.SUPER_ADMIN, UserRole.ADMIN_SPC, UserRole.EDITOR_DPE, UserRole.EDITOR_DPHAP, UserRole.EDITOR_DPI];
+
+/** Perfis que podem acessar a Central de Ingestão (/ingestao), incluindo Colaboradores. */
+const EDITOR_ROLES: UserRole[] = [...ADMIN_PANEL_ROLES, UserRole.COLABORADOR];
 
 const PrivateRoute = ({ children, roleRequired }: { children: React.ReactNode, roleRequired?: UserRole[] }) => {
   const { user, loading, isAdmin } = useAuth();
@@ -84,6 +85,8 @@ const PrivateRoute = ({ children, roleRequired }: { children: React.ReactNode, r
 };
 
 const HIGH_CONTRAST_KEY = 'spc-high-contrast';
+const FONT_SCALE_KEY = 'spc-font-scale';
+type FontScale = 'sm' | 'md' | 'lg';
 
 /** Alto contraste: guarda a escolha do visitante e aplica a classe no body. */
 const useHighContrast = () => {
@@ -105,6 +108,31 @@ const useHighContrast = () => {
   }, [enabled]);
 
   return { enabled, toggle: () => setEnabled((v) => !v) };
+};
+
+/** Escala tipográfica (e-MAG: A-, A, A+): ajusta o tamanho-base (rem) do documento. */
+const useFontScale = () => {
+  const [scale, setScale] = useState<FontScale>(() => {
+    try {
+      const saved = localStorage.getItem(FONT_SCALE_KEY);
+      if (saved === 'sm' || saved === 'md' || saved === 'lg') return saved;
+      return 'md';
+    } catch {
+      return 'md';
+    }
+  });
+
+  useEffect(() => {
+    const pct = scale === 'lg' ? '112.5%' : scale === 'sm' ? '92.5%' : '100%';
+    document.documentElement.style.fontSize = pct;
+    try {
+      localStorage.setItem(FONT_SCALE_KEY, scale);
+    } catch {
+      /* armazenamento indisponível */
+    }
+  }, [scale]);
+
+  return { scale, setScale };
 };
 
 /** Widget oficial do VLibras (tradução para Libras), do Governo Federal. */
@@ -179,12 +207,14 @@ const Navigation = () => {
 
   const { user, logout, isAdmin, isColaborador } = useAuth();
   const highContrast = useHighContrast();
+  const fontScale = useFontScale();
 
   const navItems = [
     { label: 'A SPC', path: '/institucional', icon: <Info size={18} /> },
     { label: 'Serviços', path: '/servicos', icon: <FileText size={18} /> },
     { label: 'Bens tombados', path: '/bens-tombados', icon: <Landmark size={18} /> },
-    { label: 'Legislação', path: '/legislacao', icon: <Gavel size={18} /> },
+    { label: 'Mapas', path: '/mapa', icon: <MapIcon size={18} /> },
+    { label: 'Legislação', path: '/legislacao', icon: <Scale size={18} /> },
     { label: 'Contato', path: '/contato', icon: <Mail size={18} /> },
   ];
 
@@ -196,24 +226,54 @@ const Navigation = () => {
 
   return (
     <>
-      {/* Barra de acessibilidade: faixa fina, rola junto com a página */}
-      <div className="bg-brand-navy text-white font-sans px-6 py-0.5 hidden md:block">
+      {/* Barra de acessibilidade com efeito Liquid Glass escuro */}
+      <div className="liquid-glass-topbar text-white font-sans px-6 py-1 hidden md:block">
         <div className="max-w-[1440px] mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-4 text-[11px] leading-none uppercase font-bold tracking-wider text-slate-200">
             <L to="/transparencia" className="hover:text-white transition-colors">Acesso à Informação</L>
             <span className="text-white/20" aria-hidden="true">|</span>
             <a href="https://cultura.ma.gov.br" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">SECMA<span className="sr-only"> (abre em nova aba)</span></a>
-            <span className="text-white/20" aria-hidden="true">|</span>
-            <L
-              to="/denuncia"
-              className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-brand-red text-white text-[10px] font-black uppercase tracking-wider hover:bg-brand-red-dark transition-all shadow-xs"
-            >
-              <ShieldAlert size={12} aria-hidden="true" />
-              <span>Denúncias</span>
-            </L>
           </div>
 
-          <div className="flex items-center space-x-5">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-1" role="group" aria-label="Tamanho da fonte">
+              <button
+                type="button"
+                onClick={() => fontScale.setScale('sm')}
+                aria-pressed={fontScale.scale === 'sm'}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-black transition-colors ${
+                  fontScale.scale === 'sm' ? 'bg-white text-brand-navy' : 'text-slate-300 hover:text-white'
+                }`}
+                title="Diminuir fonte (A-)"
+              >
+                A-
+              </button>
+              <button
+                type="button"
+                onClick={() => fontScale.setScale('md')}
+                aria-pressed={fontScale.scale === 'md'}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-black transition-colors ${
+                  fontScale.scale === 'md' ? 'bg-white text-brand-navy' : 'text-slate-300 hover:text-white'
+                }`}
+                title="Fonte padrão (A)"
+              >
+                A
+              </button>
+              <button
+                type="button"
+                onClick={() => fontScale.setScale('lg')}
+                aria-pressed={fontScale.scale === 'lg'}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-black transition-colors ${
+                  fontScale.scale === 'lg' ? 'bg-white text-brand-navy' : 'text-slate-300 hover:text-white'
+                }`}
+                title="Aumentar fonte (A+)"
+              >
+                A+
+              </button>
+            </div>
+
+            <span className="text-white/20" aria-hidden="true">|</span>
+
             <button
               type="button"
               aria-pressed={highContrast.enabled}
@@ -231,23 +291,23 @@ const Navigation = () => {
         </div>
       </div>
 
-      {/* Main Navigation Header */}
+      {/* Main Navigation Header com Liquid Glass de última geração */}
       <nav
-        className={`sticky top-0 z-[100] border-b bg-white py-1.5 transition-shadow duration-300
-        ${scrolled ? 'border-slate-200/60 shadow-md' : 'border-slate-200/70 shadow-sm'}`}
+        className={`fixed top-0 left-0 right-0 lg:sticky lg:top-0 z-[150] liquid-glass-header py-1.5 transition-all duration-300
+        ${scrolled ? 'shadow-lg' : ''}`}
       >
-        <div className="max-w-[1440px] mx-auto px-6">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6">
           <div className="flex justify-between items-center relative">
-            <L to="/" className="flex items-center space-x-3.5 group relative z-10 text-decoration-none">
+            <L to="/" className="flex items-center space-x-3 group relative z-10 text-decoration-none">
               <img
                 src="/spc-logo-horizontal.png"
                 alt="Superintendência do Patrimônio Cultural"
-                className="h-10 w-auto sm:h-11"
+                className="h-8 w-auto sm:h-9"
               />
             </L>
 
             <div className="hidden lg:flex items-center gap-1.5">
-              <div className="flex items-center bg-white p-1 rounded-2xl">
+              <div className="flex items-center bg-white/55 backdrop-blur-md border border-white/70 p-1 rounded-full shadow-inner">
                 {navItems.map((item) => {
                   const isActive = location.pathname === item.path;
                   return (
@@ -293,104 +353,210 @@ const Navigation = () => {
               {user && (
                 <button
                   onClick={logout}
-                  className="px-4.5 py-2 bg-slate-100 hover:bg-brand-terracotta/10 hover:text-brand-terracotta text-slate-600 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5"
+                  className="px-4 py-2 bg-slate-100 hover:bg-brand-terracotta/10 hover:text-brand-terracotta text-slate-700 rounded-full text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5"
                   title={`Logado como ${user.name}`}
                 >
-                  <LogOut size={12} aria-hidden="true" /> Sair
+                  <LogOut size={13} aria-hidden="true" /> Sair
                 </button>
               )}
 
               <img
                 src="/imagens/logo_governo.png"
                 alt="Governo do Maranhão"
-                className="h-10 w-auto object-contain ml-3"
+                className="h-8 w-auto object-contain ml-2"
               />
             </div>
 
-            <button
-              className="lg:hidden p-2 rounded-xl bg-slate-50 text-brand-navy border border-slate-200/50 hover:bg-slate-100 transition-colors"
-              onClick={() => setIsOpen(!isOpen)}
-              aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
-              aria-expanded={isOpen}
+            {/* Mobile: botão compacto de Denúncia no topo (navegação principal na barra inferior fixa) */}
+            <L
+              to="/denuncia"
+              className="lg:hidden inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-brand-red text-white text-[11px] font-black uppercase tracking-wider shadow-sm"
             >
-              {isOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
+              <ShieldAlert size={13} aria-hidden="true" />
+              <span>Denunciar</span>
+            </L>
           </div>
         </div>
+      </nav>
 
-        {/* Mobile Menu */}
-        {isOpen && (
-          <div className="lg:hidden absolute top-full left-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-100 shadow-2xl animate-fade-in z-[90]">
-            <div className="p-4 space-y-2">
-              {navItems.map((item) => (
+      {/* Espaçador para compensar o header fixo no mobile/tablet (<lg) */}
+      <div className="h-[46px] sm:h-[50px] lg:hidden shrink-0" aria-hidden="true" />
+
+      {/* Gaveta "Mais" aberta pela barra inferior mobile */}
+      {isOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-[155] bg-[#071D33]/50 backdrop-blur-xs flex items-end"
+          onClick={() => setIsOpen(false)}
+        >
+          <div
+            className="w-full max-h-[80dvh] overflow-y-auto rounded-t-3xl bg-white p-5 pb-24 shadow-2xl animate-slide-in-bottom space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <span className="text-xs font-black uppercase tracking-wider text-brand-navy">
+                Mais opções do Portal
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="p-1.5 rounded-full bg-slate-100 text-brand-navy"
+                aria-label="Fechar menu"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <L
+                to="/"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-brand-surface border border-[#E5DDD5] text-xs font-bold text-brand-navy"
+              >
+                <Home size={16} className="text-brand-blue-dark" aria-hidden="true" />
+                <span>Início</span>
+              </L>
+              <L
+                to="/institucional"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-brand-surface border border-[#E5DDD5] text-xs font-bold text-brand-navy"
+              >
+                <Info size={16} className="text-brand-blue-dark" aria-hidden="true" />
+                <span>A SPC</span>
+              </L>
+              <L
+                to="/contato"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-brand-surface border border-[#E5DDD5] text-xs font-bold text-brand-navy"
+              >
+                <Mail size={16} className="text-brand-terracotta" aria-hidden="true" />
+                <span>Contato</span>
+              </L>
+              <L
+                to="/transparencia"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-brand-surface border border-[#E5DDD5] text-xs font-bold text-brand-navy"
+              >
+                <ShieldCheck size={16} className="text-brand-sage-dark" aria-hidden="true" />
+                <span>Transparência</span>
+              </L>
+              {isColaborador && (
                 <L
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center space-x-3 p-4 rounded-2xl font-bold transition-all ${location.pathname === item.path
-                    ? 'bg-brand-navy text-white shadow-lg'
-                    : 'text-slate-700 bg-brand-cream hover:bg-brand-sand'
-                    }`}
+                  to="/ingestao"
                   onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-brand-surface border border-[#E5DDD5] text-xs font-bold text-brand-navy"
                 >
-                  <span className="text-sm">{item.label}</span>
+                  <Upload size={16} className="text-brand-navy" aria-hidden="true" />
+                  <span>Ingestão</span>
                 </L>
-              ))}
-
+              )}
               {adminItem && (
                 <L
                   to={adminItem.path}
-                  className={`flex items-center space-x-3 p-4 rounded-2xl font-bold transition-all ${location.pathname === adminItem.path
-                    ? 'bg-brand-navy text-white shadow-lg'
-                    : 'text-brand-navy hover:bg-slate-50'
-                    }`}
                   onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-brand-navy text-xs font-bold text-white"
                 >
-                  <span className="text-sm">{adminItem.label}</span>
+                  <Settings size={16} aria-hidden="true" />
+                  <span>Painel Admin</span>
                 </L>
               )}
+            </div>
 
-              <div className="border-t border-slate-100 my-2 pt-2 space-y-1">
-                <L to="/transparencia" className="flex items-center p-4 rounded-2xl font-bold text-slate-600 hover:bg-slate-50" onClick={() => setIsOpen(false)}>
-                  <span className="text-sm">Acesso à Informação</span>
-                </L>
-                {/* Denúncias em destaque no menu mobile */}
-                <L
-                  to="/denuncia"
-                  className="flex items-center gap-3 p-4 rounded-2xl font-black text-white bg-brand-red hover:bg-[#B94734] transition-all shadow-sm"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <ShieldAlert size={18} aria-hidden="true" className="flex-shrink-0" />
-                  <div>
-                    <span className="text-sm block">Denunciar Obra Irregular</span>
-                    <span className="text-[11px] font-normal opacity-80">Canal oficial de fiscalização</span>
-                  </div>
-                </L>
+            <div className="pt-2 border-t border-slate-100 space-y-2">
+              <div className="flex items-center justify-between gap-2">
                 <button
                   type="button"
                   aria-pressed={highContrast.enabled}
                   onClick={highContrast.toggle}
-                  className="w-full flex items-center space-x-3 p-4 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 text-left"
+                  className="flex-1 min-h-[40px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-brand-surface border border-[#E5DDD5] text-xs font-bold text-brand-navy"
                 >
-                  <Accessibility size={18} aria-hidden="true" />
-                  <span className="text-sm">Alto contraste</span>
+                  <Accessibility size={15} aria-hidden="true" />
+                  <span>Alto contraste</span>
                 </button>
-                <div className="p-2 bg-brand-navy rounded-2xl">
-                  <SiteSearch compact />
+                <div className="flex items-center gap-1" role="group" aria-label="Tamanho da fonte">
+                  {(['sm', 'md', 'lg'] as FontScale[]).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => fontScale.setScale(s)}
+                      aria-pressed={fontScale.scale === s}
+                      className={`min-h-[40px] px-3 py-1 rounded-xl text-xs font-black ${
+                        fontScale.scale === s ? 'bg-brand-navy text-white' : 'bg-brand-surface text-brand-navy border border-[#E5DDD5]'
+                      }`}
+                    >
+                      {s === 'sm' ? 'A-' : s === 'md' ? 'A' : 'A+'}
+                    </button>
+                  ))}
                 </div>
-                {user && (
-                  <button
-                    onClick={() => { logout(); setIsOpen(false); }}
-                    className="w-full flex items-center space-x-3 p-4 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 transition-all"
-                  >
-                    <LogOut size={18} aria-hidden="true" />
-                    <span className="text-sm">Sair</span>
-                  </button>
-                )}
               </div>
+
+              {user && (
+                <button
+                  type="button"
+                  onClick={() => { logout(); setIsOpen(false); }}
+                  className="w-full min-h-[40px] flex items-center justify-center gap-2 rounded-xl bg-slate-100 text-xs font-bold text-slate-600"
+                >
+                  <LogOut size={15} aria-hidden="true" />
+                  <span>Sair ({user.name})</span>
+                </button>
+              )}
             </div>
           </div>
-        )}
-      </nav>
+        </div>
+      )}
+
+      {/* Dock Inferior Flutuante Liquid Glass (Mobile/Tablet < lg) */}
+      <div
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-[160] px-3 pb-3 pt-1 pointer-events-none print:hidden"
+        style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
+      >
+        <nav
+          aria-label="Navegação principal mobile"
+          className="pointer-events-auto liquid-glass-dock rounded-[26px] max-w-md mx-auto px-1.5 py-1.5"
+        >
+          <div className="grid grid-cols-5 items-center">
+            {[
+              { label: 'Bens', path: '/bens-tombados', icon: Landmark },
+              { label: 'Mapas', path: '/mapa', icon: MapIcon },
+              { label: 'Legislação', path: '/legislacao', icon: Scale },
+              { label: 'Serviços', path: '/servicos', icon: FileText }
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const active = location.pathname === tab.path;
+              return (
+                <L
+                  key={tab.path}
+                  to={tab.path}
+                  onClick={() => setIsOpen(false)}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex flex-col items-center justify-center gap-0.5 py-2 rounded-[20px] transition-all duration-200 active:scale-95 ${
+                    active
+                      ? 'bg-brand-navy text-white shadow-md font-bold'
+                      : 'text-slate-700 font-semibold hover:bg-brand-navy/5 hover:text-brand-navy'
+                  }`}
+                >
+                  <Icon size={19} strokeWidth={active ? 2.3 : 1.9} aria-hidden="true" />
+                  <span className="text-[10px] leading-none tracking-tight">{tab.label}</span>
+                </L>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={() => setIsOpen((v) => !v)}
+              aria-expanded={isOpen}
+              aria-label={isOpen ? 'Fechar mais opções' : 'Abrir mais opções'}
+              className={`flex flex-col items-center justify-center gap-0.5 py-2 rounded-[20px] transition-all duration-200 active:scale-95 ${
+                isOpen
+                  ? 'bg-brand-terracotta text-white shadow-md font-bold'
+                  : 'text-slate-700 font-semibold hover:bg-brand-navy/5 hover:text-brand-navy'
+              }`}
+            >
+              {isOpen ? <X size={19} strokeWidth={2.3} aria-hidden="true" /> : <Menu size={19} strokeWidth={1.9} aria-hidden="true" />}
+              <span className="text-[10px] leading-none tracking-tight">Mais</span>
+            </button>
+          </div>
+        </nav>
+      </div>
     </>
   );
 };
@@ -402,68 +568,44 @@ const Footer = () => {
 
   return (
     <footer className="bg-brand-navy text-slate-200 font-sans relative overflow-hidden">
-      <AzulejoBand large />
-      <div className="max-w-[1200px] mx-auto px-6 pt-14 pb-10 grid grid-cols-1 md:grid-cols-3 gap-12 relative z-10">
-        <div className="space-y-5">
-          <h3 className="text-white font-black text-xl flex items-center gap-3 tracking-tight">
-            SPC Maranhão
-          </h3>
-          <p className="text-sm leading-relaxed text-slate-200 max-w-sm">
-            Superintendência do Patrimônio Cultural do Maranhão, órgão vinculado à Secretaria de Estado da Cultura (SECMA).
-          </p>
-          <div className="inline-flex flex-wrap items-center gap-5 rounded-2xl bg-white px-5 py-4 shadow-lg">
-            <img src="/spc-logo-completa.png" alt="Superintendência do Patrimônio Cultural" className="h-16 w-auto" />
-            <span aria-hidden="true" className="h-12 w-px bg-slate-200" />
-            <img src="/imagens/logo_governo.png" alt="Governo do Maranhão" className="h-16 w-auto" />
+      <AzulejoBand />
+      <div className="max-w-[1200px] mx-auto px-5 py-5 grid grid-cols-1 md:grid-cols-3 gap-4 relative z-10 items-center">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="inline-flex items-center gap-2.5 rounded-lg bg-white px-2.5 py-1.5 shadow-sm shrink-0">
+            <img src="/spc-logo-completa.png" alt="Superintendência do Patrimônio Cultural" className="h-7 w-auto" />
+            <span aria-hidden="true" className="h-5 w-px bg-slate-200" />
+            <img src="/imagens/logo_governo.png" alt="Governo do Maranhão" className="h-7 w-auto" />
           </div>
+          <p className="text-[11px] leading-snug text-slate-300">
+            SPC · Secretaria de Estado da Cultura (SECMA)
+          </p>
         </div>
 
-        <div>
-          <h4 className="text-white font-bold mb-4 text-sm">Institucional</h4>
-          <ul className="space-y-3 text-sm font-medium">
-            <li><L to="/institucional" className="hover:text-white hover:underline">Quem somos</L></li>
-            <li><L to="/servicos" className="hover:text-white hover:underline">Serviços ao cidadão</L></li>
-            <li><L to="/bens-tombados" className="hover:text-white hover:underline">Bens tombados</L></li>
-            <li><L to="/legislacao" className="hover:text-white hover:underline">Legislação</L></li>
-            <li><L to="/transparencia" className="hover:text-white hover:underline">Transparência e acesso à informação</L></li>
-            <li><L to="/denuncia" className="hover:text-white hover:underline">Denúncias</L></li>
-          </ul>
-        </div>
+        <nav aria-label="Links do rodapé" className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs font-medium text-slate-300 md:justify-center">
+          <L to="/institucional" className="hover:text-white hover:underline">A SPC</L>
+          <L to="/servicos" className="hover:text-white hover:underline">Serviços</L>
+          <L to="/bens-tombados" className="hover:text-white hover:underline">Bens</L>
+          <L to="/legislacao" className="hover:text-white hover:underline">Legislação</L>
+          <L to="/transparencia" className="hover:text-white hover:underline">Transparência</L>
+          <L to="/denuncia" className="hover:text-white hover:underline">Denúncias</L>
+        </nav>
 
-        <div>
-          <h4 className="text-white font-bold mb-4 text-sm">Contato</h4>
-          <address className="not-italic text-sm leading-relaxed space-y-3">
-            <p>
-              {SITE_CONTACT.buildingName}
-              <br />
-              {SITE_CONTACT.addressLine}
-              <br />
-              {SITE_CONTACT.city}
-            </p>
-            <p>
-              <a href={`mailto:${SITE_CONTACT.email}`} className="hover:text-white underline break-all">{SITE_CONTACT.email}</a>
-            </p>
-            <p>
-              Denúncias:{' '}
-              <a href={`mailto:${SITE_CONTACT.denunciaEmail}`} className="hover:text-white underline break-all">{SITE_CONTACT.denunciaEmail}</a>
-            </p>
-            <p>
-              Ouvidoria da SECMA:{' '}
-              <a href={`mailto:${SITE_CONTACT.ouvidoriaEmail}`} className="hover:text-white underline break-all">{SITE_CONTACT.ouvidoriaEmail}</a>
-            </p>
-            <p>
-              <L to="/contato" className="hover:text-white underline">Todos os canais de atendimento</L>
-            </p>
-          </address>
-        </div>
+        <address className="not-italic text-[11px] leading-snug text-slate-300 md:text-right space-y-0.5">
+          <p>{SITE_CONTACT.buildingName} · {SITE_CONTACT.addressLine}, {SITE_CONTACT.city}</p>
+          <p>
+            <a href={`mailto:${SITE_CONTACT.email}`} className="hover:text-white underline">{SITE_CONTACT.email}</a>
+            {' · '}
+            <L to="/contato" className="hover:text-white underline">Contato</L>
+          </p>
+        </address>
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-6 pb-8 relative z-10">
-        <div className="pt-8 border-t border-white/15 text-xs flex flex-col md:flex-row justify-between items-center gap-4 text-slate-200">
+      <div className="max-w-[1200px] mx-auto px-5 pb-4 relative z-10">
+        <div className="pt-3 border-t border-white/10 text-[11px] flex flex-wrap justify-between items-center gap-2 text-slate-400">
           <p>© {new Date().getFullYear()} Governo do Estado do Maranhão</p>
-          <div className="flex flex-wrap gap-x-8 gap-y-2 items-center justify-center">
-            <L to="/privacidade" className="hover:text-white hover:underline">Política de Privacidade</L>
-            <L to="/termos" className="hover:text-white hover:underline">Termos de Uso</L>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
+            <L to="/privacidade" className="hover:text-white hover:underline">Privacidade</L>
+            <L to="/termos" className="hover:text-white hover:underline">Termos</L>
             <L to="/login" className="hover:text-white hover:underline">Área restrita</L>
           </div>
         </div>
@@ -472,47 +614,76 @@ const Footer = () => {
   );
 };
 
-/** Páginas internas ainda sem conteúdo público: dizem a verdade e dão um caminho. */
-const ModuloEmAtualizacao = () => {
-  usePageTitle('Página em preparação');
+const ROUTE_BREADCRUMBS: Record<string, { label: string; parent?: { label: string; to: string } }> = {
+  '/institucional': { label: 'A SPC (Institucional)' },
+  '/servicos': { label: 'Carta de Serviços e Protocolo' },
+  '/bens-tombados': { label: 'Bens Tombados (Livro do Tombo)' },
+  '/mapa': { label: 'Cartografia Histórica e Mapas' },
+  '/acervo-digital': { label: 'Cartografia Histórica e Acervo' },
+  '/acervo': { label: 'Cartografia Histórica e Acervo' },
+  '/legislacao': { label: 'Biblioteca de Legislação' },
+  '/repositorio': { label: 'Biblioteca de Legislação e Repositório' },
+  '/dphap': { label: 'DPHAP', parent: { label: 'A SPC', to: '/institucional' } },
+  '/dpi': { label: 'DPI', parent: { label: 'A SPC', to: '/institucional' } },
+  '/dpe': { label: 'DPE', parent: { label: 'A SPC', to: '/institucional' } },
+  '/contato': { label: 'Canais de Atendimento' },
+  '/denuncia': { label: 'Denúncia de Dano ao Patrimônio' },
+  '/transparencia': { label: 'Transparência e Acesso à Informação (LAI)' },
+  '/privacidade': { label: 'Política de Privacidade (LGPD)' },
+  '/termos': { label: 'Termos de Uso' },
+  '/login': { label: 'Acesso Restrito' },
+  '/admin': { label: 'Painel Administrativo' },
+  '/ingestao': { label: 'Central de Ingestão Documental' }
+};
+
+const BreadcrumbBar = () => {
+  const { pathname } = useLocation();
+  if (pathname === '/') return null;
+  const current = ROUTE_BREADCRUMBS[pathname];
+  if (!current) return null;
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 px-6 text-center">
-      <Clock size={56} className="text-brand-blue" aria-hidden="true" />
-      <h1 className="text-3xl font-black text-brand-dark">Esta página ainda não está disponível</h1>
-      <p className="text-slate-600 max-w-md">
-        Estamos preparando este conteúdo. Enquanto isso, você pode consultar a legislação ou falar diretamente com a SPC.
-      </p>
-      <div className="flex flex-wrap gap-3 justify-center">
-        <L to="/legislacao" className="px-6 py-3 bg-brand-navy text-white rounded-xl font-bold hover:shadow-xl transition-all">Ver legislação</L>
-        <L to="/contato" className="px-6 py-3 bg-white text-brand-navy border-2 border-brand-navy rounded-xl font-bold hover:bg-slate-50 transition-all">Falar com a SPC</L>
+    <nav
+      aria-label="Você está em"
+      className="bg-[#F4EFEA] border-b border-brand-sand/70 text-xs text-slate-600 print:hidden"
+    >
+      <div className="max-w-[1240px] mx-auto px-6 py-2 flex flex-wrap items-center gap-1.5">
+        <L to="/" className="font-bold text-brand-navy hover:underline">
+          Início
+        </L>
+        <span aria-hidden="true" className="text-slate-400">/</span>
+        {current.parent && (
+          <>
+            <L to={current.parent.to} className="font-bold text-brand-navy hover:underline">
+              {current.parent.label}
+            </L>
+            <span aria-hidden="true" className="text-slate-400">/</span>
+          </>
+        )}
+        <span aria-current="page" className="font-semibold text-slate-800">
+          {current.label}
+        </span>
       </div>
-      <p className="text-sm text-slate-500">
-        <a className="underline font-bold" href={`mailto:${SITE_CONTACT.email}`}>{SITE_CONTACT.email}</a>
-      </p>
-    </div>
+    </nav>
   );
 };
 
-/** Página de departamento ainda sem conteúdo próprio: mostra o que o setor faz e como contatar. */
-const DepartamentoEmPreparacao = ({ code }: { code: 'DPHAP' | 'DPE' | 'DPI' }) => {
-  const dept = DEPARTMENTS.find((d) => d.code === code)!;
-  usePageTitle(dept.code);
-  return (
-    <div className="max-w-3xl mx-auto px-6 py-16 space-y-6">
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Departamento</p>
-      <h1 className="text-3xl font-black text-brand-navy">{dept.code}</h1>
-      <p className="text-lg text-slate-700">{dept.name}</p>
-      <p className="text-slate-700">{dept.summary}</p>
-      <p className="text-slate-600">
-        A página completa deste departamento ainda está em preparação. Para falar com a equipe, escreva para{' '}
-        <a className="font-bold underline text-brand-blue-dark" href={`mailto:${SITE_CONTACT.email}`}>{SITE_CONTACT.email}</a>.
-      </p>
-      <div className="flex flex-wrap gap-3">
-        <L to="/servicos" className="px-6 py-3 bg-brand-navy text-white rounded-xl font-bold">Ver serviços</L>
-        <L to="/legislacao" className="px-6 py-3 bg-white text-brand-navy border-2 border-brand-navy rounded-xl font-bold">Ver legislação</L>
-      </div>
-    </div>
-  );
+/** Registra de forma anônima a visita, páginas navegadas e duração da sessão. */
+const VisitorTracker = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    void recordPageVisit(pathname);
+  }, [pathname]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void recordSessionHeartbeat(15);
+    }, 15000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  return null;
 };
 
 const NaoEncontrada = () => {
@@ -534,7 +705,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <HashRouter>
-        <div className="min-h-screen flex flex-col font-sans selection:bg-brand-blue selection:text-white max-w-full overflow-x-hidden">
+        <div className="min-h-screen flex flex-col font-sans selection:bg-brand-blue selection:text-white max-w-full overflow-x-clip pb-24 lg:pb-0">
           <button
             type="button"
             onClick={() => document.getElementById('conteudo')?.focus()}
@@ -543,22 +714,34 @@ const App: React.FC = () => {
             Ir para o conteúdo
           </button>
           <ScrollProgress />
+          <VisitorTracker />
           <Navigation />
+          <BreadcrumbBar />
           <main id="conteudo" tabIndex={-1} className="flex-grow outline-none max-w-full overflow-x-hidden">
             <PageTransition>
+            <Suspense
+              fallback={
+                <div className="min-h-[50vh] flex items-center justify-center p-8" role="status" aria-live="polite">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-10 h-10 border-4 border-brand-navy border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs font-bold text-slate-600">Carregando módulo...</span>
+                  </div>
+                </div>
+              }
+            >
             <Routes>
               <Route path="/" element={<HomePage />} />
-              <Route path="/mapa" element={<ModuloEmAtualizacao />} />
+              <Route path="/mapa" element={<CartografiaPage />} />
               <Route path="/institucional" element={<InstitucionalPage />} />
               <Route path="/servicos" element={<ServicosPage />} />
-              <Route path="/acervo-digital" element={<ModuloEmAtualizacao />} />
-              <Route path="/acervo" element={<ModuloEmAtualizacao />} />
-              <Route path="/repositorio" element={<ModuloEmAtualizacao />} />
+              <Route path="/acervo-digital" element={<CartografiaPage />} />
+              <Route path="/acervo" element={<CartografiaPage />} />
+              <Route path="/repositorio" element={<LegislacaoPage />} />
               <Route path="/legislacao" element={<LegislacaoPage />} />
               <Route path="/bens-tombados" element={<BensTombadosPage />} />
-              <Route path="/dphap" element={<DepartamentoEmPreparacao code="DPHAP" />} />
-              <Route path="/dpi" element={<DepartamentoEmPreparacao code="DPI" />} />
-              <Route path="/dpe" element={<DepartamentoEmPreparacao code="DPE" />} />
+              <Route path="/dphap" element={<DepartamentoOficialPage code="DPHAP" />} />
+              <Route path="/dpi" element={<DepartamentoOficialPage code="DPI" />} />
+              <Route path="/dpe" element={<DepartamentoOficialPage code="DPE" />} />
               <Route path="/contato" element={<ContatoPage />} />
               <Route path="/denuncia" element={<DenunciaPage />} />
               <Route path="/transparencia" element={<TransparenciaPage />} />
@@ -569,7 +752,7 @@ const App: React.FC = () => {
               <Route
                 path="/admin"
                 element={
-                  <PrivateRoute roleRequired={EDITOR_ROLES}>
+                  <PrivateRoute roleRequired={ADMIN_PANEL_ROLES}>
                     <AdminDashboard />
                   </PrivateRoute>
                 }
@@ -584,6 +767,7 @@ const App: React.FC = () => {
               />
               <Route path="*" element={<NaoEncontrada />} />
             </Routes>
+            </Suspense>
             </PageTransition>
           </main>
           <Footer />
