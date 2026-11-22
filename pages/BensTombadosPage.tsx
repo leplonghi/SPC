@@ -4,6 +4,7 @@ import {
   Search,
   MapPin,
   FileText,
+  FileSpreadsheet,
   Download,
   X,
   Copy,
@@ -16,6 +17,7 @@ import {
   Landmark
 } from 'lucide-react';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { downloadCatalogXlsx, ExportCatalogOptions, printCatalogPdf } from '../utils/exportCatalog';
 import { ChartCard } from '../components/dataviz/ChartCard';
 import { BarList } from '../components/dataviz/BarList';
 import { ColumnChart } from '../components/dataviz/ColumnChart';
@@ -114,31 +116,44 @@ const BensTombadosPage: React.FC = () => {
     setTimeout(() => setCopiadoId(null), 2200);
   };
 
-  const exportarCsv = () => {
-    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const head = ['Inscricao', 'Nome', 'Municipio', 'Localizacao', 'Categoria', 'Decreto', 'Ano', 'Livro_Folha', 'PDF'];
-    const rows = resultados.map((b) =>
-      [
-        esc(b.id),
-        esc(b.nome),
-        esc(b.municipio),
-        esc(b.local ?? ''),
-        esc(TIPO_POR_INSCRICAO[b.id] ?? ''),
-        esc(b.decreto.numero),
-        esc(String(b.decreto.ano ?? '')),
-        esc(b.livro.folha),
-        esc(temPdf(b) ? 'Sim' : 'Físico')
-      ].join(';')
-    );
-    const blob = new Blob(['\uFEFF' + [head.join(';'), ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `spc-bens-tombados-${municipio ? norm(municipio).replace(/\s+/g, '-') : 'maranhao'}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const buildBensExport = (): ExportCatalogOptions<BemTombado> => {
+    const filtros: string[] = [];
+    if (municipio) filtros.push(`Município: ${municipio}`);
+    if (tipo) filtros.push(`Categoria: ${tipo}`);
+    if (faixa) {
+      const f = FAIXAS_DECRETO.find((x) => x.id === faixa);
+      if (f) filtros.push(`Período: ${f.label}`);
+    }
+    if (soPdf) filtros.push('Somente com Decreto em PDF');
+    if (busca.trim()) filtros.push(`Busca: "${busca.trim()}"`);
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const slugMun = municipio ? norm(municipio).replace(/\s+/g, '-') : 'maranhao';
+
+    return {
+      title: 'Relação de Bens Tombados do Estado do Maranhão',
+      subtitle: 'Livro do Tombo Estadual · DPHAP / Superintendência do Patrimônio Cultural (SPC/SECMA)',
+      filterSummary: filtros.length ? filtros.join(' · ') : `Acervo completo (${resultados.length} inscrições ativas)`,
+      sheetName: 'Bens_Tombados_MA',
+      fileNameBase: `spc-bens-tombados-${slugMun}`,
+      rows: resultados,
+      sourceUrl: `${origin}/bens-tombados`,
+      columns: [
+        { header: 'Inscrição', width: 11, value: (b) => `#${b.id}` },
+        { header: 'Denominação do Bem', width: 42, value: (b) => b.nome },
+        { header: 'Município', width: 18, value: (b) => b.municipio },
+        { header: 'Localização', width: 32, value: (b) => b.local ?? '—' },
+        { header: 'Categoria', width: 22, value: (b) => TIPO_POR_INSCRICAO[b.id] ?? 'Patrimônio Edificado' },
+        { header: 'Decreto Estadual', width: 16, value: (b) => `Nº ${b.decreto.numero}` },
+        { header: 'Ano', width: 9, value: (b) => String(b.decreto.ano ?? '—') },
+        { header: 'Livro / Folha', width: 14, value: (b) => b.livro.folha ? `Fl. ${b.livro.folha}` : '—' },
+        {
+          header: 'Decreto Digital',
+          width: 18,
+          value: (b) => (temPdf(b) ? 'PDF disponível' : 'Acervo físico')
+        }
+      ]
+    };
   };
 
   const limparTudo = () => {
@@ -442,18 +457,23 @@ const BensTombadosPage: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={exportarCsv}
-              className="min-h-[36px] inline-flex items-center gap-1 rounded-xl border border-[#E5DDD5] bg-white px-3 py-1.5 text-xs font-bold text-[#071D33] hover:bg-brand-surface"
+              disabled={resultados.length === 0}
+              onClick={() => downloadCatalogXlsx(buildBensExport())}
+              title={`Baixar ${resultados.length} ${resultados.length === 1 ? 'bem tombado' : 'bens tombados'} em planilha Excel (.xlsx)`}
+              className="min-h-[36px] inline-flex items-center gap-1.5 rounded-xl border border-[#256B58]/35 bg-white hover:bg-[#256B58] hover:text-white px-3 py-1.5 text-xs font-bold text-[#256B58] transition-colors disabled:opacity-40 disabled:pointer-events-none"
             >
-              <Download size={13} /> CSV
+              <FileSpreadsheet size={13} aria-hidden="true" />
+              <span>Excel</span>
             </button>
             <button
               type="button"
-              onClick={() => window.print()}
-              aria-label="Imprimir"
-              className="min-h-[36px] inline-flex items-center rounded-xl border border-[#E5DDD5] bg-white px-2.5 py-1.5 text-xs text-[#071D33] hover:bg-brand-surface print:hidden"
+              disabled={resultados.length === 0}
+              onClick={() => printCatalogPdf(buildBensExport())}
+              title={`Imprimir ou salvar em PDF (${resultados.length} ${resultados.length === 1 ? 'bem tombado' : 'bens tombados'})`}
+              className="min-h-[36px] inline-flex items-center gap-1.5 rounded-xl border border-[#E5DDD5] bg-white hover:bg-[#071D33] hover:text-white px-3 py-1.5 text-xs font-bold text-[#071D33] transition-colors disabled:opacity-40 disabled:pointer-events-none print:hidden"
             >
-              <Printer size={13} />
+              <Printer size={13} aria-hidden="true" />
+              <span>PDF</span>
             </button>
           </div>
         </div>

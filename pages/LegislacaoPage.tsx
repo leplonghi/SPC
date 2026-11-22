@@ -5,6 +5,8 @@ import {
   Copy,
   Download,
   ExternalLink,
+  FileSpreadsheet,
+  Printer,
   Search,
   Sparkles,
   X
@@ -19,6 +21,7 @@ import {
   PUBLIC_LEGAL_DOCUMENTS,
   PublicLegalDocument
 } from '../data/publicLegalDocuments';
+import { downloadCatalogXlsx, ExportCatalogOptions, printCatalogPdf } from '../utils/exportCatalog';
 
 const SCOPES: LegalDocumentScope[] = ['Estadual', 'Federal', 'Municipal', 'SPC'];
 const CATEGORIES: LegalDocumentCategory[] = [
@@ -156,6 +159,38 @@ const LegislacaoPage: React.FC = () => {
     navigator.clipboard.writeText(`${doc.title} (${doc.scope}, ${parseYear(doc.date)}). ${doc.issuer}. Fonte: ${doc.sourceLabel}.`);
     setCopiedId(doc.id);
     setTimeout(() => setCopiedId(null), 2200);
+  };
+
+  const buildLegislationExport = (): ExportCatalogOptions<PublicLegalDocument> => {
+    const parts: string[] = [];
+    if (activeScope !== 'Todos') parts.push(`Esfera: ${activeScope}`);
+    if (activeCategory !== 'Todos') parts.push(`Tipo: ${activeCategory}`);
+    if (searchTerm.trim()) parts.push(`Busca: "${searchTerm.trim()}"`);
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const resolveFullUrl = (u: string) => (u.startsWith('http') ? u : `${origin}${u}`);
+
+    const slugSuffix = activeScope !== 'Todos' ? `-${normalizeText(activeScope)}` : '';
+
+    return {
+      title: 'Relação de Legislação e Normas Patrimoniais',
+      subtitle: 'Superintendência do Patrimônio Cultural do Maranhão (SPC/SECMA)',
+      filterSummary: parts.length ? parts.join(' · ') : `Acervo completo (${filteredDocuments.length} atos oficiais)`,
+      sheetName: 'Legislacao_SPC',
+      fileNameBase: `spc-legislacao-patrimonial${slugSuffix}`,
+      rows: filteredDocuments,
+      sourceUrl: `${origin}/legislacao`,
+      columns: [
+        { header: 'Ano', width: 9, value: (d) => parseYear(d.date) },
+        { header: 'Esfera', width: 13, value: (d) => d.scope },
+        { header: 'Tipo de Ato', width: 18, value: (d) => d.category },
+        { header: 'Título / Norma', width: 42, value: (d) => d.title },
+        { header: 'Ementa / Resumo', width: 48, value: (d) => d.description },
+        { header: 'Órgão Emissor', width: 28, value: (d) => d.issuer },
+        { header: 'Formato', width: 10, value: (d) => d.format },
+        { header: 'Link / Arquivo Oficial', width: 42, value: (d) => resolveFullUrl(d.sourceUrl) }
+      ]
+    };
   };
 
   const renderDocDetail = (doc: PublicLegalDocument) => {
@@ -328,7 +363,7 @@ const LegislacaoPage: React.FC = () => {
             })}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <select
               aria-label="Filtrar por tipo de ato"
               value={activeCategory}
@@ -350,6 +385,26 @@ const LegislacaoPage: React.FC = () => {
                 <X size={13} /> Limpar
               </button>
             )}
+            <button
+              type="button"
+              disabled={filteredDocuments.length === 0}
+              onClick={() => downloadCatalogXlsx(buildLegislationExport())}
+              title={`Baixar ${filteredDocuments.length} ${filteredDocuments.length === 1 ? 'norma' : 'normas'} em planilha Excel (.xlsx)`}
+              className="min-h-[38px] inline-flex items-center gap-1.5 rounded-xl border border-[#256B58]/35 bg-white hover:bg-[#256B58] hover:text-white px-3 py-1.5 text-xs font-bold text-[#256B58] transition-colors disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <FileSpreadsheet size={14} aria-hidden="true" />
+              <span>Excel</span>
+            </button>
+            <button
+              type="button"
+              disabled={filteredDocuments.length === 0}
+              onClick={() => printCatalogPdf(buildLegislationExport())}
+              title={`Imprimir ou salvar em PDF (${filteredDocuments.length} ${filteredDocuments.length === 1 ? 'norma' : 'normas'})`}
+              className="min-h-[38px] inline-flex items-center gap-1.5 rounded-xl border border-[#E5DDD5] bg-white hover:bg-[#071D33] hover:text-white px-3 py-1.5 text-xs font-bold text-[#071D33] transition-colors disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <Printer size={14} aria-hidden="true" />
+              <span>PDF</span>
+            </button>
           </div>
         </div>
 
