@@ -4,7 +4,7 @@ import { OrigamiMenu } from '../components/ui/OrigamiMenu';
 import { PUBLIC_LEGAL_DOCUMENTS } from '../data/publicLegalDocuments';
 import { BENS_TOMBADOS, DECRETOS_PDF } from '../data/bensTombados';
 import { MAPAS_HISTORICOS } from '../data/mapasHistoricos';
-import { SITE_CONTACT, DEPARTMENTS } from '../data/siteContact';
+import { DEPARTMENTS } from '../data/siteContact';
 import { usePageTitle } from '../hooks/usePageTitle';
 
 const SERVICOS = [
@@ -226,24 +226,6 @@ export const HomePage: React.FC = () => {
             </li>
           ))}
         </ul>
-      </section>
-
-      <section className="bg-brand-navy text-white py-10" aria-labelledby="contato-titulo">
-        <div className="max-w-[1240px] mx-auto px-6 flex flex-wrap items-center justify-between gap-6">
-          <div className="text-sm">
-            <h2 id="contato-titulo" className="text-lg font-bold">Contato</h2>
-            <p className="mt-2 text-slate-200">
-              {SITE_CONTACT.buildingName}, {SITE_CONTACT.addressLine}, {SITE_CONTACT.city}
-            </p>
-            <p className="text-slate-200">
-              <a className="underline" href={`mailto:${SITE_CONTACT.email}`}>{SITE_CONTACT.email}</a>
-            </p>
-          </div>
-          <div className="flex gap-3 text-sm font-bold">
-            <Link to="/contato" className="rounded bg-white px-4 py-2 text-brand-navy">Contato</Link>
-            <Link to="/denuncia" className="rounded border border-white px-4 py-2">Denúncia</Link>
-          </div>
-        </div>
       </section>
     </div>
   );
