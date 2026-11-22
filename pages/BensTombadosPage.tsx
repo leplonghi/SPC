@@ -59,6 +59,7 @@ const BensTombadosPage: React.FC = () => {
   const [params] = useSearchParams();
   const qInicial = params.get('q') ?? '';
   const munInicial = params.get('municipio') ?? '';
+  const bemInicial = params.get('bem') ?? '';
 
   const [busca, setBusca] = useState(qInicial);
   const [municipio, setMunicipio] = useState(ordemMunicipios.includes(munInicial) ? munInicial : '');
@@ -67,15 +68,25 @@ const BensTombadosPage: React.FC = () => {
   const [soPdf, setSoPdf] = useState(false);
   const [mostrarGraficos, setMostrarGraficos] = useState(false);
 
-  const [selectedId, setSelectedId] = useState<string>(BENS_TOMBADOS[0].id);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string>(
+    BENS_TOMBADOS.some((b) => b.id === bemInicial) ? bemInicial : BENS_TOMBADOS[0].id
+  );
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(
+    BENS_TOMBADOS.some((b) => b.id === bemInicial)
+  );
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
+  const [copiadoLinkId, setCopiadoLinkId] = useState<string | null>(null);
 
   useEffect(() => {
     const qParam = params.get('q');
     const munParam = params.get('municipio');
+    const bemParam = params.get('bem');
     if (qParam !== null) setBusca(qParam);
     if (munParam !== null && ordemMunicipios.includes(munParam)) setMunicipio(munParam);
+    if (bemParam !== null && BENS_TOMBADOS.some((b) => b.id === bemParam)) {
+      setSelectedId(bemParam);
+      setMobileDrawerOpen(true);
+    }
   }, [params]);
 
   const temPdf = (b: BemTombado) => Boolean(DECRETOS_PDF[b.decreto.numero]);
@@ -104,6 +115,13 @@ const BensTombadosPage: React.FC = () => {
   const handleSelectBem = (bem: BemTombado) => {
     setSelectedId(bem.id);
     setMobileDrawerOpen(true);
+  };
+
+  const copiarLinkDireto = (bem: BemTombado) => {
+    const url = `${window.location.origin}/#/bens-tombados?bem=${encodeURIComponent(bem.id)}`;
+    navigator.clipboard?.writeText(url).catch(() => {});
+    setCopiadoLinkId(bem.id);
+    setTimeout(() => setCopiadoLinkId(null), 2200);
   };
 
   const copiarCitacao = (bem: BemTombado) => {
@@ -295,25 +313,44 @@ const BensTombadosPage: React.FC = () => {
           </Link>
         </div>
 
-        {/* Rodapé: Copiar citação */}
-        <div className="flex items-center justify-between pt-1 text-xs">
-          <button
-            type="button"
-            onClick={() => copiarCitacao(bem)}
-            className="inline-flex items-center gap-1.5 font-bold text-[#2F5F78] hover:text-[#071D33]"
-          >
-            {copiadoId === bem.id ? (
-              <>
-                <Check size={14} className="text-[#256B58]" />
-                <span className="text-[#256B58]">Citação copiada!</span>
-              </>
-            ) : (
-              <>
-                <Copy size={14} />
-                <span>Copiar citação técnica</span>
-              </>
-            )}
-          </button>
+        {/* Rodapé: Copiar citação e link direto */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs">
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              onClick={() => copiarCitacao(bem)}
+              className="inline-flex items-center gap-1.5 font-bold text-[#2F5F78] hover:text-[#071D33]"
+            >
+              {copiadoId === bem.id ? (
+                <>
+                  <Check size={14} className="text-[#256B58]" />
+                  <span className="text-[#256B58]">Citação copiada!</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={14} />
+                  <span>Copiar citação técnica</span>
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => copiarLinkDireto(bem)}
+              className="inline-flex items-center gap-1.5 font-bold text-[#2F5F78] hover:text-[#071D33]"
+            >
+              {copiadoLinkId === bem.id ? (
+                <>
+                  <Check size={14} className="text-[#256B58]" />
+                  <span className="text-[#256B58]">Link copiado!</span>
+                </>
+              ) : (
+                <>
+                  <ArrowRight size={14} />
+                  <span>Copiar link direto</span>
+                </>
+              )}
+            </button>
+          </div>
           <a href={`mailto:${SITE_CONTACT.email}?subject=Consulta%20Bem%20%23${bem.id}`} className="text-slate-500 hover:text-[#071D33] underline">
             Reportar divergência
           </a>

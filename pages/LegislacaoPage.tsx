@@ -30,6 +30,7 @@ const CATEGORIES: LegalDocumentCategory[] = [
   'Portaria',
   'Instrução Normativa',
   'Resolução',
+  'Certidão',
   'Diretriz',
   'Manual'
 ];
@@ -90,6 +91,7 @@ const LegislacaoPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') ?? '');
   const urlQuery = searchParams.get('q');
+  const urlDoc = searchParams.get('doc');
 
   useEffect(() => {
     if (urlQuery !== null) setSearchTerm(urlQuery);
@@ -98,9 +100,17 @@ const LegislacaoPage: React.FC = () => {
   const [activeScope, setActiveScope] = useState<'Todos' | LegalDocumentScope>('Todos');
   const [activeCategory, setActiveCategory] = useState<'Todos' | LegalDocumentCategory>('Todos');
   const [publishedDocuments, setPublishedDocuments] = useState<PublicLegalDocument[]>([]);
-  const [selectedId, setSelectedId] = useState<string>(PUBLIC_LEGAL_DOCUMENTS[0].id);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string>(urlDoc || PUBLIC_LEGAL_DOCUMENTS[0].id);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(Boolean(urlDoc));
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (urlDoc) {
+      setSelectedId(urlDoc);
+      setMobileDrawerOpen(true);
+    }
+  }, [urlDoc]);
 
   useEffect(() => {
     const qRef = query(collection(db, 'legislation'), where('status', '==', 'published'));
@@ -159,6 +169,13 @@ const LegislacaoPage: React.FC = () => {
     navigator.clipboard.writeText(`${doc.title} (${doc.scope}, ${parseYear(doc.date)}). ${doc.issuer}. Fonte: ${doc.sourceLabel}.`);
     setCopiedId(doc.id);
     setTimeout(() => setCopiedId(null), 2200);
+  };
+
+  const copyDirectLink = (doc: PublicLegalDocument) => {
+    const url = `${window.location.origin}/#/legislacao?doc=${encodeURIComponent(doc.id)}`;
+    navigator.clipboard.writeText(url);
+    setCopiedLinkId(doc.id);
+    setTimeout(() => setCopiedLinkId(null), 2200);
   };
 
   const buildLegislationExport = (): ExportCatalogOptions<PublicLegalDocument> => {
@@ -236,6 +253,24 @@ const LegislacaoPage: React.FC = () => {
               <>
                 <Copy size={14} />
                 <span>Copiar referência</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => copyDirectLink(doc)}
+            className="min-h-[44px] inline-flex items-center gap-1.5 rounded-xl border border-[#E5DDD5] bg-white hover:border-[#256B58] px-4 py-2.5 text-xs font-bold text-[#071D33] transition-colors"
+          >
+            {copiedLinkId === doc.id ? (
+              <>
+                <Check size={14} className="text-[#256B58]" />
+                <span className="text-[#256B58]">Link copiado</span>
+              </>
+            ) : (
+              <>
+                <ExternalLink size={14} />
+                <span>Copiar link direto</span>
               </>
             )}
           </button>

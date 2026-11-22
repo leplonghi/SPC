@@ -29,7 +29,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { BENS_TOMBADOS, DECRETOS_PDF } from '../data/bensTombados';
-import { PUBLIC_LEGAL_DOCUMENTS } from '../data/publicLegalDocuments';
+import {
+  PUBLIC_LEGAL_DOCUMENTS,
+  INTERNAL_CATALOG_LEGAL_DOCUMENTS
+} from '../data/publicLegalDocuments';
 import { MAPAS_HISTORICOS } from '../data/mapasHistoricos';
 import { SUPER_ADMIN_EMAIL } from '../data/adminConfig';
 import {
@@ -437,6 +440,7 @@ const AdminDashboard: React.FC = () => {
         <div className="w-full lg:w-64 bg-white border-r border-slate-200 p-4 space-y-1">
           {[
             { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard, role: 'any' },
+            { id: 'catalog', label: 'Acompanhamento & Ocultos', icon: Shield, role: 'any' },
             { id: 'analytics', label: 'Acessos & Visitantes', icon: BarChart, role: 'admin' },
             { id: 'assets', label: 'Bens Materiais', icon: MapIcon, role: 'any' },
             { id: 'intangible', label: 'Imaterial', icon: FilePlus, role: 'any' },
@@ -1235,6 +1239,140 @@ const AdminDashboard: React.FC = () => {
               )}
             </div>
           )}
+
+          {activeTab === 'catalog' && (() => {
+            const pendingByDecree = new Map<string, { numero: string; data: string | null; municipio: string; ids: string[]; nomes: string[] }>();
+            for (const bem of BENS_TOMBADOS) {
+              if (DECRETOS_PDF[bem.decreto.numero]) continue;
+              const existing = pendingByDecree.get(bem.decreto.numero);
+              if (existing) {
+                existing.ids.push(bem.id);
+                existing.nomes.push(bem.nome);
+              } else {
+                pendingByDecree.set(bem.decreto.numero, {
+                  numero: bem.decreto.numero,
+                  data: bem.decreto.data,
+                  municipio: bem.municipio,
+                  ids: [bem.id],
+                  nomes: [bem.nome]
+                });
+              }
+            }
+            const pendingList = Array.from(pendingByDecree.values()).sort((a, b) =>
+              a.numero.localeCompare(b.numero, undefined, { numeric: true })
+            );
+            const pendingInscriptionsCount = BENS_TOMBADOS.filter((b) => !DECRETOS_PDF[b.decreto.numero]).length;
+
+            const exportPendingCsv = () => {
+              const header = 'decreto_numero;data_decreto;municipio;inscricoes;bens';
+              const rows = pendingList.map(
+                (item) =>
+                  `${item.numero};${item.data || 'a confirmar'};${item.municipio};${item.ids.join(' | ')};${item.nomes.join(' | ')}`
+              );
+              const blob = new Blob(['\uFEFF' + [header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `spc-decretos-pendentes-${new Date().toISOString().slice(0, 10)}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            };
+
+            return (
+              <div className="space-y-6">
+                {/* Bloco 1: Documentos Mantidos Ocultos na Página Pública */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-amber-700">
+                        <Shield size={14} /> Catalogação Interna (Ocultos em /legislacao)
+                      </span>
+                      <h2 className="text-lg font-black text-slate-900 mt-0.5">
+                        Atos Normativos em Acompanhamento Interno ({INTERNAL_CATALOG_LEGAL_DOCUMENTS.length})
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Arquivados em <code>public/documentos/legislacao/</code> e ocultos do público conforme decisão editorial.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
+                    {INTERNAL_CATALOG_LEGAL_DOCUMENTS.map((doc) => (
+                      <div key={doc.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/40">
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+                            <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900">Oculto no site público</span>
+                            <span className="text-slate-500">{doc.scope} · {doc.category}</span>
+                          </div>
+                          <p className="text-sm font-bold text-slate-900">{doc.title}</p>
+                          <p className="text-xs text-slate-500">{doc.note}</p>
+                        </div>
+                        <a
+                          href={doc.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition"
+                        >
+                          <Download size={14} />
+                          <span>Abrir PDF</span>
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Bloco 2: Decretos Pendentes de Digitalização */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-brand-blue">
+                        <Database size={14} /> Pendências de Digitalização (DOE/MA)
+                      </span>
+                      <h2 className="text-lg font-black text-slate-900 mt-0.5">
+                        {pendingList.length} Decretos sem PDF ({pendingInscriptionsCount} inscrições)
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Lista calculada automaticamente comparando os 63 bens tombados com os 16 decretos já digitalizados.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={exportPendingCsv}
+                      className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-800 transition"
+                    >
+                      <Download size={14} className="text-emerald-700" />
+                      <span>Exportar Lista CSV</span>
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto border border-slate-100 rounded-xl">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wider">
+                        <tr>
+                          <th className="px-4 py-2.5">Decreto nº</th>
+                          <th className="px-4 py-2.5">Data</th>
+                          <th className="px-4 py-2.5">Município</th>
+                          <th className="px-4 py-2.5">Inscrições</th>
+                          <th className="px-4 py-2.5">Bens Vinculados</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {pendingList.map((item) => (
+                          <tr key={item.numero} className="hover:bg-slate-50/70">
+                            <td className="px-4 py-2.5 font-mono font-bold text-slate-900 whitespace-nowrap">{item.numero}</td>
+                            <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{item.data || 'a confirmar'}</td>
+                            <td className="px-4 py-2.5 font-semibold text-slate-700 whitespace-nowrap">{item.municipio}</td>
+                            <td className="px-4 py-2.5 font-mono text-slate-600 whitespace-nowrap">{item.ids.map((id) => `#${id}`).join(', ')}</td>
+                            <td className="px-4 py-2.5 text-slate-600">{item.nomes.join(' · ')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

@@ -991,6 +991,331 @@ export const MAPAS_HISTORICOS: MapaHistorico[] = [
         buscaTombamento: 'Carolina'
       }
     ]
+  },
+  {
+    id: 'sao-luis-poligonal-fed-est-unesco',
+    categoria: 'Mapa de Tombamento',
+    ano: 'São Luís (Fed. / Est. / UNESCO)',
+    epocaLabel: 'Poligonais Federal, Estadual (Dec. 11.591/1990) e Patrimônio Mundial UNESCO',
+    municipio: 'São Luís',
+    municipiosRelacionados: ['São Luís'],
+    titulo: 'Mapa Oficial das Poligonais de Tombamento — Federal, Estadual e UNESCO (São Luís)',
+    autor: 'DPHAP / Superintendência do Patrimônio Cultural (SPC/SECMA)',
+    fonte: 'Acervo Cartográfico DPHAP/SPC (2019) · Decretos Estaduais nº 10.089/1986 e nº 11.591/1990',
+    src: '/cena-fotos/MAN_2019_SLZ_MAPA_TOMBAMENTO_FED_EST_UNESCO.jpg',
+    srcFull: '/cena-fotos/MAN_2019_SLZ_MAPA_TOMBAMENTO_FED_EST_UNESCO.jpg',
+    downloadUrl: '/cena-fotos/MAN_2019_SLZ_MAPA_TOMBAMENTO_FED_EST_UNESCO.pdf',
+    formatoDownload: 'PDF Vetorial de Alta Precisão + JPG',
+    width: 2800,
+    height: 1981,
+    alt: 'Mapa oficial do Centro Histórico de São Luís delimitando simultaneamente a área de tombamento estadual, o perímetro de tombamento federal (IPHAN) e a área inscrita como Patrimônio Mundial pela UNESCO.',
+    resumo:
+      'Prancha técnica vetorial do DPHAP/SPC que sobrepõe, sobre a base cartográfica entre os rios Anil e Bacanga, o perímetro da Área Tombada pelo Governo Estadual (Decreto nº 11.591/1990), o Tombamento Federal (IPHAN) e a Área Inscrita como Patrimônio Mundial pela UNESCO.',
+    leituraUrbana:
+      'Permite a arquitetos, proprietários e técnicos identificar rapidamente se um lote no Centro Histórico de São Luís está sob tutela estadual, federal ou de dupla proteção (Estadual + IPHAN/UNESCO).',
+    points: [
+      {
+        id: 'slz-fed-est-praia-grande',
+        label: 'Núcleo Praia Grande / UNESCO e Tombamento Federal',
+        nomeAtual: 'Praia Grande, Rua Portugal e Av. Pedro II (Insc. #037 e #050)',
+        x: 0.255,
+        y: 0.305,
+        descricao:
+          'Setor central em amarelo: sobreposição entre a Área Inscrita pela UNESCO, o tombamento federal (IPHAN) e o tombamento estadual do Centro Histórico.',
+        bemIds: ['037', '050'],
+        buscaTombamento: 'Praia Grande'
+      },
+      {
+        id: 'slz-fed-est-nucleo-laranja',
+        label: 'Transição Largo do Carmo / Rua Grande (Decs. 10.089 e 11.591)',
+        nomeAtual: 'Setor de Sobreposição Estadual — Centro (Insc. #037 e #050)',
+        x: 0.365,
+        y: 0.295,
+        descricao:
+          'Trecho em laranja abrangido simultaneamente pelos Decretos Estaduais nº 10.089/1986 e nº 11.591/1990.',
+        bemIds: ['037', '050'],
+        buscaTombamento: 'Centro Histórico'
+      },
+      {
+        id: 'slz-fed-est-desterro',
+        label: 'Desterro e Margem do Rio Bacanga',
+        nomeAtual: 'Bairro do Desterro e Portinho (Insc. #037 e #050)',
+        x: 0.270,
+        y: 0.545,
+        descricao:
+          'Porção sul do núcleo colonial voltada ao Rio Bacanga, abrangendo o bairro histórico do Desterro e entorno.',
+        bemIds: ['037', '050'],
+        buscaTombamento: 'Desterro'
+      },
+      {
+        id: 'slz-fed-est-expansao-estadual',
+        label: 'Área de Abrangência Estadual (Decreto nº 10.089/1986)',
+        nomeAtual: 'Perímetro Ampliado de Tombamento Estadual — Centro, Apicum e Lira',
+        x: 0.455,
+        y: 0.420,
+        descricao:
+          'Poligonal em rosa protegida pelo Governo Estadual (Decreto nº 10.089/1986), envolvendo os bairros históricos adjacentes ao núcleo federal.',
+        bemIds: ['037', '050', '056'],
+        buscaTombamento: 'Centro Histórico'
+      }
+    ]
+  },
+  {
+    id: 'sao-luis-setorizacao-ch',
+    categoria: 'Mapa de Tombamento',
+    ano: 'São Luís (Setorização)',
+    epocaLabel: 'Gestão Técnica DPHAP · Setores 1 a 5 do Centro Histórico',
+    municipio: 'São Luís',
+    municipiosRelacionados: ['São Luís'],
+    titulo: 'Mapa de Setorização do Centro Histórico de São Luís (Setores 1 a 5)',
+    autor: 'DPHAP / Superintendência do Patrimônio Cultural (SPC/SECMA)',
+    fonte: 'Acervo Cartográfico DPHAP/SPC (2018) · Base Cadastral de Quadras do Centro Histórico',
+    src: '/cena-fotos/MAN_2018_SLZ_SETORIZACAO_CH.jpg',
+    srcFull: '/cena-fotos/MAN_2018_SLZ_SETORIZACAO_CH.jpg',
+    downloadUrl: '/cena-fotos/MAN_2018_SLZ_SETORIZACAO_CH.pdf',
+    formatoDownload: 'PDF Vetorial de Quadras + JPG',
+    width: 2800,
+    height: 1978,
+    alt: 'Planta cadastral do Centro Histórico de São Luís dividida em cinco setores numerados (Setor 1 a Setor 5) com numeração individual de quadras.',
+    resumo:
+      'Mapa cadastral de quadras que divide o Centro Histórico de São Luís em cinco setores técnicos (Setor 1 a Setor 5), utilizado pelo DPHAP para fiscalização, vistorias e organização dos processos de análise arquitetônica.',
+    leituraUrbana:
+      'A numeração sequencial de quadras facilita a localização exata de imóveis em processos de certidão de poligonal, projetos de intervenção e vistorias de campo.',
+    points: [
+      {
+        id: 'slz-setor-praia-grande',
+        label: 'Núcleo Praia Grande / Centro (Quadras 01 a 164)',
+        nomeAtual: 'Praia Grande, Centro Cívico e Desterro',
+        x: 0.255,
+        y: 0.295,
+        descricao:
+          'Quadras cadastrais do núcleo fundacional oeste (Praia Grande, Av. Pedro II e Largo do Carmo).',
+        bemIds: ['037', '044', '050'],
+        buscaTombamento: 'Centro Histórico'
+      },
+      {
+        id: 'slz-setor-1-2',
+        label: 'Setores 1 (Verde) e 2 (Azul) — Faixa Norte',
+        nomeAtual: 'Quadras Norte do Centro Histórico (próximo ao Rio Anil)',
+        x: 0.435,
+        y: 0.235,
+        descricao:
+          'Setores técnicos 1 e 2 na porção norte-nordeste do Centro Histórico de São Luís.',
+        bemIds: ['050'],
+        buscaTombamento: 'São Luís'
+      },
+      {
+        id: 'slz-setor-3',
+        label: 'Setor 3 (Ciano) — Faixa Central',
+        nomeAtual: 'Quadras Centrais de Transição (Quadras 112 a 156)',
+        x: 0.425,
+        y: 0.435,
+        descricao:
+          'Setor técnico 3 no eixo central da poligonal estadual de São Luís.',
+        bemIds: ['050', '056'],
+        buscaTombamento: 'São Luís'
+      },
+      {
+        id: 'slz-setor-4-5',
+        label: 'Setores 4 (Magenta) e 5 (Vermelho) — Faixa Sul',
+        nomeAtual: 'Quadras Sul — Madre Deus, Lira e Entorno do Bacanga',
+        x: 0.450,
+        y: 0.600,
+        descricao:
+          'Setores técnicos 4 e 5 cobrindo a porção meridional da área protegida estadual.',
+        bemIds: ['050'],
+        buscaTombamento: 'São Luís'
+      }
+    ]
+  },
+  {
+    id: 'sao-luis-estilos-arquitetonicos',
+    categoria: 'Mapa de Tombamento',
+    ano: 'São Luís (Estilos Arquitetônicos)',
+    epocaLabel: 'Levantamento Tipológico · Escala 1:3.000',
+    municipio: 'São Luís',
+    municipiosRelacionados: ['São Luís'],
+    titulo: 'Levantamento de Estilos Arquitetônicos do Centro Histórico de São Luís',
+    autor: 'Prefeitura de São Luís (Instituto da Cidade) / Acervo DPHAP (SPC/SECMA)',
+    fonte: 'Levantamento Urbanístico do Centro Histórico de São Luís — Estilo Arquitetônico · Escala 1:3.000',
+    src: '/cena-fotos/MAN_s.d._SLZ_ESTILOS_ARQUITETONICOS.jpg',
+    srcFull: '/cena-fotos/MAN_s.d._SLZ_ESTILOS_ARQUITETONICOS.jpg',
+    downloadUrl: '/cena-fotos/MAN_s.d._SLZ_ESTILOS_ARQUITETONICOS.pdf',
+    formatoDownload: 'PDF Vetorial Temático (1:3.000) + JPG',
+    width: 2800,
+    height: 1981,
+    alt: 'Mapa temático em escala 1:3.000 classificando os imóveis do Centro Histórico de São Luís por estilo arquitetônico: Tradicional Português, Neoclássico, Eclético, Neocolonial, Art Déco e Moderno.',
+    resumo:
+      'Prancha temática em escala 1:3.000 que classifica lote a lote o acervo edificado do Centro Histórico de São Luís segundo seis matrizes estilísticas: Tradicional Português, Neoclássico, Eclético, Neocolonial, Art Déco e Moderno.',
+    leituraUrbana:
+      'Ferramenta fundamental de apoio ao Manual de Tipologias e Preservação do DPHAP, evidenciando a predominância do casario luso-brasileiro no núcleo da Praia Grande e a diversidade eclética e art déco nos eixos comerciais.',
+    points: [
+      {
+        id: 'slz-estilo-portugues',
+        label: 'Núcleo Tradicional Português (Cinza)',
+        nomeAtual: 'Casario Colonial e Azulejado da Praia Grande e Desterro',
+        x: 0.155,
+        y: 0.405,
+        descricao:
+          'Maior concentração contínua de sobrados, moradas inteiras e meias-moradas de matriz tradicional portuguesa em São Luís.',
+        bemIds: ['037', '050'],
+        buscaTombamento: 'Sobrado'
+      },
+      {
+        id: 'slz-estilo-ecletico-artdeco',
+        label: 'Eixos Eclético, Neoclássico e Art Déco',
+        nomeAtual: 'Rua Grande, Praça João Lisboa e Centro Expandido',
+        x: 0.315,
+        y: 0.335,
+        descricao:
+          'Corredores urbanos onde se destacam exemplares ecléticos, neoclássicos, neocoloniais e art déco do início do século XX.',
+        bemIds: ['049', '050'],
+        buscaTombamento: 'Edifício'
+      },
+      {
+        id: 'slz-estilo-sul',
+        label: 'Setor Sul — Predominância de Intervenções Modernas',
+        nomeAtual: 'Porção Meridional da Área de Entorno (Madre Deus / Lira)',
+        x: 0.345,
+        y: 0.610,
+        descricao:
+          'Setor sul do levantamento tipológico com mescla de edificações tradicionais e inserções contemporâneas.',
+        bemIds: ['050'],
+        buscaTombamento: 'São Luís'
+      }
+    ]
+  },
+  {
+    id: 'alcantara-mapa-cidade',
+    categoria: 'Mapa de Tombamento',
+    ano: 'Alcântara (Mapa Geral)',
+    epocaLabel: 'Decreto Estadual nº 11.683/1990 · Planta 1:5000 (DPHAP)',
+    municipio: 'Alcântara',
+    municipiosRelacionados: ['Alcântara'],
+    titulo: 'Mapa Geral da Cidade de Alcântara — Malha Urbana e Nomenclatura de Ruas',
+    autor: 'DPHAP / Secretaria de Cultura do Estado do Maranhão',
+    fonte: 'Acervo Cartográfico DPHAP/SPC — Planta da Cidade (Escala 1:5000) · Insc. #013, #017, #018 e #060',
+    src: '/cena-fotos/MAN_s.d._ALC_MAPA_CIDADE.jpg',
+    srcFull: '/cena-fotos/MAN_s.d._ALC_MAPA_CIDADE.jpg',
+    downloadUrl: '/cena-fotos/MAN_s.d._ALC_MAPA_CIDADE.pdf',
+    formatoDownload: 'PDF Prancha 1:5000 (21,1 MB) + JPG',
+    width: 2800,
+    height: 2043,
+    alt: 'Planta da cidade de Alcântara em escala 1:5000 com nomenclatura primitiva de ruas, legenda bilíngue português-francês, Foz do Rio Ferijó, Ilha do Livramento e Baía de São Marcos.',
+    resumo:
+      'Prancha cartográfica histórica da Secretaria de Cultura/DPHAP em escala 1:5000 com a malha urbana completa de Alcântara, nomenclatura primitiva de 32 logradouros e legenda bilíngue (português/francês) de 21 monumentos e marcos.',
+    leituraUrbana:
+      'Complementa o mapa de monumentos do Sítio Histórico (Decreto Estadual nº 11.683/1990) ao situar o núcleo colonial em relação ao Porto do Jacaré, Foz do Rio Ferijó, Ilha do Livramento e Baía de São Marcos.',
+    points: [
+      {
+        id: 'alc-cidade-nucleo',
+        label: 'Largo da Matriz, Pelourinho e Rua Grande',
+        nomeAtual: 'Núcleo Central do Sítio Histórico de Alcântara (Insc. #013, #017, #018 e #060)',
+        x: 0.375,
+        y: 0.555,
+        descricao:
+          'Coração urbano protegido pelo Decreto Estadual nº 11.683/1990, reunindo a Matriz de São Matias, Casa de Câmara e Cadeia, Pelourinho e Rua Grande.',
+        bemIds: ['013', '017', '018', '060'],
+        buscaTombamento: 'Alcântara'
+      },
+      {
+        id: 'alc-cidade-porto-jacare',
+        label: 'Porto e Praia do Jacaré / Igarapé',
+        nomeAtual: 'Setor Oeste — Acesso Portuário Histórico de Alcântara',
+        x: 0.270,
+        y: 0.550,
+        descricao:
+          'Acesso histórico de desembarque na margem do igarapé, articulando a Ladeira do Jacaré ao centro monumental.',
+        bemIds: ['060'],
+        buscaTombamento: 'Alcântara'
+      },
+      {
+        id: 'alc-cidade-largo-carmo',
+        label: 'Largo do Carmo e Expansão Norte',
+        nomeAtual: 'Setor Norte — Convento do Carmo e Rua da Quinta',
+        x: 0.405,
+        y: 0.445,
+        descricao:
+          'Porção norte da malha urbana representada na planta 1:5000, abrangendo o entorno do Carmo e vias de expansão.',
+        bemIds: ['060'],
+        buscaTombamento: 'Alcântara'
+      },
+      {
+        id: 'alc-cidade-ilha-livramento',
+        label: 'Ilha do Livramento e Foz do Rio Ferijó',
+        nomeAtual: 'Paisagem Costeira da Baía de São Marcos',
+        x: 0.220,
+        y: 0.855,
+        descricao:
+          'Ilha do Livramento na desembocadura do Rio Ferijó, elemento marcante da moldura paisagística de Alcântara.',
+        bemIds: ['060'],
+        buscaTombamento: 'Alcântara'
+      }
+    ]
+  },
+  {
+    id: 'sao-jose-de-ribamar-poligonal',
+    categoria: 'Mapa de Tombamento',
+    ano: 'São José de Ribamar (Estudo)',
+    epocaLabel: 'Parecer Técnico DPHAP nº 025/2023 · SIRGAS 2000 UTM 23S',
+    municipio: 'São José de Ribamar',
+    municipiosRelacionados: ['São José de Ribamar'],
+    titulo: 'Conjunto Arquitetônico e Urbanístico de São José de Ribamar — Poligonais de Tombamento e Entorno',
+    autor: 'DPHAP / Superintendência do Patrimônio Cultural (Aryanne da Silva Firmino, 04/2023)',
+    fonte: 'Acervo Cartográfico DPHAP/SPC (04/2023) · Base IBGE 2020 · Parecer Técnico nº 025/2023',
+    src: '/cena-fotos/MAN_2023_SJR_MAPA_TOMBAMENTO.jpg',
+    srcFull: '/cena-fotos/MAN_2023_SJR_MAPA_TOMBAMENTO.jpg',
+    downloadUrl: '/cena-fotos/MAN_2023_SJR_MAPA_TOMBAMENTO.pdf',
+    formatoDownload: 'PDF Técnico Georreferenciado + JPG',
+    width: 2526,
+    height: 1785,
+    alt: 'Mapa georreferenciado (SIRGAS 2000 UTM 23S) do Conjunto Arquitetônico e Urbanístico de São José de Ribamar delimitando a Área Tombada e o Entorno Imediato, com destaque para a Igreja Matriz, Praça da Matriz e Monumento de São José de Ribamar.',
+    resumo:
+      'Mapa técnico georreferenciado (SIRGAS 2000, Zona 23S) das poligonais de tombamento e entorno imediato do Conjunto Arquitetônico e Urbanístico de São José de Ribamar, abrangendo a Igreja Matriz, Praça da Matriz, Monumento de São José de Ribamar e Gruta de Nossa Senhora de Lourdes (estudo técnico vinculado ao Parecer DPHAP nº 025/2023).',
+    leituraUrbana:
+      'Delimita o perímetro nuclear do santuário ribamarense (em salmão) e a faixa tracejada de entorno imediato voltada à orla e ao cais, servindo de base cartográfica para a instrução técnica de preservação do complexo.',
+    points: [
+      {
+        id: 'sjr-igreja-matriz',
+        label: 'Igreja Matriz de São José de Ribamar',
+        nomeAtual: 'Santuário da Igreja Matriz (Área Tombada)',
+        x: 0.345,
+        y: 0.445,
+        descricao:
+          'Edificação principal do conjunto religioso na cabeceira norte da Praça da Matriz, inserida na poligonal da Área Tombada.',
+        buscaTombamento: 'Ribamar'
+      },
+      {
+        id: 'sjr-praca-matriz',
+        label: 'Praça da Matriz',
+        nomeAtual: 'Eixo Central da Praça da Matriz (Área Tombada)',
+        x: 0.362,
+        y: 0.525,
+        descricao:
+          'Espaço público linear em destaque verde que conecta a Igreja Matriz ao conjunto monumental voltado à baía.',
+        buscaTombamento: 'Ribamar'
+      },
+      {
+        id: 'sjr-monumento-gruta',
+        label: 'Monumento de São José de Ribamar e Gruta de N. Sra. de Lourdes',
+        nomeAtual: 'Extremo Sul da Área Tombada — Monumento e Gruta',
+        x: 0.431,
+        y: 0.642,
+        descricao:
+          'Marco monumental circular e Gruta de Nossa Senhora de Lourdes na extremidade sul da poligonal de tombamento, voltados à orla.',
+        buscaTombamento: 'Ribamar'
+      },
+      {
+        id: 'sjr-entorno-imediato',
+        label: 'Poligonal de Entorno Imediato ao Tombamento',
+        nomeAtual: 'Quadras Históricas do Entorno Imediato',
+        x: 0.290,
+        y: 0.345,
+        descricao:
+          'Perímetro tracejado de entorno imediato que envolve o casario e as vias adjacentes ao santuário.',
+        buscaTombamento: 'Ribamar'
+      }
+    ]
   }
 ];
 

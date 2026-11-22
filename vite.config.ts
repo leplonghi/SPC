@@ -33,6 +33,16 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: false,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/firebase')) return 'vendor-firebase';
+            if (id.includes('node_modules/three')) return 'vendor-three';
+            if (id.includes('node_modules/gsap')) return 'vendor-gsap';
+            if (id.includes('node_modules/leaflet')) return 'vendor-leaflet';
+          }
+        }
+      }
     },
     resolve: {
       alias: {

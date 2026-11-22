@@ -320,6 +320,33 @@ export const DepartamentoOficialPage: React.FC<DepartamentoOficialPageProps> = (
                   <span>Baixar Cartilha Completa (PDF)</span>
                 </a>
                 <a
+                  href="/documentos/legislacao/diretrizes-dphap-pintura-fachadas-historicas.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand-surface text-brand-navy border border-[#E5DDD5] text-xs font-bold uppercase tracking-wider hover:bg-slate-100 transition"
+                >
+                  <Download size={15} aria-hidden="true" />
+                  <span>Pintura em Fachadas (PDF)</span>
+                </a>
+                <a
+                  href="/documentos/servicos/dphap-requerimento-2024.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand-surface text-brand-navy border border-[#E5DDD5] text-xs font-bold uppercase tracking-wider hover:bg-slate-100 transition"
+                >
+                  <FileText size={15} aria-hidden="true" />
+                  <span>Requerimento DPHAP (PDF)</span>
+                </a>
+                <a
+                  href="/documentos/servicos/dphap-checklists-documentacoes.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand-surface text-brand-navy border border-[#E5DDD5] text-xs font-bold uppercase tracking-wider hover:bg-slate-100 transition"
+                >
+                  <FileText size={15} aria-hidden="true" />
+                  <span>Checklists de Documentos (PDF)</span>
+                </a>
+                <a
                   href="/imagens/infografico_engenhos.jpg"
                   target="_blank"
                   rel="noopener noreferrer"

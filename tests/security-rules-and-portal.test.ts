@@ -4,7 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BENS_TOMBADOS, DECRETOS_PDF } from '../data/bensTombados.ts';
-import { PUBLIC_LEGAL_DOCUMENTS } from '../data/publicLegalDocuments.ts';
+import {
+  PUBLIC_LEGAL_DOCUMENTS,
+  INTERNAL_CATALOG_LEGAL_DOCUMENTS
+} from '../data/publicLegalDocuments.ts';
 import { SEDE_MUNICIPIO } from '../data/municipios.ts';
 import { SUPER_ADMIN_EMAIL } from '../data/adminConfig.ts';
 import { MAPAS_HISTORICOS, getMapasTombamentoPorMunicipio } from '../data/mapasHistoricos.ts';
@@ -349,8 +352,8 @@ test('Etapa C e E - Integridade do acervo, legislação, mapas e configuração 
     assert.ok(fs.existsSync(pdfPath), `PDF do Decreto ${num} ausente em ${pdfPath}`);
   }
 
-  // 4. Verifica integridade dos 11 atos da biblioteca de legislação
-  assert.equal(PUBLIC_LEGAL_DOCUMENTS.length, 11);
+  // 4. Verifica integridade dos 18 atos públicos da biblioteca de legislação
+  assert.equal(PUBLIC_LEGAL_DOCUMENTS.length, 18);
   for (const doc of PUBLIC_LEGAL_DOCUMENTS) {
     if (doc.sourceUrl.startsWith('/')) {
       const localPath = path.join(ROOT_DIR, 'public', doc.sourceUrl);
@@ -358,8 +361,26 @@ test('Etapa C e E - Integridade do acervo, legislação, mapas e configuração 
     }
   }
 
-  // 5. Verifica integridade dos 12 mapas históricos e de tombamento em public/cena-fotos/
-  assert.equal(MAPAS_HISTORICOS.length, 12);
+  // 4.1 Verifica que documentos internos catalogados (Lei 5.205/1991 e Dec. 38.398/2023) existem em disco mas permanecem ocultos na página pública
+  assert.equal(INTERNAL_CATALOG_LEGAL_DOCUMENTS.length, 2);
+  const publicIds = new Set(PUBLIC_LEGAL_DOCUMENTS.map((d) => d.id));
+  for (const doc of INTERNAL_CATALOG_LEGAL_DOCUMENTS) {
+    assert.equal(publicIds.has(doc.id), false, `Documento interno ${doc.id} não deve estar em PUBLIC_LEGAL_DOCUMENTS`);
+    const localPath = path.join(ROOT_DIR, 'public', doc.sourceUrl);
+    assert.ok(fs.existsSync(localPath), `Arquivo interno catalogado ausente: ${localPath}`);
+  }
+
+  // 4.2 Verifica formulários e checklists oficiais do DPHAP em public/documentos/servicos/
+  for (const rel of [
+    '/documentos/servicos/dphap-requerimento-2024.pdf',
+    '/documentos/servicos/dphap-checklists-documentacoes.pdf'
+  ]) {
+    const localPath = path.join(ROOT_DIR, 'public', rel);
+    assert.ok(fs.existsSync(localPath), `Documento de serviço ausente: ${localPath}`);
+  }
+
+  // 5. Verifica integridade dos 17 mapas históricos e de tombamento em public/cena-fotos/
+  assert.equal(MAPAS_HISTORICOS.length, 17);
   for (const mapa of MAPAS_HISTORICOS) {
     const srcPath = path.join(ROOT_DIR, 'public', mapa.src);
     const dlPath = path.join(ROOT_DIR, 'public', mapa.downloadUrl);

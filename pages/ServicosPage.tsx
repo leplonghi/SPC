@@ -56,6 +56,10 @@ const SERVICOS_LIST: Service[] = [
       '3. Parecer Técnico Conclusivo e Certificado de Autorização'
     ],
     references: [
+      { label: 'Recomendações de Pintura em Fachadas Históricas (PDF)', href: '/documentos/legislacao/diretrizes-dphap-pintura-fachadas-historicas.pdf' },
+      { label: 'Baixar Requerimento Oficial DPHAP — Anexo I (PDF)', href: '/documentos/servicos/dphap-requerimento-2024.pdf' },
+      { label: 'Baixar Checklists de Documentação DPHAP (PDF)', href: '/documentos/servicos/dphap-checklists-documentacoes.pdf' },
+      { label: 'Manual: Tipologias e Preservação (PDF)', href: '/documentos/legislacao/manual-dphap-patrimonio-tipologias-preservacao.pdf' },
       { label: 'Legislação estadual de proteção', to: '/legislacao' },
       { label: 'Consultar se o bem é tombado', to: '/bens-tombados' }
     ]
@@ -80,6 +84,8 @@ const SERVICOS_LIST: Service[] = [
       '2. Emissão da certidão oficial assinada pela autoridade competente'
     ],
     references: [
+      { label: 'Baixar Requerimento Oficial DPHAP — Anexo I (PDF)', href: '/documentos/servicos/dphap-requerimento-2024.pdf' },
+      { label: 'Baixar Checklists de Documentação DPHAP (PDF)', href: '/documentos/servicos/dphap-checklists-documentacoes.pdf' },
       { label: 'Baixar mapas de poligonal dos municípios', to: '/mapa?categoria=tombamento' },
       { label: 'Consultar bens tombados', to: '/bens-tombados' }
     ]
@@ -106,6 +112,8 @@ const SERVICOS_LIST: Service[] = [
     ],
     references: [
       { label: 'Baixar Cartilha de Engenhos Publicitários (PDF)', href: '/documentos/legislacao/diretrizes-dphap-engenhos-publicitarios.pdf' },
+      { label: 'Baixar Requerimento Oficial DPHAP — Anexo I (PDF)', href: '/documentos/servicos/dphap-requerimento-2024.pdf' },
+      { label: 'Baixar Checklists de Documentação DPHAP (PDF)', href: '/documentos/servicos/dphap-checklists-documentacoes.pdf' },
       { label: 'Ver Infográfico Visual (JPG)', href: '/imagens/infografico_engenhos.jpg' }
     ]
   },
