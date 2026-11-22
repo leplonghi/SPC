@@ -171,7 +171,16 @@ const ServicosPage: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string>(
     SERVICOS_LIST.some((s) => s.id === initialSrv) ? initialSrv! : 's1'
   );
-  const [step, setStep] = useState<'docs' | 'form'>('docs');
+  const [step, setStep] = useState<'docs' | 'form'>('form');
+
+  const handleSelectService = (id: string) => {
+    setSelectedId(id);
+    setStep('form');
+    setShowSummary(false);
+    window.setTimeout(() => {
+      document.getElementById('painel-requerimento')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+  };
 
   const [userName, setUserName] = useState('');
   const [userDoc, setUserDoc] = useState('');
@@ -261,9 +270,9 @@ Data: ${new Date().toLocaleDateString('pt-BR')} — ${propertyCity}/MA`;
       </header>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-7 space-y-6">
-        {/* PASSO 1: 5 Cartões Diretos de Objetivo */}
+        {/* PASSO 1: 5 Ações Compactas — 1 clique leva direto ao formulário */}
         <section aria-label="Escolha o serviço">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
             {SERVICOS_LIST.map((srv) => {
               const Icon = srv.icon;
               const active = srv.id === selectedId;
@@ -271,32 +280,24 @@ Data: ${new Date().toLocaleDateString('pt-BR')} — ${propertyCity}/MA`;
                 <button
                   key={srv.id}
                   type="button"
-                  onClick={() => {
-                    setSelectedId(srv.id);
-                    setShowSummary(false);
-                  }}
-                  className={`text-left rounded-2xl p-4 border-2 transition-all flex flex-col justify-between gap-3 ${
+                  onClick={() => handleSelectService(srv.id)}
+                  className={`text-left rounded-xl px-3.5 py-3 border transition-all flex items-center gap-3 ${
                     active
-                      ? 'bg-[#B94734] text-white border-[#B94734] shadow-lg'
+                      ? 'bg-[#B94734] text-white border-[#B94734] shadow-md'
                       : 'bg-white text-[#071D33] border-[#E5DDD5] hover:border-[#B94734]/60 shadow-sm'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                        active ? 'bg-white/20 text-white' : 'bg-[#FAF8F5] text-[#B94734] border border-[#E5DDD5]'
-                      }`}
-                    >
-                      <Icon size={18} aria-hidden="true" />
-                    </span>
-                    <span className={`text-[10px] font-black uppercase tracking-wider ${active ? 'text-[#E9B44C]' : 'text-slate-400'}`}>
+                  <span
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                      active ? 'bg-white/20 text-white' : 'bg-[#FAF8F5] text-[#B94734] border border-[#E5DDD5]'
+                    }`}
+                  >
+                    <Icon size={16} aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-display text-xs font-bold leading-snug line-clamp-2">{srv.shortTitle}</p>
+                    <p className={`text-[10px] font-semibold mt-0.5 ${active ? 'text-[#E9B44C]' : 'text-slate-500'}`}>
                       {srv.department_responsible}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-display text-sm font-bold leading-snug">{srv.shortTitle}</p>
-                    <p className={`text-[11px] mt-0.5 ${active ? 'text-white/85' : 'text-slate-500'}`}>
-                      {srv.category}
                     </p>
                   </div>
                 </button>
@@ -305,38 +306,40 @@ Data: ${new Date().toLocaleDateString('pt-BR')} — ${propertyCity}/MA`;
           </div>
         </section>
 
-        {/* PASSO 2: Painel Focado em 2 Abas (Documentos & Regras | Preencher Requerimento) */}
-        <section className="bg-white rounded-3xl border border-[#E5DDD5] shadow-sm overflow-hidden">
-          <div className="p-5 sm:p-7 border-b border-[#E5DDD5] bg-[#FAF8F5] flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#B94734]">
+        {/* PASSO 2: Painel Focado — abre direto no Formulário com aba rápida de Documentos */}
+        <section
+          id="painel-requerimento"
+          className="scroll-mt-20 bg-white rounded-3xl border border-[#E5DDD5] shadow-sm overflow-hidden"
+        >
+          <div className="p-4 sm:p-6 border-b border-[#E5DDD5] bg-[#FAF8F5] flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#B94734]">
                 {service.department_responsible} · {service.category}
               </p>
-              <h2 className="font-serif text-xl sm:text-2xl font-medium text-[#071D33]">
+              <h2 className="font-serif text-lg sm:text-xl font-medium text-[#071D33]">
                 {service.title}
               </h2>
-              <p className="text-sm text-slate-600 max-w-2xl">{service.description}</p>
             </div>
 
-            {/* Alternador 2 Passos */}
+            {/* Alternador Rápido: Formulário (Padrão) | Documentos & Etapas */}
             <div className="inline-flex rounded-xl bg-white border border-[#E5DDD5] p-1 shrink-0 self-start">
               <button
                 type="button"
-                onClick={() => setStep('docs')}
-                className={`min-h-[40px] px-4 py-2 rounded-lg text-xs font-bold transition-colors ${
-                  step === 'docs' ? 'bg-[#071D33] text-white' : 'text-slate-600 hover:text-[#071D33]'
-                }`}
-              >
-                1. Documentos & Etapas
-              </button>
-              <button
-                type="button"
                 onClick={() => setStep('form')}
-                className={`min-h-[40px] px-4 py-2 rounded-lg text-xs font-bold transition-colors ${
+                className={`min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                   step === 'form' ? 'bg-[#B94734] text-white' : 'text-slate-600 hover:text-[#071D33]'
                 }`}
               >
-                2. Gerar Requerimento
+                Formulário
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep('docs')}
+                className={`min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                  step === 'docs' ? 'bg-[#071D33] text-white' : 'text-slate-600 hover:text-[#071D33]'
+                }`}
+              >
+                Documentos ({service.bring.length})
               </button>
             </div>
           </div>
