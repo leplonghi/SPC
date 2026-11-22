@@ -15,6 +15,7 @@ import {
   HelpCircle,
   Users,
   Gavel,
+  Scale,
   BookOpen,
   Library,
   Database,
@@ -213,7 +214,7 @@ const Navigation = () => {
     { label: 'Serviços', path: '/servicos', icon: <FileText size={18} /> },
     { label: 'Bens tombados', path: '/bens-tombados', icon: <Landmark size={18} /> },
     { label: 'Mapas', path: '/mapa', icon: <MapIcon size={18} /> },
-    { label: 'Legislação', path: '/legislacao', icon: <Gavel size={18} /> },
+    { label: 'Legislação', path: '/legislacao', icon: <Scale size={18} /> },
     { label: 'Contato', path: '/contato', icon: <Mail size={18} /> },
   ];
 
@@ -225,8 +226,8 @@ const Navigation = () => {
 
   return (
     <>
-      {/* Barra de acessibilidade: faixa fina, rola junto com a página */}
-      <div className="bg-brand-navy text-white font-sans px-6 py-1 hidden md:block">
+      {/* Barra de acessibilidade com efeito Liquid Glass escuro */}
+      <div className="liquid-glass-topbar text-white font-sans px-6 py-1 hidden md:block">
         <div className="max-w-[1440px] mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-4 text-[11px] leading-none uppercase font-bold tracking-wider text-slate-200">
             <L to="/transparencia" className="hover:text-white transition-colors">Acesso à Informação</L>
@@ -290,10 +291,10 @@ const Navigation = () => {
         </div>
       </div>
 
-      {/* Main Navigation Header (Compacto e elegante no desktop e mobile) */}
+      {/* Main Navigation Header com Liquid Glass de última geração */}
       <nav
-        className={`fixed top-0 left-0 right-0 lg:sticky lg:top-0 z-[150] border-b bg-white/95 backdrop-blur-md py-1 transition-shadow duration-300
-        ${scrolled ? 'border-slate-200/80 shadow-md' : 'border-slate-200/70 shadow-sm'}`}
+        className={`fixed top-0 left-0 right-0 lg:sticky lg:top-0 z-[150] liquid-glass-header py-1.5 transition-all duration-300
+        ${scrolled ? 'shadow-lg' : ''}`}
       >
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6">
           <div className="flex justify-between items-center relative">
@@ -306,7 +307,7 @@ const Navigation = () => {
             </L>
 
             <div className="hidden lg:flex items-center gap-1.5">
-              <div className="flex items-center bg-white p-1 rounded-2xl">
+              <div className="flex items-center bg-white/55 backdrop-blur-md border border-white/70 p-1 rounded-full shadow-inner">
                 {navItems.map((item) => {
                   const isActive = location.pathname === item.path;
                   return (
@@ -503,54 +504,59 @@ const Navigation = () => {
         </div>
       )}
 
-      {/* Barra Inferior Fixa com Ícones (Mobile/Tablet < lg) — Navegação na zona do polegar */}
-      <nav
-        aria-label="Navegação principal mobile"
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-[160] bg-white/95 backdrop-blur-md border-t border-[#E5DDD5] shadow-[0_-4px_20px_rgba(7,29,51,0.08)] print:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      {/* Dock Inferior Flutuante Liquid Glass (Mobile/Tablet < lg) */}
+      <div
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-[160] px-3 pb-3 pt-1 pointer-events-none print:hidden"
+        style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
       >
-        <div className="grid grid-cols-5 h-16 max-w-md mx-auto">
-          {[
-            { label: 'Bens', path: '/bens-tombados', icon: Landmark },
-            { label: 'Mapas', path: '/mapa', icon: MapIcon },
-            { label: 'Leis', path: '/legislacao', icon: Gavel },
-            { label: 'Serviços', path: '/servicos', icon: FileText }
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const active = location.pathname === tab.path;
-            return (
-              <L
-                key={tab.path}
-                to={tab.path}
-                onClick={() => setIsOpen(false)}
-                aria-current={active ? 'page' : undefined}
-                className={`flex flex-col items-center justify-center gap-1 transition-colors relative ${
-                  active ? 'text-brand-navy font-extrabold' : 'text-slate-500 font-semibold hover:text-brand-navy'
-                }`}
-              >
-                {active && (
-                  <span aria-hidden="true" className="absolute top-0 left-3 right-3 h-0.5 rounded-full bg-brand-terracotta" />
-                )}
-                <Icon size={20} strokeWidth={active ? 2.4 : 1.9} aria-hidden="true" />
-                <span className="text-[10px] leading-none">{tab.label}</span>
-              </L>
-            );
-          })}
+        <nav
+          aria-label="Navegação principal mobile"
+          className="pointer-events-auto liquid-glass-dock rounded-[26px] max-w-md mx-auto px-1.5 py-1.5"
+        >
+          <div className="grid grid-cols-5 items-center">
+            {[
+              { label: 'Bens', path: '/bens-tombados', icon: Landmark },
+              { label: 'Mapas', path: '/mapa', icon: MapIcon },
+              { label: 'Legislação', path: '/legislacao', icon: Scale },
+              { label: 'Serviços', path: '/servicos', icon: FileText }
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const active = location.pathname === tab.path;
+              return (
+                <L
+                  key={tab.path}
+                  to={tab.path}
+                  onClick={() => setIsOpen(false)}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex flex-col items-center justify-center gap-0.5 py-2 rounded-[20px] transition-all duration-200 active:scale-95 ${
+                    active
+                      ? 'bg-brand-navy text-white shadow-md font-bold'
+                      : 'text-slate-700 font-semibold hover:bg-brand-navy/5 hover:text-brand-navy'
+                  }`}
+                >
+                  <Icon size={19} strokeWidth={active ? 2.3 : 1.9} aria-hidden="true" />
+                  <span className="text-[10px] leading-none tracking-tight">{tab.label}</span>
+                </L>
+              );
+            })}
 
-          <button
-            type="button"
-            onClick={() => setIsOpen((v) => !v)}
-            aria-expanded={isOpen}
-            aria-label={isOpen ? 'Fechar mais opções' : 'Abrir mais opções'}
-            className={`flex flex-col items-center justify-center gap-1 transition-colors relative ${
-              isOpen ? 'text-brand-terracotta font-extrabold' : 'text-slate-500 font-semibold hover:text-brand-navy'
-            }`}
-          >
-            {isOpen ? <X size={20} strokeWidth={2.4} aria-hidden="true" /> : <Menu size={20} strokeWidth={1.9} aria-hidden="true" />}
-            <span className="text-[10px] leading-none">Mais</span>
-          </button>
-        </div>
-      </nav>
+            <button
+              type="button"
+              onClick={() => setIsOpen((v) => !v)}
+              aria-expanded={isOpen}
+              aria-label={isOpen ? 'Fechar mais opções' : 'Abrir mais opções'}
+              className={`flex flex-col items-center justify-center gap-0.5 py-2 rounded-[20px] transition-all duration-200 active:scale-95 ${
+                isOpen
+                  ? 'bg-brand-terracotta text-white shadow-md font-bold'
+                  : 'text-slate-700 font-semibold hover:bg-brand-navy/5 hover:text-brand-navy'
+              }`}
+            >
+              {isOpen ? <X size={19} strokeWidth={2.3} aria-hidden="true" /> : <Menu size={19} strokeWidth={1.9} aria-hidden="true" />}
+              <span className="text-[10px] leading-none tracking-tight">Mais</span>
+            </button>
+          </div>
+        </nav>
+      </div>
     </>
   );
 };
@@ -705,7 +711,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <HashRouter>
-        <div className="min-h-screen flex flex-col font-sans selection:bg-brand-blue selection:text-white max-w-full overflow-x-clip pb-16 lg:pb-0">
+        <div className="min-h-screen flex flex-col font-sans selection:bg-brand-blue selection:text-white max-w-full overflow-x-clip pb-24 lg:pb-0">
           <button
             type="button"
             onClick={() => document.getElementById('conteudo')?.focus()}
